@@ -1,0 +1,45 @@
+var const KFCharacterInfo_Monster DefaultMonsterArch, SummerMonsterArch, XmasMonsterArch;
+
+simulated function KFCharacterInfoBase GetSeasonalCharacterArch()
+{
+	local KFEventHelper EventHelper;
+	
+	EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
+	if( EventHelper == None )
+		return DefaultMonsterArch;
+	
+	switch( EventHelper.GetEventType() )
+	{
+		case EV_SUMMER:
+			return SummerMonsterArch != None ? SummerMonsterArch : DefaultMonsterArch;
+		case EV_XMAS:
+			return XmasMonsterArch != None ? XmasMonsterArch : DefaultMonsterArch;
+		case EV_NORMAL:
+		default:
+			return DefaultMonsterArch;
+	}
+	
+	return DefaultMonsterArch;
+}
+
+static function string GetSeasonalLocalizationSuffix()
+{
+	local KFEventHelper EventHelper;
+	
+	EventHelper = class'KFEventHelper'.static.FindEventHelper(class'WorldInfo'.static.GetWorldInfo());
+	if( EventHelper == None )
+		return "";
+	
+	switch( EventHelper.GetEventType() )
+	{
+		case EV_SUMMER:
+			return "_Summer";
+		case EV_XMAS:
+			return "_Winter";
+		case EV_NORMAL:
+		default:
+			return "";
+	}
+	
+	return "";
+}

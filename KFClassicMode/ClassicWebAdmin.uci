@@ -1,0 +1,4 @@
+reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime  )
+{
+	Super.TeamMessage(PRI, class'ClassicPlayerController'.static.StripColorMessage(S), Type, MsgLifeTime);
+}
