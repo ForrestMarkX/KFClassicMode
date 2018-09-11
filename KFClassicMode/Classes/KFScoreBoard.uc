@@ -9,6 +9,7 @@ var KFPlayerReplicationInfo RightClickPlayer;
 var editinline export KFGUI_RightClickMenu PlayerContext;
 var KFGUI_List PlayersList;
 var transient int InitAdminSize;
+var Texture2D DefaultAvatar;
 
 var KFGameReplicationInfo KFGRI;
 var array<KFPlayerReplicationInfo> KFPRIArray;
@@ -48,6 +49,20 @@ function ShowMenu()
 		for( i=0; i<InitAdminSize; ++i )
 			PlayerContext.ItemRows[4+i].Text = AdminCommands[i].Info;
 	} 
+}
+
+function CheckAvatar(KFPlayerReplicationInfo KFPRI)
+{
+	local Texture2D Avatar;
+	
+	if( KFPRI.Avatar == None || KFPRI.Avatar == DefaultAvatar )
+	{
+		Avatar = FindAvatar(KFPRI.UniqueId);
+		if( Avatar == None )
+			Avatar = DefaultAvatar;
+			
+		KFPRI.Avatar = Avatar;
+	}
 }
 
 function CloseMenu()
@@ -274,6 +289,8 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
 	YOffset *= 1.05;
 	KFPRI = KFPRIArray[Index];
 	
+	CheckAvatar(KFPRI);
+	
 	if( KFGRI.bVersusGame )
 		bIsZED = KFTeamInfo_Zeds(KFPRI.Team) != None;
 		
@@ -322,7 +339,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
 		if( KFPRI.CurrentPerkClass!=None )
 		{
 			PerkLevel = class<ClassicPerk_Base>(KFPRI.CurrentPerkClass).static.PreDrawPerk(C, KFPRI.GetActivePerkLevel(), PerkIcon, PerkStarIcon);
-			DrawPerkWithStars(C,PerkXPos,YOffset+BORDERTHICKNESS,Height-(BORDERTHICKNESS * 2),PerkLevel,PerkIcon,PerkStarIcon);
+			DrawPerkWithStars(C,PerkXPos,YOffset+(BORDERTHICKNESS / 2),Height-(BORDERTHICKNESS * 2),PerkLevel,PerkIcon,PerkStarIcon);
 		}
 		else
 		{
@@ -341,11 +358,6 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
 		C.DrawTile(KFPRI.Avatar,Height - 6,Height - 6,0,0,KFPRI.Avatar.SizeX,KFPRI.Avatar.SizeY);
 		Owner.CurrentStyle.DrawBoxHollow(PlayerXPos - (Height * 1.075), YOffset + (Height / 2) - ((Height - 6) / 2), Height - 6, Height - 6, 1);
 	} 
-	else
-	{
-		if( !KFPRI.bBot )
-			KFPRI.Avatar = FindAvatar(KFPRI.UniqueId);
-	}
 
 	// Player
 	C.SetPos (PlayerXPos, TextYOffset);
@@ -458,6 +470,11 @@ final function DrawPerkWithStars( Canvas C, float X, float Y, float Scale, int S
 	
 	while( Stars>0 )
 	{
+		if( (X+Scale) >= PlayerXPos )
+		{
+			break;
+		}
+		
 		for( i=1; i<=Min(5,Stars); ++i )
 		{
 			C.SetPos(X,Y-(i*Scale*0.8f));
@@ -614,6 +631,8 @@ defaultproperties
 		OnBecameHidden=HidRightClickMenu
 	End Object
 	PlayerContext=PlayerContextMenu
+	
+	DefaultAvatar=Texture2D'UI_HUD.ScoreBoard_Standard_SWF_I26'
 	
 	AdminCommands.Add((Info="Kick Player",Cmd="Kick"))
 	AdminCommands.Add((Info="Ban Player",Cmd="KickBan"))

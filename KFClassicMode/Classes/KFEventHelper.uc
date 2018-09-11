@@ -6,7 +6,9 @@ var protected enum EEventTypes
 	EV_NONE,
 	EV_NORMAL,
 	EV_SUMMER,
-	EV_XMAS
+	EV_WINTER,
+	EV_SPRING,
+	EV_FALL
 } CurrentEventType;
 
 replication

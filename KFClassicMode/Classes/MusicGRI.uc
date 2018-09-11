@@ -80,7 +80,7 @@ simulated function string LoadMusicType(EEventTypes EventType, string Type)
     {
 		case EV_SUMMER:
 			return Type ~= "Wave" ? SummerWaveMusic : SummerTraderMusic;
-		case EV_XMAS:
+		case EV_WINTER:
 			return Type ~= "Wave" ? XmasWaveMusic : XmasTraderMusic;
 		default:
 			return Type ~= "Wave" ? WaveMusic : TraderMusic;

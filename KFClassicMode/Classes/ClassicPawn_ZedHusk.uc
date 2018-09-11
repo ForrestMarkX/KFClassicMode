@@ -47,7 +47,8 @@ DefaultProperties
 	
 	DefaultMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Husk_Archetype'
 	SummerMonsterArch=KFCharacterInfo_Monster'SUMMER_ZED_ARCH.ZED_Husk_Archetype'
-	XmasMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Husk_Archetype'
+	WinterMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Husk_Archetype'
+	FallMonsterArch=KFCharacterInfo_Monster'HALLOWEEN_ZED_ARCH.ZED_Husk_Archetype'
 	
     Health=600.f
 	

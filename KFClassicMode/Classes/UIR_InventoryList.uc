@@ -101,7 +101,10 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
 				{
 					if( !Item.FillAmmoB.bDisabled )
 					{
-						PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PERK_MENU_BUTTON_CLICK');
+						if (PC != None && PC.MyGFxHUD != None)
+						{
+							PC.MyGFxHUD.PlaySoundFromTheme('PERK_MENU_BUTTON_CLICK', 'UI');
+						}
 					}
 					
 					Item.FillAmmoB.HandleMouseClick(false);
@@ -110,7 +113,10 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
 				{
 					if( !Item.PurchaseVest.bDisabled )
 					{
-						PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PERK_MENU_BUTTON_CLICK');
+						if (PC != None && PC.MyGFxHUD != None)
+						{
+							PC.MyGFxHUD.PlaySoundFromTheme('PERK_MENU_BUTTON_CLICK', 'UI');
+						}
 					}
 					
 					Item.PurchaseVest.HandleMouseClick(false);
@@ -184,7 +190,10 @@ function DoSellItem( UIR_ItemBase Sender, bool bRight, int MouseX, int MouseY )
 		TraderMenu.WeightB.NewBoxes = 0;
         TraderMenu.bDidBuyableUpdate = true;
 		
-		GetPlayer().PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_SELL_WEAPON');
+		if( PC.MyGFxHUD != None )
+		{
+			PC.MyGFxHUD.PlaySoundFromTheme('TRADER_SELL_WEAPON', 'UI');
+		}
 	}
 }
 

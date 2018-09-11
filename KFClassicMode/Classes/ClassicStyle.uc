@@ -370,7 +370,7 @@ function RenderButton( KFGUI_Button B )
 		
 		if( B.GetUsingGamepad() )
 		{
-			ButtonTex = Texture2D(DynamicLoadObject("UI_Controller."$B.GamepadButtonName$"_Asset", class'Texture2D'));
+			ButtonTex = Texture2D(DynamicLoadObject(ClassicPlayerController(B.GetPlayer()).ControllerType$"."$B.GamepadButtonName$"_Asset", class'Texture2D'));
 			if( ButtonTex != None )
 			{
 				B.GetRealtivePos(AX, AY);

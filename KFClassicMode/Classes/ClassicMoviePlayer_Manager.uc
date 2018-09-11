@@ -180,6 +180,14 @@ function LaunchMenus( optional bool bForceSkipLobby )
 	SetMovieCanReceiveInput(false);
 }
 
+function PlaySoundFromTheme(name EventName, optional name SoundTheme)
+{
+	if( EventName == 'TraderTime_Countdown' )
+		return;
+		
+	Super.PlaySoundFromTheme(EventName, SoundTheme);
+}
+
 function ConditionalPauseGame(bool bPause);
 
 defaultproperties

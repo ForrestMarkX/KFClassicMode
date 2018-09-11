@@ -83,7 +83,11 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
 		case 'XboxTypeS_Y':
 			if( Event == IE_Pressed )
 			{
-				PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PARTYWIDGET_READYUP_BUTTON_CLICK');
+				if (PC != None && PC.MyGFxHUD != None)
+				{
+					PC.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_READYUP_BUTTON_CLICK', 'UI');
+				}
+				
 				ReadyButton.HandleMouseClick(false);
 			}
 			return true;
@@ -113,7 +117,11 @@ function SetFinalCountdown(bool B, int CountdownTime)
 function FinalCountdown()
 {
 	FinalCountTime -= 1;
-	PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PARTYWIDGET_COUNTDOWN');
+	if (PC != None && PC.MyGFxHUD != None)
+	{
+		// There seems to be another countdown sound that plays and I can't find where it's played from.
+		//PC.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_COUNTDOWN', 'UI');
+	}
 	
 	if( FinalCountTime == 0 )
 	{

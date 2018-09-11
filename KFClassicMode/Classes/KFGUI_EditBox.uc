@@ -10,7 +10,7 @@ var enum eTextCase
 var Color FontColor;
 
 var string TextStr,AllowedCharSet;
-var bool bDrawBackground,bMaskText,bIntOnly,bFloatOnly,bIncludeSign,bConvertSpaces,bCtrl,bAllSelected,bForceShowCaret;
+var bool bDrawBackground,bNoClearOnEnter,bMaskText,bIntOnly,bFloatOnly,bIncludeSign,bConvertSpaces,bCtrl,bAllSelected,bForceShowCaret;
 var int MaxWidth;
 var bool bReadOnly,bAlwaysNotify;
 var int CaretPos,FirstVis,LastSizeX,LastCaret,LastLength;
@@ -202,8 +202,11 @@ function bool NotifyInputKey(int ControllerId, name Key, EInputEvent Event, floa
 		{
 			Temp = TextStr;
 			OnTextFinished(self, Temp);
-			SetInputText("");
-			CaretPos = 0;
+			if( !bNoClearOnEnter )
+			{
+				SetInputText("");
+				CaretPos = 0;
+			}
 		}
 
 		return true;

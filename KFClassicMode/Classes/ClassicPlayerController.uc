@@ -1,18 +1,6 @@
 Class ClassicPlayerController extends KFPlayerController
 	config(ClassicPlayer);
 
-enum ECameraViewModes
-{
-	CVM_FirstPerson,
-	CVM_ThirdPersonAboveHead,
-	CVM_ThirdPersonRightShoulderClose,
-	CVM_ThirdPersonRightShoulderFar,
-	CVM_ThirdPersonLeftShoulderClose,
-	CVM_ThirdPersonLeftShoulderFar
-};
-var ECameraViewModes CurrentCameraViewMode, PreviousCameraViewMode;
-var bool bCameraMoveRight, bCameraIsClose;
-
 var transient float NextSpectateChange;
 
 var ClassicPerkManager PerkManager;
@@ -47,13 +35,14 @@ var transient KF2GUIController GUIController;
 var transient UIP_PerkSelection PerkSelectionBox;
 
 var config int SelectedEmoteIndex, ConfigVer;
+var globalconfig string ControllerType;
 var globalconfig bool bHideKillMsg, bSetupBindings;
 var globalconfig array<name> FavoriteWeaponClassNames;
 
 replication
 {
 	if( bNetDirty )
-		MidGameMenuClass, LobbyMenuClass, FlashUIClass, TraderMenuClass, PendingPerk, bPlayerNeedsPerkUpdate, PerkManager, bSetPerk, CurrentCameraViewMode, PreviousCameraViewMode, bCameraMoveRight, bCameraIsClose;
+		MidGameMenuClass, LobbyMenuClass, FlashUIClass, TraderMenuClass, PendingPerk, bPlayerNeedsPerkUpdate, PerkManager, bSetPerk;
 }
 
 simulated function PostBeginPlay()
@@ -224,6 +213,14 @@ simulated function PostBeginPlay()
 			ConfigVer = 1;
 			SaveConfig();
 		}
+		
+		if( ConfigVer < 2 )
+		{
+			ControllerType = "Xbox One";
+			
+			ConfigVer = 2;
+			SaveConfig();
+		}
 	
 		if( LobbyMenu == None )
 		{
@@ -237,20 +234,23 @@ simulated function PostBeginPlay()
 simulated event name GetSeasonalStateName()
 {
 	if( EventHelper == None )
-		return 'No_Event';
+		return Super.GetSeasonalStateName();
 		
 	switch( EventHelper.GetEventType() )
 	{
 		case EV_SUMMER:
 			return 'Summer_Sideshow';
-		case EV_XMAS:
+		case EV_WINTER:
 			return 'Winter';
+		case EV_FALL:
+			return 'Fall';
+		case EV_SPRING:
 		case EV_NORMAL:
 		default:
 			return 'No_Event';
 	}
 
-    return 'No_Event';
+    return Super.GetSeasonalStateName();
 }
 
 simulated function OpenLobbyMenu()
@@ -545,117 +545,6 @@ exec function StartFire( optional byte FireModeNum )
 	}
 
 	super.StartFire( FireModeNum );
-}
-
-exec function ToggleBehindView()
-{
-	bBehindView = !bBehindView;
-	ServerCamera(bBehindView ? 'ThirdPerson' : 'FirstPerson');
-		
-	if( !OldDrawCrosshair )
-	{
-		KFHudBase(myHUD).bDrawCrosshair = bBehindView;
-	}
-}
-
-reliable server function ServerCamera( name NewMode )
-{
-	// <- REMOVED CAMERA LOGGING (PlayerController)
-	if ( NewMode == '1st' )
-		NewMode = 'FirstPerson';
-	else if ( NewMode == '3rd' )
-		NewMode = 'ThirdPerson';
-	SetCameraMode( NewMode );
-}
-
-exec function Camera( name NewMode )
-{
-	// If ToggleBehindView Keybind(END) was pressed
-	if (NewMode == 'FirstPerson')
-	{
-		ToggleBehindView();
-		return;
-	}
-	// If INSERT or PAGEUP was pressed change distance to our player
-	else if (NewMode == 'FreeCam' || NewMode == 'Fixed')
-	{
-		switch (CurrentCameraViewMode)
-		{
-			case CVM_FirstPerson: 
-				CurrentCameraViewMode = CVM_ThirdPersonAboveHead; 
-				break;
-
-			case CVM_ThirdPersonAboveHead: 
-				CurrentCameraViewMode = CVM_FirstPerson; 
-				break;
-
-			case CVM_ThirdPersonRightShoulderClose: 
-				CurrentCameraViewMode = CVM_ThirdPersonRightShoulderFar; 
-				bCameraIsClose = false;
-				break;
-
-			case CVM_ThirdPersonRightShoulderFar: 
-				CurrentCameraViewMode = CVM_ThirdPersonRightShoulderClose; 
-				bCameraIsClose = true;
-				break;
-
-			case CVM_ThirdPersonLeftShoulderClose: 
-				CurrentCameraViewMode = CVM_ThirdPersonLeftShoulderFar; 
-				bCameraIsClose = false;
-				break;
-
-			case CVM_ThirdPersonLeftShoulderFar: 
-				CurrentCameraViewMode = CVM_ThirdPersonLeftShoulderClose; 
-				bCameraIsClose = true;
-				break;
-		}
-	}
-	// If DELETE, PAGEDOWN, or HOME was pressed change the camera angle to our player
-	else if (NewMode == 'Default' || NewMode == 'ThirdPerson' || NewMode == 'FixedTracking')
-	{
-		if (CurrentCameraViewMode > 0)
-		{
-			switch (CurrentCameraViewMode)
-			{
-				case CVM_ThirdPersonAboveHead:
-					if (bCameraMoveRight && bCameraIsClose)
-					{
-						CurrentCameraViewMode = CVM_ThirdPersonRightShoulderClose;
-						bCameraMoveRight = false;
-					}
-					else if (bCameraMoveRight && !bCameraIsClose)
-					{
-						CurrentCameraViewMode = CVM_ThirdPersonRightShoulderFar;
-						bCameraMoveRight = false;
-					}
-					else if (!bCameraMoveRight && bCameraIsClose)
-					{
-						CurrentCameraViewMode = CVM_ThirdPersonLeftShoulderClose;
-						bCameraMoveRight = true;
-					}
-					else if (!bCameraMoveRight && !bCameraIsClose)
-					{
-						CurrentCameraViewMode = CVM_ThirdPersonLeftShoulderFar;
-						bCameraMoveRight = true;
-					}
-
-					break;
-
-				case CVM_ThirdPersonRightShoulderClose:
-				case CVM_ThirdPersonRightShoulderFar:
-				case CVM_ThirdPersonLeftShoulderClose:
-				case CVM_ThirdPersonLeftShoulderFar:
-					CurrentCameraViewMode = CVM_ThirdPersonAboveHead; 
-					break;
-			}
-		}
-	}
-
-	// If in thirdperson apply view offset
-	if (CurrentCameraViewMode > 0)
-		ClassicThirdPersonCamera(ClassicPlayerCamera(PlayerCamera).ThirdPersonCam).SetViewOffset(class'ClassicThirdPersonCameraMode'.static.GetViewOffset(CurrentCameraViewMode));
-	
-	ServerCamera((CurrentCameraViewMode > 0) ? 'ThirdPerson' : 'FirstPerson');
 }
 
 reliable client function ReceiveServerMOTD( string S, bool bFinal )
@@ -982,7 +871,7 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
 			KFInput.GetKeyBindFromCommand(BoundKey, "GBA_Use", false);
 			if( KFInput.bUsingGamepad )
 			{
-				KeyName = "<Icon>UI_Controller."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
+				KeyName = "<Icon>"$ControllerType$"."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
 			}
 			else
 			{
@@ -1022,7 +911,7 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
 					KFInput.GetKeyBindFromCommand(BoundKey, KFInput.bUsingGamepad ? "GBA_Reload_Gamepad" : "GBA_QuickHeal", false);
 					if( KFInput.bUsingGamepad )
 					{
-						KeyName = "<Icon>UI_Controller."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
+						KeyName = "<Icon>"$ControllerType$"."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
 					}
 					else
 					{
@@ -1255,17 +1144,11 @@ defaultproperties
 	InputClass=class'KFClassicMode.ClassicPlayerInput'
 	PerkManagerClass=class'ClassicPerkManager'
 	PurchaseHelperClass=class'ClassicAutoPurchaseHelper'
-	CameraClass=class'ClassicPlayerCamera'
 	
 	MidGameMenuClass=class'UI_MidGameMenu'
 	LobbyMenuClass=class'UI_LobbyMenu'
 	FlashUIClass=class'UI_FlashLobby'
 	TraderMenuClass=class'UI_TraderMenu'
-	
-	bCameraMoveRight=true
-	bCameraIsClose=false
-	CurrentCameraViewMode=CVM_FirstPerson
-	PreviousCameraViewMode=CVM_ThirdPersonAboveHead
 	
 	PerkList.Empty
 }

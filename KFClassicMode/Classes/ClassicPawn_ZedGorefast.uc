@@ -41,7 +41,8 @@ DefaultProperties
 	
 	DefaultMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Gorefast_Archetype'
 	SummerMonsterArch=KFCharacterInfo_Monster'SUMMER_ZED_ARCH.ZED_Gorefast_Archetype'
-	XmasMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Gorefast_Archetype'
+	WinterMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Gorefast_Archetype'
+	FallMonsterArch=KFCharacterInfo_Monster'HALLOWEEN_ZED_ARCH.ZED_Gorefast_Archetype'
 	
 	ElitePawnClass.Empty
 	

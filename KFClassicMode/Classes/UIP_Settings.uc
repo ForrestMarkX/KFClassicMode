@@ -1,10 +1,9 @@
 Class UIP_Settings extends KFGUI_MultiComponent;
 
 var KFGUI_ComponentList SettingsBox;
-var KFGUI_Button KeyBindButton;
-var KFGUI_TextLable KeyBindLabel,ResetColorLabel;
-var name CurKeybind;
-var bool bSetKeybind,bDelayedSet;
+var KFGUI_TextLable ResetColorLabel,PerkStarsLabel,PerkStarsRowLabel,ControllerTypeLabel;
+var KFGUI_EditBox PerkStarsBox, PerkRowsBox;
+var KFGUI_ComboBox ControllerBox;
 
 function InitMenu()
 {
@@ -19,28 +18,17 @@ function InitMenu()
 	AddCheckBox("Show Score","Check to show scores on the HUD.",'bScore',!KFHUDInterface(GetPlayer().myHUD).bHideDosh);
 	AddCheckBox("Show Kill Counter","Tally specimen kills on the HUD.",'bTallySpecimenKills',!ClassicPlayerController(GetPlayer()).bHideKillMsg);
 	
+	PerkStarsBox = AddEditBox("Max Perk Stars","How many perk stars to show.",'MaxPerkStars',string(KFHUDInterface(GetPlayer().myHUD).MaxPerkStars),PerkStarsLabel);
+	PerkStarsBox.bIntOnly = true;
+	
+	PerkRowsBox = AddEditBox("Max Stars Per-Row","How many perk stars to draw per row.",'MaxStarsPerRow',string(KFHUDInterface(GetPlayer().myHUD).MaxStarsPerRow),PerkStarsRowLabel);
+	PerkRowsBox.bIntOnly = true;
+	
+	ControllerBox = AddComboBox("Controller Type","What controller type to use for GUI elements.",'ControllerType',ControllerTypeLabel);
+	ControllerBox.Values.AddItem("Xbox One");
+	ControllerBox.Values.AddItem("Playstation 4");
+	
 	AddButton("Reset","Reset HUD Colors","Resets the color settings for the HUD.",'ResetColors',ResetColorLabel);
-	KeyBindButton = AddButton("","Toggle Behindview keybind:","With this desired button you can toggle your behindview (click to change it)",'KB',KeyBindLabel);
-	InitBehindviewKey();
-}
-final function InitBehindviewKey()
-{
-	local PlayerInput IN;
-	local int i;
-
-	CurKeybind = '';
-
-	// Check what keys now using!
-	IN = Owner.BackupInput;
-	for( i=0; i<IN.Bindings.Length; ++i )
-	{
-		if( IN.Bindings[i].Command~="Camera FirstPerson" )
-		{
-			CurKeybind = IN.Bindings[i].Name;
-			break;
-		}
-	}
-	KeyBindButton.ButtonText = (CurKeybind!='' ? string(CurKeybind) : "<Not set>");
 }
 final function KFGUI_CheckBox AddCheckBox( string Cap, string TT, name IDN, bool bDefault )
 {
@@ -80,6 +68,90 @@ final function KFGUI_Button AddButton( string ButtonText, string Cap, string TT,
 
 	return CB;
 }
+final function KFGUI_EditBox AddEditBox( string Cap, string TT, name IDN, string DefaultValue, out KFGUI_TextLable Label )
+{
+	local KFGUI_EditBox EB;
+	local KFGUI_MultiComponent MC;
+	
+	MC = KFGUI_MultiComponent(SettingsBox.AddListComponent(class'KFGUI_MultiComponent'));
+	MC.InitMenu();
+	Label = new(MC) class'KFGUI_TextLable';
+	Label.SetText(Cap);
+	Label.XSize = 0.60;
+	Label.FontScale = 1;
+	Label.AlignY = 1;
+	MC.AddComponent(Label);
+	EB = new(MC) class'KFGUI_EditBox';
+	EB.XPosition = 0.77;
+	EB.YPosition = 0.5;
+	EB.XSize = 0.15;
+	EB.YSize = 1;
+	EB.ToolTip = TT;
+	EB.bDrawBackground = true;
+	EB.ID = IDN;
+	EB.OnChange = OnTextChanged;
+	EB.SetText(DefaultValue);
+	EB.bNoClearOnEnter = true;
+	MC.AddComponent(EB);
+
+	return EB;
+}
+final function KFGUI_ComboBox AddComboBox( string Cap, string TT, name IDN, out KFGUI_TextLable Label )
+{
+	local KFGUI_ComboBox CB;
+	local KFGUI_MultiComponent MC;
+	
+	MC = KFGUI_MultiComponent(SettingsBox.AddListComponent(class'KFGUI_MultiComponent'));
+	MC.InitMenu();
+	Label = new(MC) class'KFGUI_TextLable';
+	Label.SetText(Cap);
+	Label.XSize = 0.60;
+	Label.FontScale = 1;
+	Label.AlignY = 1;
+	MC.AddComponent(Label);
+	CB = new(MC) class'KFGUI_ComboBox';
+	CB.XPosition = 0.77;
+	CB.XSize = 0.15;
+	CB.ToolTip = TT;
+	CB.ID = IDN;
+	CB.OnComboChanged = OnComboChanged;
+	MC.AddComponent(CB);
+
+	return CB;
+}
+
+function OnComboChanged(KFGUI_ComboBox Sender)
+{
+	local ClassicPlayerController PC;
+
+	PC = ClassicPlayerController(GetPlayer());
+	switch( Sender.ID )
+	{
+	case 'ControllerType':
+		PC.ControllerType = Sender.GetCurrent() ~= "Xbox One" ? "UI_Controller" : "UI_Controller_Orbis";
+		break;
+	}
+	
+	PC.SaveConfig();
+}
+
+function OnTextChanged(KFGUI_EditBox Sender)
+{
+	local ClassicPlayerController PC;
+
+	PC = ClassicPlayerController(GetPlayer());
+	switch( Sender.ID )
+	{
+	case 'MaxPerkStars':
+		KFHUDInterface(PC.myHUD).MaxPerkStars = int(Sender.TextStr);
+		break;
+	case 'MaxStarsPerRow':
+		KFHUDInterface(PC.myHUD).MaxStarsPerRow = int(Sender.TextStr);
+		break;
+	}
+	
+	KFHUDInterface(PC.myHUD).SaveConfig();
+}
 
 function CheckChange( KFGUI_CheckBox Sender )
 {
@@ -115,14 +187,6 @@ function ButtonClicked( KFGUI_Button Sender )
 	PC = ClassicPlayerController(GetPlayer());
 	switch( Sender.ID )
 	{
-	case 'KB':
-		KeyBindButton.ButtonText = "Press a button";
-		KeyBindButton.SetDisabled(true);
-		GrabKeyFocus();
-		bSetKeybind = true;
-		bDelayedSet = false;
-		SetTimer(0.4,false);
-		break;
 	case 'ResetColors':
 		KFHUDInterface(PC.myHUD).ResetHUDColors();
 		if( PC.ColorSettingMenu != None )
@@ -132,36 +196,6 @@ function ButtonClicked( KFGUI_Button Sender )
 			PC.ColorSettingMenu.FontSlider.SetDefaultColor(KFHUDInterface(GetPlayer().myHUD).FontColor);
 		}
 		break;
-	}
-}
-function Timer()
-{
-	bDelayedSet = false;
-}
-function bool NotifyInputKey( int ControllerId, name Key, EInputEvent Event, float AmountDepressed, bool bGamepad )
-{
-	if( Event==IE_Pressed && !bDelayedSet && InStr(Caps(string(Key)),"MOUSE")==-1 )
-	{
-		if( Key!='Escape' )
-			BindNewKey(Key,"Camera FirstPerson");
-		ReleaseKeyFocus();
-	}
-	return true;
-}
-function LostKeyFocus()
-{
-	KeyBindButton.SetDisabled(false);
-	bSetKeybind = false;
-	InitBehindviewKey();
-}
-final function BindNewKey( name Key, string Cmd )
-{
-	local PlayerController PC;
-
-	PC = GetPlayer();
-	if (PC != None && PC.PlayerInput != None)
-	{
-		PC.PlayerInput.SetBind(Key, Cmd);
 	}
 }
 

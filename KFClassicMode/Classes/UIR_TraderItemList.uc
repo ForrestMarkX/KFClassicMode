@@ -251,7 +251,10 @@ function DoPurchaseItem( UIR_ItemBase Sender, bool bRight, int MouseX, int Mouse
 		TraderMenu.WeightB.NewBoxes = 0;
         TraderMenu.bDidBuyableUpdate = true;
 		
-		GetPlayer().PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_BUY_WEAPON');
+		if( PC.MyGFxHUD != None )
+		{
+			PC.MyGFxHUD.PlaySoundFromTheme('TRADER_BUY_WEAPON', 'UI');
+		}
 	}
 }
 

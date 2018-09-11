@@ -415,6 +415,14 @@ defaultproperties
 	OnHUDIcons.Add((DrawColor=(R=178,G=0,B=255,A=255)))
 	OnHUDIcons.Add((DrawColor=(R=255,G=0,B=128,A=255)))
 	OnHUDIcons.Add((DrawColor=(R=95,G=0,B=0,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=217,G=124,B=32,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=4,G=171,B=33,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=94,G=22,B=145,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=119,G=229,B=231,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=239,G=58,B=124,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=255,G=140,B=0,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=148,G=0,B=211,A=255)))
+	OnHUDIcons.Add((DrawColor=(R=240,G=255,B=255,A=255)))
 	
 	WeaponDiscount=(Name="Weapon Discount",Increment=0.1f,Rank=0,StartingValue=0.1f,MaxValue=0.9f)
 	

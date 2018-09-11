@@ -41,7 +41,8 @@ DefaultProperties
 	
 	DefaultMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Stalker_Archetype'
 	SummerMonsterArch=KFCharacterInfo_Monster'SUMMER_ZED_ARCH.ZED_Stalker_Archetype'
-	XmasMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Stalker_Archetype'
+	WinterMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Stalker_Archetype'
+	FallMonsterArch=KFCharacterInfo_Monster'HALLOWEEN_ZED_ARCH.ZED_Stalker_Archetype'
 	
 	HitZones.Empty
 	HitZones[HZI_HEAD]=(ZoneName=head, BoneName=Head, Limb=BP_Head, GoreHealth=25, DmgScale=1.1, SkinID=1)

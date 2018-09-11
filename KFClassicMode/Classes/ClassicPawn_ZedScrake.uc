@@ -57,7 +57,8 @@ defaultproperties
 	
 	DefaultMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Scrake_Archetype'
 	SummerMonsterArch=KFCharacterInfo_Monster'SUMMER_ZED_ARCH.ZED_Scrake_Archetype'
-	XmasMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Scrake_Archetype'
+	WinterMonsterArch=KFCharacterInfo_Monster'XMAS_ZED_ARCH.ZED_Scrake_Archetype'
+	FallMonsterArch=KFCharacterInfo_Monster'HALLOWEEN_ZED_ARCH.ZED_Scrake_Archetype'
 	
     Health=1000
 	

@@ -76,14 +76,22 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
 		case 'XboxTypeS_Back':
 			if( Event == IE_Pressed )
 			{
-				GetPlayer().PlayAKEvent(AkEvent'WW_UI_Menu.Play_PERK_MENU_BUTTON_CLICK');
+				if (KFPlayerController(GetPlayer()) != None && KFPlayerController(GetPlayer()).MyGFxHUD != None)
+				{
+					KFPlayerController(GetPlayer()).MyGFxHUD.PlaySoundFromTheme('TRADER_MAGFILL_BUTTON_CLICK', 'UI');
+				}
+				
 				AutoFill.HandleMouseClick(false);
 			}
 			break;
 		case 'XboxTypeS_Start':
 			if( Event == IE_Pressed )
 			{
-				GetPlayer().PlayAKEvent(AkEvent'WW_UI_Menu.Play_UI_Trader_Menu_Close');
+				if (KFPlayerController(GetPlayer()) != None && KFPlayerController(GetPlayer()).MyGFxHUD != None)
+				{
+					KFPlayerController(GetPlayer()).MyGFxHUD.PlaySoundFromTheme('TRADER_EXIT_BUTTON_CLICK', 'UI');
+				}
+				
 				DoClose();
 			}
 			break;

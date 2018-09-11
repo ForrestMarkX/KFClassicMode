@@ -841,12 +841,22 @@ function SetupMapInfo()
 		
             if( MapInfo.Type ~= "XMas" || MapInfo.Type ~= "Winter" )
             {
-				EventHelper.SetEventType(EV_XMAS);
+				EventHelper.SetEventType(EV_WINTER);
 				return;
             }
             else if( MapInfo.Type ~= "Summer" || MapInfo.Type ~= "Slideshow" )
             {
 				EventHelper.SetEventType(EV_SUMMER);
+				return;
+            }
+            else if( MapInfo.Type ~= "Spring" )
+            {
+				EventHelper.SetEventType(EV_SPRING);
+				return;
+            }
+            else if( MapInfo.Type ~= "Fall" || MapInfo.Type ~= "Halloween" )
+            {
+				EventHelper.SetEventType(EV_FALL);
 				return;
             }
         }
@@ -856,11 +866,18 @@ function SetupMapInfo()
 	{
 		case 'XMas':
 		case 'Winter':
-			EventHelper.SetEventType(EV_XMAS);
+			EventHelper.SetEventType(EV_WINTER);
 			break;
 		case 'Slideshow':
 		case 'Summer':
 			EventHelper.SetEventType(EV_SUMMER);
+			break;
+		case 'Spring':
+			EventHelper.SetEventType(EV_SPRING);
+			break;
+		case 'Fall':
+		case 'Halloween':
+			EventHelper.SetEventType(EV_FALL);
 			break;
 		default:
 			EventHelper.SetEventType(EV_NORMAL);

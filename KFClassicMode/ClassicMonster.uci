@@ -1,4 +1,4 @@
-var const KFCharacterInfo_Monster DefaultMonsterArch, SummerMonsterArch, XmasMonsterArch;
+var const KFCharacterInfo_Monster DefaultMonsterArch, SummerMonsterArch, WinterMonsterArch, FallMonsterArch;
 
 simulated function KFCharacterInfoBase GetSeasonalCharacterArch()
 {
@@ -12,8 +12,10 @@ simulated function KFCharacterInfoBase GetSeasonalCharacterArch()
 	{
 		case EV_SUMMER:
 			return SummerMonsterArch != None ? SummerMonsterArch : DefaultMonsterArch;
-		case EV_XMAS:
-			return XmasMonsterArch != None ? XmasMonsterArch : DefaultMonsterArch;
+		case EV_WINTER:
+			return WinterMonsterArch != None ? WinterMonsterArch : DefaultMonsterArch;
+		case EV_FALL:
+			return FallMonsterArch != None ? FallMonsterArch : DefaultMonsterArch;
 		case EV_NORMAL:
 		default:
 			return DefaultMonsterArch;
@@ -34,8 +36,11 @@ static function string GetSeasonalLocalizationSuffix()
 	{
 		case EV_SUMMER:
 			return "_Summer";
-		case EV_XMAS:
+		case EV_WINTER:
 			return "_Winter";
+		case EV_FALL:
+			return "_Fall";
+		case EV_SPRING:
 		case EV_NORMAL:
 		default:
 			return "";

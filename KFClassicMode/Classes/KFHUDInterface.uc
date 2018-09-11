@@ -589,6 +589,8 @@ function DrawHUDBox
 	}
 	else
 	{
+		Y -= (ScaledBorderSize / 1.75f);
+		
 		for( i=0; i<StringArray.Length; ++i )
 		{
 			Canvas.TextSize(GUIStyle.StripTextureFromString(StringArray[i]), XL, YL, TextScale, TextScale);
@@ -1269,27 +1271,28 @@ function DrawNonCritialMessage( int Index, FCritialMessage Message, float X, flo
 		SArray = SplitString(Message.Text, Message.Delimiter);
 		if( SArray.Length > 0 )
 		{	
+			TY += GUIStyle.DefaultHeight*SArray.Length;
 			for( i=0; i<SArray.Length; ++i )
 			{
 				if( SArray[i]!="" )
 				{
-					Canvas.TextSize(GUIStyle.StripTextureFromString(SArray[i]),XS,YS,FontScalar,FontScalar);
+					Canvas.TextSize(GUIStyle.StripTextureFromString(SArray[i]),XS,YS);
 					TX = FMax(XS,TX);
 				}
-				
-				TY += GUIStyle.DefaultHeight;
 			}
 			
-			XL = TX * 1.15f;
-			YL = TY * 1.15f;
+			TX *= FontScalar;
+			
+			XL = (TX + ScaledBorderSize) * 1.15;
+			YL = TY + (ScaledBorderSize * 2);
 		}
 	}
 	else
 	{
 		Canvas.TextSize(GUIStyle.StripTextureFromString(Message.Text), XS, YS, FontScalar, FontScalar);
 		
-		XL = XS * 1.15f;
-		YL = YS * 1.15f;
+		XL = (XS + ScaledBorderSize) * 1.15;
+		YL = YS + (ScaledBorderSize * 2);
 	}
 	
 	BoxXS = X - (XL / 2);
@@ -1297,6 +1300,9 @@ function DrawNonCritialMessage( int Index, FCritialMessage Message, float X, flo
 	
 	if( (BoxYS + YL) > Canvas.ClipY )
 		BoxYS = Canvas.ClipY - (YL * 1.25);
+		
+	if( Message.Delimiter == "" )
+		BoxYS += (ScaledBorderSize / 2);
 	
 	DrawHUDBox(BoxXS, BoxYS, XL, YL, Message.Text, HUDA_None,, FontColor,, FadeAlpha,, FontScalar, SArray);
 }
