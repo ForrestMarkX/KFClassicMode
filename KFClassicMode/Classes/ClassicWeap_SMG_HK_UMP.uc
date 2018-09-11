@@ -5,12 +5,12 @@ defaultproperties
     // Inventory
     InventorySize=6
     GroupPriority=115
-	
+    
     // Ammo
     SpareAmmoCapacity[0]=270
     InitialSpareMags[0]=3
 
-	// Recoil
+    // Recoil
     RecoilRate=0.07
 
     // DEFAULT_FIREMODE
@@ -20,6 +20,6 @@ defaultproperties
     // ALT_FIREMODE
     InstantHitDamage(ALTFIRE_FIREMODE)=45
     Spread(ALTFIRE_FIREMODE)=0.009
-	
+    
     AssociatedPerkClasses(0)=class'KFPerk_Commando'
 }

@@ -2,12 +2,12 @@ class ClassicStartContainer_InGameOverview extends KFGFxStartContainer_InGameOve
 
 function Initialize( KFGFxObject_Menu NewParentMenu )
 {
-	Super.Initialize(NewParentMenu);
-	
-	if(SharedContentButton != none)
-	{
-		SharedContentButton.SetVisible(false);
-	}
+    Super.Initialize(NewParentMenu);
+    
+    if(SharedContentButton != none)
+    {
+        SharedContentButton.SetVisible(false);
+    }
 }
 
 function UpdateSharedContent();

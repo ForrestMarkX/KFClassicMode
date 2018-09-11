@@ -2,5 +2,5 @@ class ClassicPlayerCamera extends KFPlayerCamera;
 
 DefaultProperties
 {
-	ThirdPersonCameraClass=class'ClassicThirdPersonCamera'
+    ThirdPersonCameraClass=class'ClassicThirdPersonCamera'
 }

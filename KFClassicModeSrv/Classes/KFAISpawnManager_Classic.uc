@@ -5,59 +5,59 @@ var ClassicMode ControllerMutator;
 
 function Initialize()
 {
-	if( OriginalSpawnManager == None )
-	{
-		OriginalSpawnManager = new(Outer) SpawnManagerClasses[GameLength];
-		OriginalSpawnManager.Initialize();
-	}
-	else OriginalSpawnManager.Initialize();
+    if( OriginalSpawnManager == None )
+    {
+        OriginalSpawnManager = new(Outer) SpawnManagerClasses[GameLength];
+        OriginalSpawnManager.Initialize();
+    }
+    else OriginalSpawnManager.Initialize();
 }
 
 function Update()
 {
-	local array<class<KFPawn_Monster> > SpawnList;
+    local array<class<KFPawn_Monster> > SpawnList;
 
-	if( IsWaveActive() )
-	{
-   		OriginalSpawnManager.TotalWavesActiveTime += 1.0;
-		OriginalSpawnManager.TimeUntilNextSpawn -= 1.f;
+    if( IsWaveActive() )
+    {
+           OriginalSpawnManager.TotalWavesActiveTime += 1.0;
+        OriginalSpawnManager.TimeUntilNextSpawn -= 1.f;
 
         if( OriginalSpawnManager.ShouldAddAI() )
         {
-			SpawnList = OriginalSpawnManager.GetNextSpawnList();
-			if( ControllerMutator != None )
-				ControllerMutator.AdjustSpawnList(SpawnList);
+            SpawnList = OriginalSpawnManager.GetNextSpawnList();
+            if( ControllerMutator != None )
+                ControllerMutator.AdjustSpawnList(SpawnList);
 
-			NumAISpawnsQueued += OriginalSpawnManager.SpawnSquad( SpawnList );
+            NumAISpawnsQueued += OriginalSpawnManager.SpawnSquad( SpawnList );
             OriginalSpawnManager.TimeUntilNextSpawn = OriginalSpawnManager.CalcNextGroupSpawnTime();
         }
-	}
+    }
 }
 
 function SetupNextWave(byte NextWaveIndex, int TimeToNextWaveBuffer = 0)
 {
-	OriginalSpawnManager.SetupNextWave(NextWaveIndex, TimeToNextWaveBuffer);
-	WaveTotalAI = OriginalSpawnManager.WaveTotalAI;
+    OriginalSpawnManager.SetupNextWave(NextWaveIndex, TimeToNextWaveBuffer);
+    WaveTotalAI = OriginalSpawnManager.WaveTotalAI;
 }
 
 function bool IsFinishedSpawning()
 {
-	return OriginalSpawnManager.IsFinishedSpawning();
+    return OriginalSpawnManager.IsFinishedSpawning();
 }
 
 function int SpawnSquad( out array< class<KFPawn_Monster> > AIToSpawn, optional bool bSkipHumanZedSpawning=false )
 {
-	return OriginalSpawnManager.SpawnSquad(AIToSpawn, bSkipHumanZedSpawning);
+    return OriginalSpawnManager.SpawnSquad(AIToSpawn, bSkipHumanZedSpawning);
 }
 
 function SummonBossMinions( array<KFAISpawnSquad> NewMinionSquad, int NewMaxBossMinions, optional bool bUseLivingPlayerScale = true )
 {
-	OriginalSpawnManager.SummonBossMinions(NewMinionSquad, NewMaxBossMinions, bUseLivingPlayerScale);
+    OriginalSpawnManager.SummonBossMinions(NewMinionSquad, NewMaxBossMinions, bUseLivingPlayerScale);
 }
 
 function StopSummoningBossMinions()
 {
-	OriginalSpawnManager.StopSummoningBossMinions();
+    OriginalSpawnManager.StopSummoningBossMinions();
 }
 
 function int GetAIAliveCount()
@@ -67,5 +67,5 @@ function int GetAIAliveCount()
 
 defaultproperties
 {
-	ForcedBossNum=1
+    ForcedBossNum=1
 }

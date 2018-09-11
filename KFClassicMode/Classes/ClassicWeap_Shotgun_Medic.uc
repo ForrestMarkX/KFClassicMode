@@ -4,5 +4,5 @@ function CheckTargetLock();
 
 defaultproperties
 {
-	AssociatedPerkClasses(1)=class'KFPerk_FieldMedic'
+    AssociatedPerkClasses(1)=class'KFPerk_FieldMedic'
 }

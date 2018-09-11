@@ -3,10 +3,10 @@ Interface KFSaveDataBase;
 
 // File accessor helpers.
 // MaxVal for integers are as follow (the lower number you use, the less bits will be reserved):
-/*	0: 0-255
-	1: 0-65535
-	2: 0-16777215
-	3: -2147483647 - 2147483647
+/*    0: 0-255
+    1: 0-65535
+    2: 0-16777215
+    3: -2147483647 - 2147483647
 */
 function SaveInt( int Value, optional byte MaxVal );
 function int ReadInt( optional byte MaxVal );

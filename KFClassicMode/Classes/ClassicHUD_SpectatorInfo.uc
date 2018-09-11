@@ -2,7 +2,7 @@ class ClassicHUD_SpectatorInfo extends KFGFxHUD_SpectatorInfo;
 
 function UpdatePlayerInfo(optional bool bForceUpdate)
 {
-	local GFxObject TempObject, PerkIconObject;
+    local GFxObject TempObject, PerkIconObject;
     local byte CurrentPerkLevel;
 
     if(SpectatedKFPRI == none)
@@ -22,11 +22,11 @@ function UpdatePlayerInfo(optional bool bForceUpdate)
         {
             TempObject.SetString("playerName", SpectatedKFPRI.PlayerName);
             TempObject.SetString("playerPerk", SpectatedKFPRI.CurrentPerkClass.default.LevelString @SpectatedKFPRI.GetActivePerkLevel() @class<ClassicPerk_Base>(SpectatedKFPRI.CurrentPerkClass).static.GetPerkName() );
-			
-			PerkIconObject = CreateObject("Object");
-			PerkIconObject.SetString("perkIcon", "img://"$PathName(class<ClassicPerk_Base>(SpectatedKFPRI.CurrentPerkClass).static.GetCurrentPerkIcon(CurrentPerkLevel)));
-			TempObject.SetObject("perkImageSource", PerkIconObject);
-		
+            
+            PerkIconObject = CreateObject("Object");
+            PerkIconObject.SetString("perkIcon", "img://"$PathName(class<ClassicPerk_Base>(SpectatedKFPRI.CurrentPerkClass).static.GetCurrentPerkIcon(CurrentPerkLevel)));
+            TempObject.SetObject("perkImageSource", PerkIconObject);
+        
             SetObject("playerData", TempObject);
         }
     }

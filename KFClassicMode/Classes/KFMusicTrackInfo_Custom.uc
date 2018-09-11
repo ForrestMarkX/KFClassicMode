@@ -7,6 +7,6 @@ var() float FadeInTime;
 
 defaultproperties
 {
-	FadeInTime=5.f
-	bIsAkEvent=false
+    FadeInTime=5.f
+    bIsAkEvent=false
 }

@@ -4,24 +4,24 @@ var config bool bSavedGametypes;
 
 function PostBeginPlay()
 {
-	local sGameMode GameMode;
-	
-	Super.PostBeginPlay();
-	
-	if( !bSavedGametypes )
-	{
-		bSavedGametypes = true;
-		
-		GameMode.FriendlyName = "Legacy Survival";
-		GameMode.ClassNameAndPath = "KFClassicModeSrv.KFGameInfo_LegacySurvival";
-		GameMode.bSoloPlaySupported = True;
-		GameMode.DifficultyLevels = 4;
-		GameMode.Lengths = 4;
-		GameMode.LocalizeID = 0;
-		
-		GameModes.AddItem(GameMode);
-		SaveConfig();
-	}
+    local sGameMode GameMode;
+    
+    Super.PostBeginPlay();
+    
+    if( !bSavedGametypes )
+    {
+        bSavedGametypes = true;
+        
+        GameMode.FriendlyName = "Legacy Survival";
+        GameMode.ClassNameAndPath = "KFClassicModeSrv.KFGameInfo_LegacySurvival";
+        GameMode.bSoloPlaySupported = True;
+        GameMode.DifficultyLevels = 4;
+        GameMode.Lengths = 4;
+        GameMode.LocalizeID = 0;
+        
+        GameModes.AddItem(GameMode);
+        SaveConfig();
+    }
 }
 
 function int GetLivingPlayerCount()
@@ -33,7 +33,7 @@ function int GetLivingPlayerCount()
     {
         if( P != None && P.Pawn != None && P.Pawn.IsAliveAndWell() )
         {
-			UsedLivingHumanPlayersCount++;
+            UsedLivingHumanPlayersCount++;
         }
     }
  

@@ -1,5 +1,5 @@
 Class xVotingHandlerBase extends Mutator
-	abstract;
+    abstract;
 
 function ClientDownloadInfo( xVotingReplication V );
 function ClientCastVote( xVotingReplication V, int GameIndex, int MapIndex, bool bAdminForce );

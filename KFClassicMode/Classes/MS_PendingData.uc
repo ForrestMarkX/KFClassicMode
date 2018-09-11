@@ -4,5 +4,5 @@ var string PendingURL;
 
 final function Reset()
 {
-	PendingURL = "";
+    PendingURL = "";
 }

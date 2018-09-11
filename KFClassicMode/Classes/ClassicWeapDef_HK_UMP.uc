@@ -2,7 +2,7 @@ class ClassicWeapDef_HK_UMP extends KFWeapDef_HK_UMP;
 
 static function string GetItemLocalization( string KeyName )
 {
-	return class'KFWeapDef_HK_UMP'.Static.GetItemLocalization(KeyName);
+    return class'KFWeapDef_HK_UMP'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

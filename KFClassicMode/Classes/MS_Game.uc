@@ -7,46 +7,46 @@ event InitGame( string Options, out string ErrorMessage )
 {
     MaxPlayers = 99;
     MaxSpectators = 99;
-	class'MS_TMPUI'.Static.Remove();
+    class'MS_TMPUI'.Static.Remove();
 }
 
 // Add or remove reference to this game for GC
 static final function SetReference()
 {
-	class'MS_TMPUI'.Static.Apply();
+    class'MS_TMPUI'.Static.Apply();
 }
 
 event PlayerController Login(string Portal, string Options, const UniqueNetID UniqueID, out string ErrorMessage)
 {
-	local NavigationPoint StartSpot;
-	local PlayerController NewPlayer;
-	local rotator SpawnRotation;
+    local NavigationPoint StartSpot;
+    local PlayerController NewPlayer;
+    local rotator SpawnRotation;
 
-	// Find a start spot.
-	StartSpot = FindPlayerStart( None, 255, Portal );
-	SpawnRotation.Yaw = StartSpot.Rotation.Yaw;
-	NewPlayer = SpawnPlayerController(StartSpot.Location, SpawnRotation);
+    // Find a start spot.
+    StartSpot = FindPlayerStart( None, 255, Portal );
+    SpawnRotation.Yaw = StartSpot.Rotation.Yaw;
+    NewPlayer = SpawnPlayerController(StartSpot.Location, SpawnRotation);
 
-	NewPlayer.GotoState('PlayerWaiting');
-	return newPlayer;
+    NewPlayer.GotoState('PlayerWaiting');
+    return newPlayer;
 }
 
 event PostLogin( PlayerController NewPlayer )
 {
-	GenericPlayerInitialization(NewPlayer);
+    GenericPlayerInitialization(NewPlayer);
 }
 
 function GenericPlayerInitialization(Controller C)
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	PC = PlayerController(C);
-	if (PC != None)
-		PC.ClientSetHUD(HudType);
+    PC = PlayerController(C);
+    if (PC != None)
+        PC.ClientSetHUD(HudType);
 }
 
 defaultproperties
 {
-	PlayerControllerClass=class'MS_PC'
-	HUDType=class'MS_HUD'
+    PlayerControllerClass=class'MS_PC'
+    HUDType=class'MS_HUD'
 }
