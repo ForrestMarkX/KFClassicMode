@@ -55,24 +55,24 @@ var transient KFMapInfo                 KFMI;
 var array<FCustomTraderItem>            CustomItemList;
 var KFGFxObject_TraderItems             CustomTrader;
 
-var array<FCustomCharEntry>                CustomCharacterList;
+var array<FCustomCharEntry>             CustomCharacterList;
 
-var KFEventHelper                        EventHelper;
+var KFEventHelper                       EventHelper;
 
-var array<FWebAdminConfigInfo>             WebConfigs;
+var array<FWebAdminConfigInfo>          WebConfigs;
 
 var config float                        RequirementScaling;
 var config int                          ForcedMaxPlayers, StatAutoSaveWaves;
 var config byte                         MinPerkLevel, MaxPerkLevel;
 var config array<string>                Perks, CustomCharacters;
-var globalconfig byte                    GlobalMaxMonsters;
-var globalconfig bool                    bBroadcastPickups, bDisableMusic;
-var globalconfig array<MapTypeInfo>        MapTypes;
-var globalconfig name                     GlobalEventName;
+var globalconfig byte                   GlobalMaxMonsters;
+var globalconfig bool                   bBroadcastPickups, bDisableMusic;
+var globalconfig array<MapTypeInfo>     MapTypes;
+var globalconfig name                   GlobalEventName;
 var globalconfig string                 ServerMOTD;
 var config array<string>                TraderInventory;
 var config array<PickupReplacmentStruct> PickupReplacments;
-var config int                            iVersionNumber;
+var config int                          iVersionNumber;
 
 function AddMutator(Mutator M)
 {
@@ -94,15 +94,15 @@ function PostBeginPlay()
     local string                    S, MyPerk, Item, Character, DefPath;
     local xVotingHandler            MV;
     local MapTypeInfo               MapInfo;
-    local STraderItem                TraderItem;
+    local STraderItem               TraderItem;
     local AIReplacementS            AI;
     local KFGameInfo                KFGI;
     local KFCharacterInfo_Human     CH;
-    local ObjectReferencer            OR;
+    local ObjectReferencer          OR;
     local Object                    O;
-    local int                        j;
-    local bool                        bLock;
-    local PickupReplacmentStruct     PickupReplacement;
+    local int                       j;
+    local bool                      bLock;
+    local PickupReplacmentStruct    PickupReplacement;
     
     Super.PostBeginPlay();
     
@@ -748,15 +748,15 @@ function SetMaxPlayers()
 function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor Pickup, out byte bAllowPickup)
 {
     local string                     S, WeaponName, PlayerName;
-    local bool                         Ret;
-    local int                         SellPrice, Index;
-    local byte                        ItemIndex;
-    local KFGameReplicationInfo     GRI;
-    local class<KFWeapon>             Weapon;
-    local class<KFWeaponDefinition> WeaponDef;
+    local bool                       Ret;
+    local int                        SellPrice, Index;
+    local byte                       ItemIndex;
+    local KFGameReplicationInfo      GRI;
+    local class<KFWeapon>            Weapon;
+    local class<KFWeaponDefinition>  WeaponDef;
     local KFInventoryManager         InvMan;
-    local PlayerController             PC;
-    local PlayerReplicationInfo     PRI;
+    local PlayerController           PC;
+    local PlayerReplicationInfo      PRI;
     local STraderItem                Item;
     
     Ret = Super.OverridePickupQuery(Other, ItemClass, Pickup, bAllowPickup);
@@ -1266,7 +1266,7 @@ function CheckTraderTime()
 function AdjustSpawnList(out array<class<KFPawn_Monster> > SpawnList)
 {
     local int     i, j;
-    local bool     bShouldReplace;
+    local bool    bShouldReplace;
     
     for( i=0; i<SpawnList.Length; i++ )
     {
