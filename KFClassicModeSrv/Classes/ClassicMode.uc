@@ -549,6 +549,20 @@ function PostBeginPlay()
         SaveConfig();    
     }
     
+    if( iVersionNumber <= 3 )
+    {
+        TraderInventory.RemoveItem("KFGame.KFWeapDef_MKB42");
+        TraderInventory.RemoveItem("KFGame.KFWeapDef_FNFal");
+        TraderInventory.RemoveItem("KFGame.KFWeapDef_MedicRifleGrenadeLauncher");
+        
+        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_MKB42");
+        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_FNFal");
+        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_M7A3");
+    
+        iVersionNumber = 4;
+        SaveConfig();    
+    }
+    
     foreach TraderInventory(Item)
     {
         CI.WeaponDef = class<KFWeaponDefinition>(DynamicLoadObject(Item,class'Class'));
