@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "FNFAL ACOG";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_FNFal'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "Classic NATO battle rifle. Has a high rate of fire and decent accuracy, with good power.";
     }
+    
+    return class'KFWeapDef_FNFal'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

@@ -2,15 +2,7 @@ class ClassicWeapDef_Bullpup extends KFWeapDef_Bullpup;
 
 static function string GetItemLocalization( string KeyName )
 {
-    switch( Caps(KeyName) )
-    {
-    case "ITEMNAME":
-        return "Bullpup";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_Bullpup'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "Standard issue military rifle. Equipped with an integrated 2X scope.";
-    }
+    return class'KFWeapDef_Bullpup'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

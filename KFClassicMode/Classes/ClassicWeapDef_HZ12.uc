@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "HSG-1 Shotgun";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_HZ12'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "An advanced Horzine prototype tactical shotgun. Features a large capacity ammo magazine and selectable tight/wide spread fire modes.";
     }
+    
+    return class'KFWeapDef_HZ12'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "Shotgun";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_MB500'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "A rugged 12-gauge pump action shotgun.";
     }
+    
+    return class'KFWeapDef_MB500'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

@@ -2,15 +2,7 @@ class ClassicWeapDef_M16M203 extends KFWeapDef_M16M203;
 
 static function string GetItemLocalization( string KeyName )
 {
-    switch( Caps(KeyName) )
-    {
-    case "ITEMNAME":
-        return "M16 203";
-    case "ITEMDESCRIPTION":
-        return "An assault rifle with an attached grenade launcher.";
-    default:
-        return class'KFWeapDef_M16M203'.static.GetItemLocalization(KeyName);
-    }
+    return class'KFWeapDef_M16M203'.static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

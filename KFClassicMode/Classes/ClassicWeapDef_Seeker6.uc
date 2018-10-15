@@ -4,13 +4,11 @@ static function string GetItemLocalization( string KeyName )
 {
     switch( Caps(KeyName) )
     {
-    case "ITEMNAME":
-        return "SeekerSix";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_Seeker6'.Static.GetItemLocalization(KeyName);
     case "ITEMDESCRIPTION":
         return "An advanced Horzine mini missile launcher. Fire one, or all six, lock on and let 'em rip!";
     }
+    
+    return class'KFWeapDef_Seeker6'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

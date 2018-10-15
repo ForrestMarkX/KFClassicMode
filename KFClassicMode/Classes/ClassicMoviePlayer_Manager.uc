@@ -1,7 +1,7 @@
 class ClassicMoviePlayer_Manager extends KFGFxMoviePlayer_Manager;
 
 var ClassicMenu_Gear EGearMenu;
- 
+
 function ClientRecieveNewTeam()
 {
     if(bMenusOpen)
@@ -204,7 +204,7 @@ defaultproperties
     WidgetBindings.Add((WidgetName="PerksMenu",WidgetClass=class'ClassicMenu_Perks'))
     
     WidgetBindings.Remove((WidgetName="gearMenu",WidgetClass=class'KFGFxMenu_Gear'))
-    WidgetBindings.Add((WidgetName="gearMenu",WidgetClass=class'ClassicMenu_Gear')) 
+    WidgetBindings.Add((WidgetName="gearMenu",WidgetClass=class'ClassicMenu_Gear'))    
     
     WidgetBindings.Remove((WidgetName="postGameMenu",WidgetClass=class'KFGFxMenu_PostGameReport'))
     WidgetBindings.Add((WidgetName="postGameMenu",WidgetClass=class'ClassicMenu_PostGameReport'))

@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "Hunting Shotgun";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_DoubleBarrel'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "A double barreled shotgun used by big game hunters.";
     }
+    
+    return class'KFWeapDef_DoubleBarrel'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

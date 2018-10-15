@@ -57,6 +57,7 @@ function InitMenu()
     BuyWeaponInfoPanel = UIR_BuyWeaponInfoPanel(FindComponentID('ItemInf'));
     
     IScrollText = KFGUI_TextScroll(FindComponentID('IScrollText'));
+    IScrollText.LineSplitter = "\n";
     
     HBGLeft = KFGUI_Frame(FindComponentID('HBGLeft'));
     HBGCenter = KFGUI_Frame(FindComponentID('HBGCenter'));

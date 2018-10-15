@@ -2,15 +2,7 @@ class ClassicWeapDef_C4 extends KFWeapDef_C4;
 
 static function string GetItemLocalization( string KeyName )
 {
-    switch( Caps(KeyName) )
-    {
-    case "ITEMNAME":
-        return "Pipe Bomb";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_C4'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "An improvised proximity explosive. Blows up when enemies get close.";
-    }
+    return class'KFWeapDef_C4'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

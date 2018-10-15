@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "Handcannon";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_Deagle'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "50 Cal AE handgun. A powerful personal choice for personal defense.";
     }
+    
+    return class'KFWeapDef_Deagle'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

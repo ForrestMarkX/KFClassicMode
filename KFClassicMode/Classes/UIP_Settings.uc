@@ -18,11 +18,13 @@ function InitMenu()
     AddCheckBox("Show Score","Check to show scores on the HUD.",'bScore',!KFHUDInterface(GetPlayer().myHUD).bHideDosh);
     AddCheckBox("Show Kill Counter","Tally specimen kills on the HUD.",'bTallySpecimenKills',!ClassicPlayerController(GetPlayer()).bHideKillMsg);
     
+    /*
     PerkStarsBox = AddEditBox("Max Perk Stars","How many perk stars to show.",'MaxPerkStars',string(KFHUDInterface(GetPlayer().myHUD).MaxPerkStars),PerkStarsLabel);
     PerkStarsBox.bIntOnly = true;
     
     PerkRowsBox = AddEditBox("Max Stars Per-Row","How many perk stars to draw per row.",'MaxStarsPerRow',string(KFHUDInterface(GetPlayer().myHUD).MaxStarsPerRow),PerkStarsRowLabel);
     PerkRowsBox.bIntOnly = true;
+    */
     
     ControllerBox = AddComboBox("Controller Type","What controller type to use for GUI elements.",'ControllerType',ControllerTypeLabel);
     ControllerBox.Values.AddItem("Xbox One");

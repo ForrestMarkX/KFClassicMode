@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "M99 AMR";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_M99'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "M99 50 Caliber Single Shot Sniper Rifle - The ultimate in long range accuracy and knock down power.";
     }
+    
+    return class'KFWeapDef_M99'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

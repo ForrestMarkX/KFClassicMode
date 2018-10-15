@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "MKb42";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_MKB42'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "German WWII era prototype assault rifle. Many heroes were known to have used this weapon in Stalingrad.";
     }
+    
+    return class'KFWeapDef_MKB42'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

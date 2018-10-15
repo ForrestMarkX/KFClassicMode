@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "M7A3 Medic Gun";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_MedicRifleGrenadeLauncher'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "An advanced Horzine prototype assault rifle. Modified to fire healing darts.";
     }
+    
+    return class'KFWeapDef_MedicRifleGrenadeLauncher'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

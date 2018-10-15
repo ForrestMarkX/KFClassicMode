@@ -63,14 +63,14 @@ final function float GetFontScaler(optional float Scaler=0.375f, optional float 
 {
     return FClamp((Owner.ScreenSize.X / 1920.f) * Scaler, Min, Max);
 }
-final function DrawText( string S )
+final function DrawText( coerce string S )
 {
     local float Scale;
     
     Canvas.Font=PickFont(Scale);
     Canvas.DrawText(S,,Scale,Scale);
 }
-final function DrawCenteredText( string S, float X, float Y, optional float Scale=1.f, optional bool bVertical )
+final function DrawCenteredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bVertical )
 {
     local float XL,YL;
 
@@ -80,7 +80,7 @@ final function DrawCenteredText( string S, float X, float Y, optional float Scal
     else Canvas.SetPos(X-(XL*Scale*0.5),Y);
     Canvas.DrawText(S,,Scale,Scale);
 }
-final function DrawTextBlurry( string S, float X, float Y, optional float Scale=1.f )
+final function DrawTextBlurry( coerce string S, float X, float Y, optional float Scale=1.f )
 {
     local Color OldDrawColor;
     
@@ -100,30 +100,36 @@ final function DrawTextBlurry( string S, float X, float Y, optional float Scale=
     Canvas.SetPos(X, Y);
     Canvas.DrawText(S,,Scale,Scale);
 }
-final function DrawTextOutline( string S, float X, float Y, int Size, Color OutlineColor, optional float Scale=1.f )
+final function DrawTextOutline( coerce string S, float X, float Y, int Size, Color OutlineColor, optional float Scale=1.f, optional FontRenderInfo FRI )
 {
     local Color OldDrawColor;
-    local int XS, YS;
+    local int XS, YS, Steps;
     
     OldDrawColor = Canvas.DrawColor;
     OutlineColor.A = OldDrawColor.A;
-    Size = int(ScreenScale(Size));
+    
+    Size += 1;
+    Steps = (Size * 2) / 3;
+    if( Steps < 1 ) 
+    {
+        Steps = 1;
+    }
     
     Canvas.DrawColor = OutlineColor;
-    for (XS = -Size; XS <= Size; XS++)
+    for (XS = -Size; XS <= Size; XS+=Steps)
     {
-        for (YS = -Size; YS <= Size; YS++)
+        for (YS = -Size; YS <= Size; YS+=Steps)
         {
             Canvas.SetPos(X + XS, Y + YS);
-            Canvas.DrawText(S,, Scale, Scale);
+            Canvas.DrawText(S,, Scale, Scale, FRI);
         }
     }
     
     Canvas.DrawColor = OldDrawColor;
     Canvas.SetPos(X, Y);
-    Canvas.DrawText(S,, Scale, Scale);
+    Canvas.DrawText(S,, Scale, Scale, FRI);
 }
-final function DrawTextShadow( string S, float X, float Y, float ShadowSize, optional float Scale=1.f )
+final function DrawTextShadow( coerce string S, float X, float Y, float ShadowSize, optional float Scale=1.f )
 {
     local Color OldDrawColor;
     
@@ -137,7 +143,7 @@ final function DrawTextShadow( string S, float X, float Y, float ShadowSize, opt
     Canvas.DrawColor = OldDrawColor;
     Canvas.DrawText(S,, Scale, Scale);
 }
-final function DrawTexturedString(string S, float X, float Y, float W, float H, optional float TextScaler=1.f, optional FontRenderInfo FRI)
+final function DrawTexturedString( coerce string S, float X, float Y, float W, float H, optional float TextScaler=1.f, optional FontRenderInfo FRI, optional bool bUseOutline )
 {
     local Texture2D Mat;
     local string D;
@@ -156,9 +162,16 @@ final function DrawTexturedString(string S, float X, float Y, float W, float H, 
         D = Left(S,i);
         S = Mid(S,j+2);
         
-        Canvas.SetPos(X,Y);
         Canvas.TextSize(D,XL,YL,TextScaler,TextScaler);
-        Canvas.DrawText(D,,TextScaler,TextScaler,FRI);
+        if( bUseOutline )
+        {
+            DrawTextOutline(D,X,Y,1,MakeColor(0, 0, 0, OrgC.A),TextScaler,FRI);
+        }
+        else
+        {
+            Canvas.SetPos(X,Y);
+            Canvas.DrawText(D,,TextScaler,TextScaler,FRI);
+        }
         
         X += XL;
         
@@ -174,9 +187,16 @@ final function DrawTexturedString(string S, float X, float Y, float W, float H, 
         Mat = FindNextTexture(S);
     }
     
-    Canvas.SetPos(X,Y);
     Canvas.TextSize(S,XL,YL,TextScaler,TextScaler);
-    Canvas.DrawText(S,,TextScaler,TextScaler,FRI);
+    if( bUseOutline )
+    {
+        DrawTextOutline(S,X,Y,1,MakeColor(0, 0, 0, OrgC.A),TextScaler,FRI);
+    }
+    else
+    {
+        Canvas.SetPos(X,Y);
+        Canvas.DrawText(S,,TextScaler,TextScaler,FRI);
+    }
 }
 final function Texture2D FindNextTexture(out string S)
 {
@@ -459,7 +479,7 @@ final function DrawTileStretched( Texture Tex, float X, float Y, float XS, float
     Canvas.DrawTile(Tex,fX,fY,mW-fX,mH-fY,fX,fY);
 }
 
-final function DrawTextJustified( byte Justification, float X1, float Y1, float X2, float Y2, string S, optional float XS, optional float YS )
+final function DrawTextJustified( byte Justification, float X1, float Y1, float X2, float Y2, coerce string S, optional float XS, optional float YS )
 {
     local float XL, YL;
     local float CurY, CurX;

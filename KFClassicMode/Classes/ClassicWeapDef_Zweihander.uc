@@ -2,15 +2,7 @@ class ClassicWeapDef_Zweihander extends KFWeapDef_Zweihander;
 
 static function string GetItemLocalization( string KeyName )
 {
-    switch( Caps(KeyName) )
-    {
-    case "ITEMNAME":
-        return "Zweihander";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_Zweihander'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "A medieval zweihander sword.";
-    }
+    return class'KFWeapDef_Zweihander'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

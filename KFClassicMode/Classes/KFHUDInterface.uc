@@ -585,7 +585,7 @@ function DrawHUDBox
     if( StringArray.Length < 1 )
     {
         Canvas.TextSize(GUIStyle.StripTextureFromString(Text), XL, YL, TextScale, TextScale);
-        GUIStyle.DrawTexturedString(Text, TempX + (IconTex != None ? (IconScale * 1.75f) : (Width / 2) - (XL / 2)), Y + (Height / 2) - (YL / 1.75f), Width, Height, TextScale, FRI);
+        GUIStyle.DrawTexturedString(Text, TempX + (IconTex != None ? (IconScale * 1.75f) : (Width / 2) - (XL / 2)), Y + (Height / 2) - (YL / 1.75f), Width, Height, TextScale, FRI, true);
     }
     else
     {
@@ -594,7 +594,7 @@ function DrawHUDBox
         for( i=0; i<StringArray.Length; ++i )
         {
             Canvas.TextSize(GUIStyle.StripTextureFromString(StringArray[i]), XL, YL, TextScale, TextScale);
-            GUIStyle.DrawTexturedString(StringArray[i], TempX + (IconTex != None ? (IconScale * 1.75f) : (Width / 2) - (XL / 2)), Y, Width, Height, TextScale, FRI);
+            GUIStyle.DrawTexturedString(StringArray[i], TempX + (IconTex != None ? (IconScale * 1.75f) : (Width / 2) - (XL / 2)), Y, Width, Height, TextScale, FRI, true);
             Y+=GUIStyle.DefaultHeight;
         }
     }
@@ -679,17 +679,15 @@ function RenderKFHUD(KFPawn_Human KFPH)
         XPos = Canvas.ClipX - DrawCircleSize/2 - (XL / 2);
         YPos = SubCircleText != "" ? DrawCircleSize/2 - (YL / 1.5) : DrawCircleSize/2 - YL / 2;
         
-        Canvas.SetDrawColorStruct(FontColor);
-        Canvas.SetPos(XPos, YPos);
-        Canvas.DrawText(CircleText, , FontScalar, FontScalar, FRI);
+        Canvas.DrawColor = FontColor;
+        GUIStyle.DrawTextOutline(CircleText, XPos, YPos, 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
         
         if( SubCircleText != "" )
         {
             FontScalar = OriginalFontScalar;
             
             Canvas.TextSize(SubCircleText, XL, YL, FontScalar, FontScalar);
-            Canvas.SetPos(Canvas.ClipX - DrawCircleSize/2 - (XL / 2), DrawCircleSize/2 + (YL / 2.5));
-            Canvas.DrawText(SubCircleText, , FontScalar, FontScalar, FRI);
+            GUIStyle.DrawTextOutline(SubCircleText, Canvas.ClipX - DrawCircleSize/2 - (XL / 2), DrawCircleSize/2 + (YL / 2.5), 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
         }
     }
     
@@ -763,8 +761,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             
             Canvas.TextSize(PlayerScore, XL, YL, FontScalar, FontScalar);
             Canvas.SetDrawColorStruct(FontColor);
-            Canvas.SetPos(DoshXL + (DoshXL * 0.035), DoshYL + (scale_w / 2) - (YL / 2));
-            Canvas.DrawText(PlayerScore, , FontScalar, FontScalar, FRI);
+            GUIStyle.DrawTextOutline(PlayerScore, DoshXL + (DoshXL * 0.035), DoshYL + (scale_w / 2) - (YL / 2), 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
         }
         
         // Draw Perk Info
@@ -831,8 +828,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             Canvas.TextSize(TraderDistanceText, XL, YL, FontScalar, FontScalar);
             
             Canvas.SetDrawColorStruct(FontColor);
-            Canvas.SetPos(Canvas.ClipX*0.015, YL);
-            Canvas.DrawText(TraderDistanceText, , FontScalar, FontScalar, FRI);
+            GUIStyle.DrawTextOutline(TraderDistanceText, Canvas.ClipX*0.015, YL, 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
         }
     }
     
@@ -873,8 +869,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             
             Canvas.TextSize(WeaponName, XL, YL, FontScalar, FontScalar);
             Canvas.SetDrawColorStruct(FontColor);
-            Canvas.SetPos((SizeX * 0.95f) - XL, SizeY * 0.892f);
-            Canvas.DrawText(WeaponName, , FontScalar, FontScalar, FRI);
+            GUIStyle.DrawTextOutline(WeaponName, (SizeX * 0.95f) - XL, SizeY * 0.892f, 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
             
             Canvas.Font = GUIStyle.PickFont(OriginalFontScalar,true);
             
@@ -1097,8 +1092,7 @@ function DrawInventory()
                         Canvas.TextSize(WeaponName, XS, YS, FontScalar, FontScalar);
                     }
                     
-                    Canvas.SetPos(TempX + ((TempWidth/2) - (XS/2)), TempY + (YS/4));
-                    Canvas.DrawText(WeaponName,, FontScalar, FontScalar);
+                    GUIStyle.DrawTextOutline(WeaponName, TempX + ((TempWidth/2) - (XS/2)), TempY + (YS/4), 1, MakeColor(0, 0, 0, FontColor.A), FontScalar);
                 }
                 else 
                 {
@@ -1123,8 +1117,7 @@ function DrawInventory()
                 {
                     S = KFW.AmmoCount[class'KFWeapon'.const.DEFAULT_FIREMODE]$"/"$KFW.SpareAmmoCount[class'KFWeapon'.const.DEFAULT_FIREMODE];
                     Canvas.TextSize(S, XS, YS, AmmoFontScalar, AmmoFontScalar);
-                    Canvas.SetPos(TempX + (TempWidth - XS) - (ScaledBorderSize*2), TempY + (TempHeight - YS) - (ScaledBorderSize*2));
-                    Canvas.DrawText(S,, AmmoFontScalar, AmmoFontScalar);
+                    GUIStyle.DrawTextOutline(S, TempX + (TempWidth - XS) - (ScaledBorderSize*2), TempY + (TempHeight - YS) - (ScaledBorderSize*2), 1, MakeColor(0, 0, 0, FontColor.A), AmmoFontScalar);
                 }
                 
                 if( KFW.UsesSecondaryAmmo() && KFW.bCanRefillSecondaryAmmo )
@@ -1134,8 +1127,7 @@ function DrawInventory()
                     else S = KFW.AmmoCount[class'KFWeapon'.const.ALTFIRE_FIREMODE]$"/"$KFW.SpareAmmoCount[class'KFWeapon'.const.ALTFIRE_FIREMODE];
                     
                     Canvas.TextSize(S, XS, YS, AmmoFontScalar, AmmoFontScalar);
-                    Canvas.SetPos(TempX + (ScaledBorderSize*2), TempY + (TempHeight - YS) - (ScaledBorderSize*2));
-                    Canvas.DrawText(S,, AmmoFontScalar, AmmoFontScalar);
+                    GUIStyle.DrawTextOutline(S, TempX + (ScaledBorderSize*2), TempY + (TempHeight - YS) - (ScaledBorderSize*2), 1, MakeColor(0, 0, 0, FontColor.A), AmmoFontScalar);
                 }
                 
                 if( (TempY + TempHeight) > (Canvas.ClipY * 0.75) )
@@ -1432,8 +1424,8 @@ function DrawDoorHealthBars()
                     
                     Canvas.TextSize(IntegrityText, TextWidth, TextHeight, FontScale, FontScale);
                     Canvas.SetDrawColor(255, 50, 50, DrawToDistance(DamageDoor, 255, 0));
-                    Canvas.SetPos(ScreenLoc.X + 5 , ScreenLoc.Y - (TextHeight / 2.f));
-                    Canvas.DrawText(IntegrityText, TRUE, FontScale, FontScale, FRI);
+                    
+                    GUIStyle.DrawTextOutline(IntegrityText, ScreenLoc.X + 5, ScreenLoc.Y - (TextHeight / 2.f), 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), FontScale, FRI);
                     
                     Canvas.SetPos((ScreenLoc.X - 5) - 64, ScreenLoc.Y - 24);
                     Canvas.DrawTile(DoorWelderIcon, 64, 48, 0, 0, 256, 192);
@@ -1535,20 +1527,17 @@ function RenderVotingOptions()
     GUIStyle.DrawOutlinedBox(X, Y, TextWidth + ScaledBorderSize, TextHeight + ScaledBorderSize, ScaledBorderSize, HudMainColor, HudOutlineColor);
     
     Canvas.DrawColor = WhiteColor;
-    Canvas.SetPos(X, Y);
-    Canvas.DrawText(CurrentVoteName,,TextScale,TextScale,FRI);
+    GUIStyle.DrawTextOutline(CurrentVoteName, X, Y, 1, MakeColor(0, 0, 0, WhiteColor.A), TextScale, FRI);
     
     Y += TextHeight;
     
     TextScale = OriginalTextScale + 0.3;
     
-    Canvas.TextSize(CurrentVoteStatus, TextWidth, TextHeight, TextScale, TextScale);
-    X = (Canvas.ClipX - TextWidth) * 0.5;
-    
     Canvas.DrawColor = WhiteColor;
     Canvas.TextSize(CurrentVoteStatus, TextWidth, TextHeight, TextScale, TextScale);
-    Canvas.SetPos(X, Y);
-    Canvas.DrawText(CurrentVoteStatus,,TextScale,TextScale,FRI);
+    
+    X = (Canvas.ClipX - TextWidth) * 0.5;
+    GUIStyle.DrawTextOutline(CurrentVoteStatus, X, Y, 1, MakeColor(0, 0, 0, WhiteColor.A), TextScale, FRI);
     
     Y += TextHeight;
     DrawAdditionalInfo(Canvas, Y);
@@ -1622,15 +1611,13 @@ function RenderVoteKick(Canvas C, float Y)
     C.DrawColor = MakeColor(0, 255, 0, 255);
     C.TextSize(YesS, TextWidth, TextHeight, TextScale, TextScale);
     X = (C.ClipX - TextWidth) * 0.5;
-    C.SetPos(X, Y);
-    C.DrawText(YesS,,TextScale,TextScale,FRI);    
+    GUIStyle.DrawTextOutline(YesS, X, Y, 1, MakeColor(0, 0, 0, C.DrawColor.A), TextScale, FRI); 
 
     Y += TextHeight;
     C.DrawColor = MakeColor(255, 0, 0, 255);
     C.TextSize(NoS, TextWidth, TextHeight, TextScale, TextScale);
     X = (C.ClipX - TextWidth) * 0.5;
-    C.SetPos(X, Y);
-    C.DrawText(NoS,,TextScale,TextScale,FRI);            
+    GUIStyle.DrawTextOutline(NoS, X, Y, 1, MakeColor(0, 0, 0, C.DrawColor.A), TextScale, FRI);         
 }
 
 function DrawVictoryEndScreen()
@@ -1889,8 +1876,7 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
     Canvas.Font = GUIStyle.PickFont(FontScale);
     Canvas.SetDrawColorStruct(BarTextColor);
     Canvas.TextSize(KFPRI.PlayerName, XL, YL, FontScale * FriendlyHudScale, FontScale * FriendlyHudScale);
-    Canvas.SetPos(ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y - (BarHeight + (YL * 1.25)));
-    Canvas.DrawText( KFPRI.PlayerName,,FontScale * FriendlyHudScale,FontScale * FriendlyHudScale, MyFontRenderInfo );
+    GUIStyle.DrawTextOutline(KFPRI.PlayerName, ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y - (BarHeight + (YL * 1.25)), 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), FontScale * FriendlyHudScale, MyFontRenderInfo);
 
     if( KFPRI.CurrentPerkClass == None )
     {
@@ -1908,8 +1894,7 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
 
     //Draw perk level and name text
     Canvas.SetDrawColorStruct(BarTextColor);
-    Canvas.SetPos(ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y + BarHeight * 0.65 + 4);
-    Canvas.DrawText( PerkLevel @class<ClassicPerk_Base>(KFPRI.CurrentPerkClass).static.GetPerkName(),,FontScale * FriendlyHudScale, FontScale * FriendlyHudScale, MyFontRenderInfo );
+    GUIStyle.DrawTextOutline(PerkLevel@class<ClassicPerk_Base>(KFPRI.CurrentPerkClass).static.GetPerkName(), ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y + BarHeight * 0.65 + 4, 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), FontScale * FriendlyHudScale, MyFontRenderInfo);
 
     return true;
 }
@@ -1959,11 +1944,10 @@ function RenderKillMsg()
         else if( KillMessages[i].bLocal )
             S = "+"$KillMessages[i].Counter@KillMessages[i].Name$(KillMessages[i].Counter>1 ? " kills" : " kill");
         else S = (KillMessages[i].OwnerPRI!=None ? KillMessages[i].OwnerPRI.GetHumanReadableName() : "Someone")$" +"$KillMessages[i].Counter@KillMessages[i].Name$(KillMessages[i].Counter>1 ? " kills" : " kill");
-        Canvas.SetPos(X,Y);
         Canvas.DrawColor = KillMessages[i].MsgColor;
         T = (1.f - (T/6.f)) * 255.f;
         Canvas.DrawColor.A = T;
-        Canvas.DrawText(S,,Sc,Sc);
+        GUIStyle.DrawTextOutline(S, X, Y, 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), Sc);
         Y+=YL;
     }
 }
@@ -2140,10 +2124,10 @@ function DrawTraderIndicator()
                 Canvas.TextSize(S,XS,YS,FontScalar,FontScalar);
                 GUIStyle.DrawOutlinedBox(V.X-((XS+8.f)*0.5), V.Y-ArrowScale-YS-8.f, XS+8.f, YS+8.f, ScaledBorderSize * 0.5, HudMainColor, HudOutlineColor);
                 
-                Canvas.SetPos(V.X-(XS*0.5)-((ScaledBorderSize * 0.5)/2),V.Y-ArrowScale-YS-4.f-((ScaledBorderSize * 0.5)/2));
                 Canvas.SetDrawColorStruct(WhiteColor);
                 Canvas.DrawColor.A = 255;
-                Canvas.DrawText(S,,FontScalar,FontScalar,FI);
+                GUIStyle.DrawTextOutline(S, V.X-(XS*0.5)-((ScaledBorderSize * 0.5)/2), V.Y-ArrowScale-YS-4.f-((ScaledBorderSize * 0.5)/2), 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), FontScalar, FI);
+                
                 return;
             }
         }
@@ -2278,8 +2262,7 @@ function DrawPortrait()
     
     Canvas.DrawColor = RedColor;
     Canvas.TextSize(CurrentTraderName, XL, YL, FontScalar, FontScalar);
-    Canvas.SetPos(Canvas.ClipY / 256 - PortraitWidth * PortraitX + 0.5 * (PortraitWidth - XL), 0.5 * (Canvas.ClipY + PortraitHeight) + 0.06 * PortraitHeight);
-    Canvas.DrawText(CurrentTraderName, true, FontScalar, FontScalar);
+    GUIStyle.DrawTextOutline(CurrentTraderName, Canvas.ClipY / 256 - PortraitWidth * PortraitX + 0.5 * (PortraitWidth - XL), 0.5 * (Canvas.ClipY + PortraitHeight) + 0.06 * PortraitHeight, 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), FontScalar);
 }
 
 simulated function Tick( float Delta )

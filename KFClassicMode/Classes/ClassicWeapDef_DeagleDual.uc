@@ -6,11 +6,9 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "Dual HCs";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_DeagleDual'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "A pair of 50 Cal AE handguns.";
     }
+    
+    return class'KFWeapDef_DeagleDual'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

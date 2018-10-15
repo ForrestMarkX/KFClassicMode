@@ -10,6 +10,8 @@ function InitMenu()
     PC = ClassicPlayerController(GetPlayer());
     PC.CurrentChatBox = self;
     
+    ChatBoxText.bUseOutlineText = true;
+    
     SetTimer(0.5, true, nameOf(CheckForLobbyClose));
 }
 

@@ -2,15 +2,7 @@ class ClassicWeapDef_FlareGun extends KFWeapDef_FlareGun;
 
 static function string GetItemLocalization( string KeyName )
 {
-    switch( Caps(KeyName) )
-    {
-    case "ITEMNAME":
-        return "Flare Revolver";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_FlareGun'.Static.GetItemLocalization(KeyName);
-    case "ITEMDESCRIPTION":
-        return "Flare Revolver. A classic wild west revolver modified to shoot fireballs!";
-    }
+    return class'KFWeapDef_FlareGun'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties

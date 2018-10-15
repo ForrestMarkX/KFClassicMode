@@ -103,16 +103,16 @@ defaultproperties
     MissileProjectileClass=class'ClassicProj_Missile_Patriarch'
     
     Begin Object Class=KFSpecialMoveHandler Name=SpecialMoveHandler_1
-        SpecialMoveClasses(SM_MeleeAttack)         =class'KFGame.KFSM_MeleeAttack'
-        SpecialMoveClasses(SM_MeleeAttackDoor)     =class'KFSM_DoorMeleeAttack'
-        SpecialMoveClasses(SM_GrappleAttack)     =class'KFSM_Patriarch_Grapple'
-        SpecialMoveClasses(SM_DeathAnim)         =class'KFSM_DeathAnim'
-        SpecialMoveClasses(SM_Stunned)             =class'KFSM_Stunned'
-        SpecialMoveClasses(SM_Taunt)             =class'KFSM_Patriarch_Taunt'
-        SpecialMoveClasses(SM_WalkingTaunt)         =class'KFGame.KFSM_Zed_WalkingTaunt'
-        SpecialMoveClasses(SM_BossTheatrics)     =class'KFGame.KFSM_Zed_Boss_Theatrics'
-        SpecialMoveClasses(SM_Heal)                 =class'KFSM_Patriarch_Heal'
-        SpecialMoveClasses(SM_HoseWeaponAttack)  =class'KFSM_Patriarch_MinigunBarrage'
+        SpecialMoveClasses(SM_MeleeAttack)        =class'KFGame.KFSM_MeleeAttack'
+        SpecialMoveClasses(SM_MeleeAttackDoor)    =class'KFSM_DoorMeleeAttack'
+        SpecialMoveClasses(SM_GrappleAttack)      =class'KFSM_Patriarch_Grapple'
+        SpecialMoveClasses(SM_DeathAnim)          =class'KFSM_DeathAnim'
+        SpecialMoveClasses(SM_Stunned)            =class'KFSM_Stunned'
+        SpecialMoveClasses(SM_Taunt)              =class'KFSM_Patriarch_Taunt'
+        SpecialMoveClasses(SM_WalkingTaunt)       =class'KFGame.KFSM_Zed_WalkingTaunt'
+        SpecialMoveClasses(SM_BossTheatrics)      =class'KFGame.KFSM_Zed_Boss_Theatrics'
+        SpecialMoveClasses(SM_Heal)               =class'KFSM_Patriarch_Heal'
+        SpecialMoveClasses(SM_HoseWeaponAttack)   =class'KFSM_Patriarch_MinigunBarrage'
         SpecialMoveClasses(SM_StandAndShootAttack)=class'ClassicSM_Patriarch_MissileAttack'
     End Object
     SpecialMoveHandler=SpecialMoveHandler_1

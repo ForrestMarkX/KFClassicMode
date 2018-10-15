@@ -31,8 +31,8 @@ var() protected string Text;
 var() Color TextColor;
 var() Canvas.FontRenderInfo TextFontInfo;
 var() float FontScale,MessageDisplayTime,MessageFadeInTime,MessageFadeOutTime;
-var() bool bNoReset,bFadeInOut;
-var() int MaxHistory;
+var() bool bNoReset,bFadeInOut,bUseOutlineText;
+var() int MaxHistory, OutlineSize;
 var protected transient array<FTextLineInfo> Lines,OrgLines;
 var transient float MaxHeight,ScrollWidth,OldSize[2],InitFontScale,TextHeight,FadeStartTime;
 var transient Font InitFont;
@@ -412,8 +412,15 @@ function DrawTextField(string S, int Index, float X, float Y, optional Color C, 
         Canvas.DrawColor.A = FadeAlpha;
     }
 
-    Canvas.SetPos(X,Y);
-    Canvas.DrawText(S,,InitFontScale,InitFontScale,TextFontInfo);
+    if( bUseOutlineText )
+    {
+        Owner.CurrentStyle.DrawTextOutline(S,X,Y,OutlineSize,MakeColor(0, 0, 0, Canvas.DrawColor.A),InitFontScale,TextFontInfo);
+    }
+    else
+    {
+        Canvas.SetPos(X,Y);
+        Canvas.DrawText(S,,InitFontScale,InitFontScale,TextFontInfo);
+    }
 }
 
 function Color GetColorFromStyle(Color MainColor, ETextFieldStyles TextStyle)
@@ -471,9 +478,11 @@ defaultproperties
     LineSplitter="|"
     FontScale=1
     MaxHistory=0
+    OutlineSize=1
     Text="TextField"
     TextColor=(R=255,G=255,B=255,A=255)
     TextFontInfo=(bClipText=true,bEnableShadow=true)
     bCanFocus=false
     bClickable=false
+    bUseOutlineText=false
 }

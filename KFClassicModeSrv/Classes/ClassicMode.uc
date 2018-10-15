@@ -199,7 +199,7 @@ function PostBeginPlay()
                     break;
                 case 'KFWeapDef_Stoner63A':
                     DefPath = "KFClassicMode.ClassicWeapDef_Stoner63A";
-                    break;
+                    break;               
                 // SUPPORT
                 case 'KFWeapDef_MB500':
                     DefPath = "KFClassicMode.ClassicWeapDef_MB500";

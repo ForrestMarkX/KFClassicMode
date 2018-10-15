@@ -6,11 +6,11 @@ static function string GetItemLocalization( string KeyName )
     {
     case "ITEMNAME":
         return "MP7M";
-    case "ITEMCATEGORY":
-        return class'KFWeapDef_MP7'.Static.GetItemLocalization(KeyName);
     case "ITEMDESCRIPTION":
         return "Prototype sub machine gun. Modified to fire healing darts.";
     }
+    
+    return class'KFWeapDef_MP7'.Static.GetItemLocalization(KeyName);
 }
 
 DefaultProperties
