@@ -195,14 +195,16 @@ simulated function PostBeginPlay()
     PlayerOwner.PlayerInput.OnReceivedNativeInputAxis = NotifyInputAxis;
     PlayerOwner.PlayerInput.OnReceivedNativeInputChar = NotifyInputChar;
     
+	/*
     OnlineSub = class'GameEngine'.static.GetOnlineSubsystem();
     if( OnlineSub!=None )
     {
         OnlineSub.AddOnInventoryReadCompleteDelegate(SearchInventoryForNewItem);
         SetTimer(60,false,'SearchInventoryForNewItem');
     }
+	*/
     
-    SetTimer(300 + FRand()*120.f, false, 'CheckForItems');
+    //SetTimer(300 + FRand()*120.f, false, 'CheckForItems');
     SetTimer(0.25, true, 'BuildDoorCache');
 }
 
@@ -285,10 +287,12 @@ function PostRender()
         RenderKillMsg();
     }
     
+	/*
     if( NewItems.Length > 0 )
     {
         DrawItemsList();
     }
+	*/
     
     if( ClassicPlayerController(PlayerOwner).LobbyMenu == None )
     {
@@ -2454,11 +2458,13 @@ simulated final function NotifyLevelChange( optional bool bMapswitch )
     if( bMapswitch )
         SetTimer(0.5,false,'PendingMapSwitch');
         
+	/*
     if( OnlineSub!=None )
     {
         OnlineSub.ClearOnInventoryReadCompleteDelegate(SearchInventoryForNewItem);
         OnlineSub = None;
     }
+	*/
 }
 
 simulated function PendingMapSwitch()
