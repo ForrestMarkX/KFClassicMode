@@ -1,0 +1,37 @@
+`if(`notdefined(OVERRIDECHARACTERARCHFUNC))
+    simulated function SetCharacterArch( KFCharacterInfoBase Info, optional bool bForce )
+    {
+        Super.SetCharacterArch(class'ClassicZEDHelper'.static.GetCharacterArch(self, Info), bForce);
+        
+        if( SoundGroupArch.EntranceSound != None )
+            SoundGroupArch.EntranceSound = None;
+    }
+`endif
+
+static function string GetSeasonalLocalizationSuffix()
+{
+    return class'ClassicZEDHelper'.static.GetSeasonalLocalizationSuffix();
+}
+
+`if(`notdefined(OVERRIDECHARACTERANIMFUNC))
+    simulated function SetCharacterAnimationInfo()
+    {
+        Super.SetCharacterAnimationInfo();
+        
+        if( PawnAnimInfo != default.PawnAnimInfo )
+            PawnAnimInfo = default.PawnAnimInfo;
+    }
+`endif
+
+function bool AttackWhileMoving( byte AttackIndex, byte StrikeFlags )
+{
+	return PawnAnimInfo.Attacks[AttackIndex].bPlayUpperBodyOnly;
+}
+
+`if(`notdefined(OVERRIDEMOVEMENTFUNC))
+    simulated function ZeroMovementVariables()
+    {
+        if( class'ClassicZEDHelper'.static.CanZeroMovement(self) )
+            Super.ZeroMovementVariables();
+    }
+`endif

@@ -1,0 +1,53 @@
+var bool bKeepMoving;
+var float MeleeFinishTime;
+
+`if(`notdefined(OVERRIDEDOSTRIKEFUNC))
+    function DoStrike()
+    {
+        local KFZEDInterface ZedInterface;
+        local byte PendingStrikeFlags;
+        
+        PendingStrikeFlags = MyKFPawn.PawnAnimInfo.GetStrikeFlags(PendingAnimStrikeIndex);
+        
+        ZedInterface = KFZEDInterface(Pawn);
+        if( ZedInterface != None )
+        {
+            bKeepMoving = ZedInterface.AttackWhileMoving(PendingAnimStrikeIndex, PendingStrikeFlags);
+            class'AICommand_Attack_MeleeClassic'.static.Melee( self, Enemy, PendingStrikeFlags );
+            if( KFPawn(Pawn).PawnAnimInfo!=None )
+                KFPawn(Pawn).PawnAnimInfo.UpdateAttackCooldown(self, PendingAnimStrikeIndex);
+        }
+        else
+        {
+            Super.DoStrike();
+        }
+    }
+`endif
+
+`if(`notdefined(OVERRIDEMELEEFINISHFUNC))
+    function NotifyMeleeAttackFinished()
+    {
+        bKeepMoving = false;
+        Super.NotifyMeleeAttackFinished();
+    }
+`endif
+
+function bool GetKeepMoving()
+{
+	return bKeepMoving;
+}
+
+function SetKeepMoving(bool b)
+{
+	bKeepMoving = b;
+}
+
+function SetMeleeFinishTime(float Time)
+{
+	MeleeFinishTime = Time;
+}
+
+function float GetMeleeFinishTime()
+{
+	return MeleeFinishTime;
+}
