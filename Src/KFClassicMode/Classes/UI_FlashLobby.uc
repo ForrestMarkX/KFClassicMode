@@ -26,6 +26,11 @@ function PreDraw()
     {
         MovieManager.SetMovieCanReceiveInput(true);
     }
+    
+    if( !MovieManager.bMenusActive )
+    {
+        DoClose();
+    }
 }
 
 function DoClose()

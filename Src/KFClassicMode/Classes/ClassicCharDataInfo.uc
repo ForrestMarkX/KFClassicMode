@@ -11,16 +11,9 @@ final function FMyCustomChar LoadData()
     
     if( HasInit<3 )
     {
-        AttachmentMesh0 = -1;
-        AttachmentSkin0 = -1;
-        AttachmentMesh1 = -1;
-        AttachmentSkin1 = -1;
-        AttachmentMesh2 = -1;
-        AttachmentSkin2 = -1;
-        HeadMeshIndex = -1;
-        HeadSkinIndex = -1;
-        BodyMeshIndex = -1;
-        BodySkinIndex = -1;
+        AttachmentMesh0 = `CLEARED_ATTACHMENT_INDEX;
+        AttachmentMesh1 = `CLEARED_ATTACHMENT_INDEX;
+        AttachmentMesh2 = `CLEARED_ATTACHMENT_INDEX;
     }
     R.HeadMeshIndex = HeadMeshIndex;
     R.HeadSkinIndex = HeadSkinIndex;

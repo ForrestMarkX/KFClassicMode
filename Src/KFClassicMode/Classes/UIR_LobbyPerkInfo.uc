@@ -74,7 +74,7 @@ function DrawMenu()
     
     Canvas.SetPos(TempX + IconBorder * Height, TempY + IconBorder * Height);
     Canvas.DrawTile(PerkIcon, IconSize, IconSize, 0, 0, PerkIcon.GetSurfaceWidth(), PerkIcon.GetSurfaceHeight());
-
+    
     TempX += IconSize + (IconToInfoSpacing * Width);
     TempY += TextTopOffset * Height + ItemBorder * Height;
 
@@ -104,6 +104,39 @@ function DrawMenu()
     Canvas.DrawTileStretched(ProgressBarBackground, ProgressBarWidth, ProgressBarHeight * Height, 0, 0, ProgressBarBackground.GetSurfaceWidth(), ProgressBarBackground.GetSurfaceHeight());
     Canvas.SetPos(TempX + 3.0, TempY + 3.0);
     Canvas.DrawTileStretched(ProgressBarForeground, (ProgressBarWidth - 6.0) * PerkProgress, (ProgressBarHeight * Height) - 6.0, 0, 0, ProgressBarForeground.GetSurfaceWidth(), ProgressBarForeground.GetSurfaceHeight());
+}
+
+function MouseRelease( bool bRight )
+{
+    local ClassicPlayerController PC;
+    
+    if( !bDisabled && !bRight )
+    {
+        PlayMenuSound(MN_ClickButton);
+        
+        PC = ClassicPlayerController(GetPlayer());
+        if( PC != None )
+        {
+            if( PC.LobbyMenu.MainMenu != None )
+            {
+                PC.LobbyMenu.MainMenu.DoClose();
+            }
+            
+            PC.LobbyMenu.MainMenu = Owner.OpenMenu(PC.MidGameMenuClass);
+        }
+    }
+}
+
+function MouseEnter()
+{
+    Super.MouseEnter();
+    if( !bDisabled )
+        PlayMenuSound(MN_FocusHover);
+}
+
+function bool CaptureMouse()
+{
+    return Super(KFGUI_Base).CaptureMouse();
 }
 
 function GetStyleTextures()

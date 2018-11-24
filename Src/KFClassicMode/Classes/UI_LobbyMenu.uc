@@ -646,7 +646,7 @@ defaultproperties
     Begin Object Class=KFGUI_TextLable Name=DifficultyL
         ID="DifficultyL"
         YPosition=0.077381
-           XPosition=0.496524
+        XPosition=0.496524
         XSize=0.36
         YSize=0.035714
         Text="Difficulty"
@@ -656,7 +656,7 @@ defaultproperties
     
     Begin Object class=KFGUI_Image Name=WaveB
         ID="WaveB"
-          YPosition=0.043810
+        YPosition=0.043810
         XPosition=0.923238
         XSize=0.051642
         YSize=0.061783
@@ -669,7 +669,7 @@ defaultproperties
         AlignX=1
         AlignY=1
         TextColor=(B=158,G=176,R=175)
-          YPosition=0.043810
+        YPosition=0.043810
         XPosition=0.923238
         XSize=0.051642
         YSize=0.061783
@@ -679,7 +679,7 @@ defaultproperties
     Begin Object Class=KFGUI_Frame Name=StoryBoxBackground
         ID="StoryBoxBackground"
         bDrawHeader=true
-           YPosition=0.109808
+         YPosition=0.109808
         XPosition=0.489062
         XSize=0.487374
         YSize=0.309092
@@ -688,7 +688,7 @@ defaultproperties
     
     Begin Object Class=KFGUI_TextScroll Name=MOTDText
         ID="MOTDText"
-           YPosition=0.119808
+         YPosition=0.119808
         XPosition=0.499062
         XSize=0.492374
         YSize=0.314092
@@ -720,7 +720,7 @@ defaultproperties
     /*
     Begin Object class=UIR_LobbyCharacterInfo Name=PlayerPortraitB
         ID="PlayerPortraitB"
-           YPosition=0.432291
+         YPosition=0.432291
         XPosition=0.489062
         XSize=0.163305
         YSize=0.25

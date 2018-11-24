@@ -144,18 +144,18 @@ function int AddItemByPriority( out SItemInformation WeaponInfo )
 
     // Add secondary ammo immediately after the main weapon
     if( WeaponInfo.DefaultItem.WeaponDef.static.UsesSecondaryAmmo() )
-       {
-           WeaponInfo.bIsSecondaryAmmo = true;
+    {
+        WeaponInfo.bIsSecondaryAmmo = true;
         WeaponInfo.SellPrice = 0;
         OwnedItemList.InsertItem( BestIndex + 1, WeaponInfo );
-       }
+    }
 
     if( MyGfxManager != none && MyGfxManager.TraderMenu != none )
     {
         MyGfxManager.TraderMenu.OwnedItemList = OwnedItemList;
     }
 
-       return BestIndex;
+    return BestIndex;
 }
 
 function RemoveWeaponFromOwnedItemList( optional int OwnedListIdx = INDEX_NONE, optional name ClassName, optional bool bDoNotSell )

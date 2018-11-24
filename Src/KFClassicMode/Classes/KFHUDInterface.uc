@@ -981,6 +981,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
         DrawPortrait();
     }
     
+    // Inventory
     if ( bDisplayInventory )
     {
         DrawInventory();
@@ -1028,10 +1029,9 @@ function DrawInventory()
         FadeAlpha = 255;
     }
 
-    for ( CurInv = PlayerOwner.Pawn.InvManager.InventoryChain; CurInv != None; CurInv = CurInv.Inventory )
+    foreach PlayerOwner.Pawn.InvManager.InventoryActors( class'KFWeapon', KFW )
     {
-        KFW = KFWeapon( CurInv );
-        if ( KFW != None && KFW.InventoryGroup < MAX_WEAPON_GROUPS )
+        if ( KFW.InventoryGroup < MAX_WEAPON_GROUPS )
         {
             Categorized[KFW.InventoryGroup].Items[Categorized[KFW.InventoryGroup].ItemCount++] = KFW;
         }
