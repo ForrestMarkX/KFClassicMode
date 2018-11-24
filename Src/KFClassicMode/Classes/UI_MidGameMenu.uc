@@ -27,7 +27,7 @@ function InitMenu()
     SettingsButton = AddMenuButton('Settings',"Settings","Enter the game settings");
     MapvoteButton = AddMenuButton('Mapvote',"Map Voting","Show mapvote menu");
     SkipTraderButton = AddMenuButton('SkipTrader',"Skip Trader","Vote to skip the trader");
-    GearButton = AddMenuButton('Gear',"Gear","");
+    //GearButton = AddMenuButton('Gear',"Gear","");
     SpectateButton = AddMenuButton('Spectate',"","");
     SuicideButton = AddMenuButton('Suicide', "Suicide", "Causes you to have a sudden heart attack");
     AddMenuButton('Profile',"Profile","Show your Steam Profile");
@@ -89,7 +89,7 @@ function ShowMenu()
         //GearButton.SetDisabled( true );
     }
     
-    GearButton.SetDisabled( true );
+    //GearButton.SetDisabled( true );
     SettingsButton.SetDisabled( ClassicPlayerController(GetPlayer()).LobbyMenu != None );
         
     PlayMenuSound(MN_DropdownChange);

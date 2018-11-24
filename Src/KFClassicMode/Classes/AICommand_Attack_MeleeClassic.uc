@@ -8,8 +8,6 @@ function ClearTimeout()
 
 function MeleeFinished()
 {
-    KFPawn_Monster(Pawn).StopLookingAtPawn();
-    
     Status = 'Success';
     PopCommand( self );
 }
@@ -43,9 +41,6 @@ Begin:
         {
             while( AttackTarget!=None )
             {
-                if( KFPawn(AttackTarget) != None )
-                    KFPawn_Monster(Pawn).LookAtPawn(KFPawn(AttackTarget));
-                    
                 MoveToward(AttackTarget);
             }
         }

@@ -29,6 +29,7 @@ function InitMenu()
     ControllerBox = AddComboBox("Controller Type","What controller type to use for GUI elements.",'ControllerType',ControllerTypeLabel);
     ControllerBox.Values.AddItem("Xbox One");
     ControllerBox.Values.AddItem("Playstation 4");
+    ControllerBox.SetValue(ClassicPlayerController(GetPlayer()).ControllerType ~= "UI_Controller" ? "Xbox One" : "Playstation 4");
     
     AddButton("Reset","Reset HUD Colors","Resets the color settings for the HUD.",'ResetColors',ResetColorLabel);
 }

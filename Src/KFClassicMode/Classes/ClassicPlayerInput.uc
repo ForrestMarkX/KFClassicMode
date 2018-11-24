@@ -360,33 +360,26 @@ function bool FilterButtonInput(int ControllerId, Name Key, EInputEvent Event, f
             return true;
         }
             
-        if ( (WorldInfo.GRI.bMatchHasBegun || WorldInfo.GRI.bMatchIsOver) )
+        if( MyGFxManager.bMenusOpen )
         {
-            if( MyGFxManager.bMenusOpen )
+            return MyGFxManager.ToggleMenus();
+        }
+        else
+        {
+            if( WorldInfo.GRI.bMatchIsOver )
             {
-                return MyGFxManager.ToggleMenus();
+                foreach Outer.DynamicActors(class'KFClassicMode.xVotingReplication',R)
+                {
+                    R.ClientOpenMapvote();
+                    break;
+                }
+                    
+                return true;
             }
             else
             {
-                if( WorldInfo.GRI.bMatchIsOver )
-                {
-                    foreach Outer.DynamicActors(class'KFClassicMode.xVotingReplication',R)
-                    {
-                        R.ClientOpenMapvote();
-                        break;
-                    }
-                        
-                    return true;
-                }
-                else
-                {
-                    MyGUIController.OpenMenu(Outer.MidGameMenuClass);
-                }
+                MyGUIController.OpenMenu(Outer.MidGameMenuClass);
             }
-        }
-        else if( !WorldInfo.GRI.bMatchHasBegun )
-        {
-            MyGUIController.OpenMenu(Outer.LobbyMenuClass);
         }
     }
     

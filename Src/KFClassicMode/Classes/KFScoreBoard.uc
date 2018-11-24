@@ -220,7 +220,7 @@ function DrawMenu()
     XPos = XPosCenter;
     YPos += DefFontHeight;
 
-    S = " " $Class'KFCommon_LocalizedStrings'.Static.GetDifficultyString (KFGRI.GameDifficulty) $"  |  WAVE " $KFGRI.WaveNum $"  |  " $class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(PC.WorldInfo.GetMapName(true));
+    S = " " $Class'KFCommon_LocalizedStrings'.Static.GetDifficultyString (KFGRI.GameDifficulty) $"  |  "$class'KFGFxHUD_ScoreboardMapInfoContainer'.default.WaveString@KFGRI.WaveNum $"  |  " $class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(PC.WorldInfo.GetMapName(true));
     Owner.CurrentStyle.DrawCenteredText(S, XPos, YPos, FontScalar,, true);
     
     // Time Elapsed
@@ -249,25 +249,25 @@ function DrawMenu()
 
     // Header texts
     Canvas.SetPos (XPos + PerkXPos, YPos);
-    Canvas.DrawText ("PERK", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxMenu_Inventory'.default.PerkFilterString, , FontScalar, FontScalar);
 
     Canvas.SetPos (XPos + KillsXPos, YPos);
-    Canvas.DrawText ("KILLS", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.KillsString, , FontScalar, FontScalar);
 
     Canvas.SetPos (XPos + AssistXPos, YPos);
-    Canvas.DrawText ("ASSISTS", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.AssistsString, , FontScalar, FontScalar);
 
     Canvas.SetPos (XPos + CashXPos, YPos);
-    Canvas.DrawText ("DOSH", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.DoshString, , FontScalar, FontScalar);
 
     Canvas.SetPos (XPos + StateXPos, YPos);
     Canvas.DrawText ("STATE", , FontScalar, FontScalar);
     
     Canvas.SetPos (XPos + PlayerXPos, YPos);
-    Canvas.DrawText ("PLAYER", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.PlayerString, , FontScalar, FontScalar);
 
     Canvas.SetPos (XPos + PingXPos, YPos);
-    Canvas.DrawText ("PING", , FontScalar, FontScalar);
+    Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.PingString, , FontScalar, FontScalar);
     
     PlayersList.XPosition = ((Canvas.ClipX - Width) * 0.5) / InputPos[2];
     PlayersList.YPosition = (YPos + (YL + 4)) / InputPos[3];
@@ -528,7 +528,7 @@ function ClickedPlayer( int Index, bool bRight, int MouseX, int MouseY )
     
     // Check what items to disable.
     PC = GetPlayer();
-    PlayerContext.ItemRows[0].bDisabled = (PlayerIndex==Index || !PC.IsSpectating());
+    PlayerContext.ItemRows[0].bDisabled = (PlayerIndex==Index || !PC.IsSpectating() || !PC.WorldInfo.GRI.bMatchHasBegun);
     PlayerContext.ItemRows[1].bDisabled = RightClickPlayer.bBot;
     PlayerContext.ItemRows[2].bDisabled = (PlayerIndex==Index || RightClickPlayer.bBot);
     PlayerContext.ItemRows[2].Text = (PlayerContext.ItemRows[2].bDisabled || PC.IsPlayerMuted(RightClickPlayer.UniqueId)) ? "Unmute player" : "Mute player";
@@ -555,7 +555,6 @@ function SelectedRCItem( int Index )
 {
     local PlayerController PC;
     local KFPlayerReplicationInfo KFPRI;
-    local ViewTargetTransitionParams TransitionParams;
     local String S;
 
     PC = GetPlayer();
@@ -563,13 +562,7 @@ function SelectedRCItem( int Index )
     switch( Index )
     {
     case 0: // Spectate this player.
-        TransitionParams.BlendTime = 0.35;
-        TransitionParams.BlendFunction = VTBlend_Cubic;
-        TransitionParams.BlendExp = 2.f;
-        TransitionParams.bLockOutgoing = false;
-    
-        PC.SetViewTarget( RightClickPlayer, TransitionParams );
-        PC.ClientSetViewTarget( RightClickPlayer, TransitionParams );
+        PC.ConsoleCommand("ViewPlayerID "$RightClickPlayer.PlayerID);
         break;
     case 1: // Steam profile.
         OnlineSubsystemSteamworks(class'GameEngine'.static.GetOnlineSubsystem()).ShowProfileUI(0,,RightClickPlayer.UniqueId);

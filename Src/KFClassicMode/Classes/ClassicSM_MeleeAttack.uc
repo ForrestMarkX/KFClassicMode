@@ -16,18 +16,32 @@ function UnpackSpecialMoveFlags()
 
     // for now all non-RootMotion are also interruptible
     bCanBeInterrupted = (bCanBeInterrupted || !bUseRootMotion);
+    bDisableMovement = !KFZEDInterface(KFPOwner).AttackWhileMoving(AtkIndex, KFPOwner.PawnAnimInfo.GetStrikeFlags(AtkIndex));
 }
 
 function PlayAnimation()
 {
-    local float D;
+    local float D, InterruptTime;
+    
+	if( AnimName == '' )
+	{
+		`warn( KFPOwner$" "$GetFuncName()$" "$self$" attempting special move attack but the AttackAnims array is empty!" );
+		return;
+	}
 
-    D = PlaySpecialMoveAnim(AnimName, AnimStance, BlendInTime, BlendOutTime, 1.f, bLoopAnim);
+	if( bCanBeInterrupted )
+	{
+		InterruptTime = KFSkeletalMeshComponent(PawnOwner.Mesh).GetAnimInterruptTime(AnimName);
+		PawnOwner.SetTimer(InterruptTime, false, nameof(InterruptCheckTimer), self);
+	}
+
+    D = PlaySpecialMoveAnim( AnimName, AnimStance, BlendInTime, BlendOutTime, KFPOwner.AttackSpeedModifier);
     if( KFZEDAIInterface(KFPOwner.Controller)!=None )
         KFZEDAIInterface(KFPOwner.Controller).SetMeleeFinishTime(KFPOwner.WorldInfo.TimeSeconds+D);
 }
 
 defaultproperties
 {
+	bUseHigherMeshSmoothingThreshold=false
     bDisableMovement=false
 }

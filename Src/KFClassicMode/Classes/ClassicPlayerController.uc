@@ -82,7 +82,6 @@ simulated function PostBeginPlay()
             }
             
             bSetupBindings = true;
-            SaveConfig();
         }
         
         if( ConfigVer < 1 )
@@ -208,16 +207,15 @@ simulated function PostBeginPlay()
             ColorTags.AddItem(TagInfo);
         
             ConfigVer = 1;
-            SaveConfig();
         }
         
         if( ConfigVer < 2 )
         {
             ControllerType = "Xbox One";
-            
             ConfigVer = 2;
-            SaveConfig();
         }
+        
+        SaveConfig();
     
         if( LobbyMenu == None )
         {
@@ -231,7 +229,11 @@ simulated function PostBeginPlay()
 simulated event name GetSeasonalStateName()
 {
     if( EventHelper == None )
-        return Super.GetSeasonalStateName();
+    {
+        EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
+        if( EventHelper == None )
+            return 'No_Event';
+    }
         
     switch( EventHelper.GetEventType() )
     {
@@ -247,7 +249,7 @@ simulated event name GetSeasonalStateName()
             return 'No_Event';
     }
 
-    return Super.GetSeasonalStateName();
+    return 'No_Event';
 }
 
 simulated function OpenLobbyMenu()
@@ -280,33 +282,6 @@ simulated function CheckForLobbyMenuClose()
             ClearTimer('CheckForLobbyMenuClose');
         }
     }
-}
-
-function MoveToValidSpectatorLocation()
-{
-    local PlayerStart PS;
-    local vector CameraLocation;
-
-    // Make sure that our freecam isn't trapped in the lobby
-    foreach AllActors( class'PlayerStart', PS )
-    {
-        CameraLocation = PS.Location + ( vect(0,0,1) * (PS.CylinderComponent.CollisionHeight * 2.f) );
-        SetLocation( CameraLocation );
-        ServerSetSpectatorLocation( CameraLocation );
-        SetRotation( rot(-1024,0,0) );
-        break;
-    }
-}
-
-function SpawnMidGameCustomizationPawn()
-{
-    Super.SpawnMidGameCustomizationPawn();
-    ServerCreateCustomizationPawn();
-}
-
-reliable server function ServerCreateCustomizationPawn()
-{
-    CreateCustomizationPawn();
 }
 
 reliable client function ClientSetCountdown(bool bFinalCountdown, byte CountdownTime, optional NavigationPoint PredictedSpawn)
@@ -376,7 +351,7 @@ function OpenTraderMenu( optional bool bForce=false )
            KFIM = KFInventoryManager(Pawn.InvManager);
            if( KFIM != none && !KFIM.bServerTraderMenuOpen )
            {
-               KFIM.bServerTraderMenuOpen = true;
+             KFIM.bServerTraderMenuOpen = true;
              ClientOpenTraderMenu(bForce);
          }
     }
@@ -814,16 +789,14 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
 {
     local KFHUDInterface HUD;
     local KFPlayerInput KFInput;
-    local KeyBind BoundKey;
-    local string MessageStr, KeyName, SeperatorStr;
+    local string MessageStr, KeyName, FinalString;
+    local string LeftBracket, RightBracket;
+    local array<String> StringArray;
     
     if( class<KFLocalMessage_Priority>(Message) != None )
     {
         switch ( Switch )
         {
-            case GMT_WaveStart:
-            case GMT_WaveStartWeekly:
-            case GMT_WaveStartSpecial:
             case GMT_WaveSBoss:
                 if(!PlayerReplicationInfo.bOnlySpectator && PlayerReplicationInfo.bReadyToPlay)
                 {
@@ -840,6 +813,9 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
                         }
                     }
                 }
+            case GMT_WaveStart:
+            case GMT_WaveStartWeekly:
+            case GMT_WaveStartSpecial:
                 class'KFMusicStingerHelper'.static.PlayWaveStartStinger( self, Switch );
                 return;
             case GMT_WaveEnd:
@@ -865,66 +841,40 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
             if( KFInput == None )
                 return;
                 
-            KFInput.GetKeyBindFromCommand(BoundKey, "GBA_Use", false);
+            MessageStr = Message.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+            if( Len(MessageStr) == 0 )
+                return;
+                
             if( KFInput.bUsingGamepad )
             {
-                KeyName = "<Icon>"$ControllerType$"."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
+                KeyName = "<Icon>"$ControllerType$"."$class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch)$"_Asset</Icon>";
             }
             else
             {
-                KeyName = KFInput.GetBindDisplayName(BoundKey);
-            }
-                
-            switch( Switch )
-            {
-                case IMT_RepairDoor:
-                case IMT_AcceptObjective:
-                case IMT_ReceiveAmmo:
-                case IMT_ReceiveGrenades:
-                case IMT_UseMinigame:
-                case IMT_UseMinigameGenerator:
-                case IMT_DoshActivate:
-                    if( KFTrigger_DoshActivated(OptionalObject) != None )
-                    {
-                        MessageStr = Message.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject);
-                        break;
-                    }
-                    
-                    MessageStr = "["@KeyName@"]"@Message.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject);
-                    break;
-                case IMT_UseTrader:
-                    SeperatorStr = "|";
-                    MessageStr = "Press "$KeyName$" to open the Trader Menu.|Hold "$KeyName$" to auto upgrade weapons.";
-                    break;
-                case IMT_UseDoor:
-                    SeperatorStr = "|";
-                    MessageStr = "[ DOOR ]|Press "$KeyName$" to Open/Close|Hold "$KeyName$" to equip the "$class'KFWeap_Welder'.default.ItemName;
-                    break;
-                case IMT_UseDoorWelded:
-                    SeperatorStr = "|";
-                    MessageStr = "[ DOOR ]|Hold "$KeyName$" to equip the "$class'KFWeap_Welder'.default.ItemName;
-                    break;        
-                case IMT_HealSelfWarning:
-                    KFInput.GetKeyBindFromCommand(BoundKey, KFInput.bUsingGamepad ? "GBA_Reload_Gamepad" : "GBA_QuickHeal", false);
-                    if( KFInput.bUsingGamepad )
-                    {
-                        KeyName = "<Icon>"$ControllerType$"."$KFInput.GetBindDisplayName(BoundKey)$"_Asset</Icon>";
-                    }
-                    else
-                    {
-                        KeyName = KFInput.GetBindDisplayName(BoundKey);
-                    }
-                    
-                    if( KFInput.bUsingGamepad )
-                        MessageStr = "Hold ["@KeyName@"] Heal Self";
-                    else MessageStr = "["@KeyName@"] Heal Self";
-                    
-                    break;
-                default:
-                    return;
+                KeyName = class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch);
             }
             
-            HUD.ShowNonCriticalMessage(MessageStr, SeperatorStr);
+            LeftBracket = "[[";
+            RightBracket = "]]";
+             
+            StringArray = SplitString(MessageStr, class'KFGFxMoviePlayer_HUD'.default.HoldCommandDelimiter);
+            if(StringArray.Length > 1)
+            {
+                if( Len(StringArray[0]) != 0 )
+                {
+                    FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket @ StringArray[0] $ "\n" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket @ StringArray[1];
+                }
+                else
+                {
+                    FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket $ "\n" $ StringArray[1];
+                }
+            }
+            else
+            {
+                FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket $ "\n" $ StringArray[0];
+            }
+            
+            HUD.ShowNonCriticalMessage(FinalString, "\n");
             return;
         }
     }
@@ -1009,12 +959,6 @@ reliable client function ClientNotifyDisconnect()
     KFPerk_Survivalist(FindObject("KFGame.Default__KFPerk_Survivalist",class'KFPerk_Survivalist')).PerkIcon = Texture2D'UI_PerkIcons_TEX.UI_PerkIcon_Survivalist';
     KFEmit_TraderPath(FindObject("KFGame.Default__KFEmit_TraderPath",class'KFEmit_TraderPath')).EmitterTemplate = ParticleSystem'FX_Gameplay_EMIT.FX_Trader_Trail';
     KFGFxObject_TraderItems(FindObject("KFGame.Default__KFGFxObject_TraderItems",class'KFGFxObject_TraderItems')).OffPerkIconPath = "UI_TraderMenu_TEX.UI_WeaponSelect_Trader_Perk";
-}
-
-reliable server function ServerSetSpectatorMode()
-{
-    MoveToValidSpectatorLocation();
-    StartSpectate();
 }
 
 function bool SetupMessage(out string S)
@@ -1123,6 +1067,50 @@ simulated function CancelConnection()
     if( KFHUDInterface(myHUD)!=None )
         KFHUDInterface(myHUD).CancelConnection();
     else class'Engine'.Static.GetEngine().GameViewport.ConsoleCommand("Disconnect");
+}
+
+exec function ViewPlayerID( int ID )
+{
+	ServerViewPlayerID(ID);
+}
+
+reliable server function ServerViewPlayerID( int ID )
+{
+	local PlayerReplicationInfo PRI;
+    local ViewTargetTransitionParams TransitionParams;
+
+	if( !IsSpectating() )
+		return;
+
+	// Find matching player by ID
+	foreach WorldInfo.GRI.PRIArray(PRI)
+	{
+		if ( PRI.PlayerID==ID )
+			break;
+	}
+	if( PRI==None || PRI.PlayerID!=ID || Controller(PRI.Owner)==None || Controller(PRI.Owner).Pawn==None || !WorldInfo.Game.CanSpectate(self, PRI) )
+		return;
+	
+    TransitionParams.BlendTime = 0.35;
+    TransitionParams.BlendFunction = VTBlend_Cubic;
+    TransitionParams.BlendExp = 2.f;
+    TransitionParams.bLockOutgoing = false;
+
+    SetViewTarget(PRI, TransitionParams);
+	ClientMessage("Now viewing from "$StripColorMessage(PRI.GetHumanReadableName()));
+	if( CurrentSpectateMode==SMODE_Roaming )
+		SpectatePlayer( SMODE_PawnFreeCam );
+}
+
+reliable server function ForceLobbySpectate()
+{
+    if( Pawn != None && KFPawn_Customization(Pawn) == None && !WorldInfo.GRI.bMatchHasBegun )
+        return;
+        
+    ClientSetCameraFade( true, MakeColor(0,0,0,255), vect2d(1.f, 0.f), 0.5f, true );
+    SpectateRoaming();
+    MoveToValidSpectatorLocation();
+    StartSpectate();
 }
 
 function NotifyLevelUp(class<KFPerk> PerkClass, byte PerkLevel, byte NewPrestigeLevel);

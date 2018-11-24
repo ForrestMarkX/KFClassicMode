@@ -68,7 +68,10 @@ function InitMenu()
 
     DisconnectButton = AddMenuButton('Disconnect',"Disconnect","Disconnects you from the server");
     ReadyButton = AddMenuButton('Ready',"Ready","");
+    
     ViewMapButton = AddMenuButton('ViewMap',"View Map","Closed the lobby menu and allows you to view the map");
+    ViewMapButton.SetDisabled(true);
+    
     OptionsButton = AddMenuButton('Options',"Options","Opens the settings menu");
     GearButton = AddMenuButton('CharacterB',"Gear","Opens the Gear menu to change characters");
     MenuButton = AddMenuButton('MainMenu',"Perks","Opens the main menu for perk changes");
@@ -117,7 +120,7 @@ function SetFinalCountdown(bool B, int CountdownTime)
 function FinalCountdown()
 {
     FinalCountTime -= 1;
-    if (PC != None && PC.MyGFxHUD != None)
+    if (PC != None && PC.MyGFxHUD != None && !bViewMapClicked)
     {
         PC.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_COUNTDOWN', 'UI');
     }
@@ -219,6 +222,7 @@ function Timer()
         
         MenuButton.SetDisabled( KFPRI.bReadyToPlay );
         GearButton.SetDisabled( KFPRI.bReadyToPlay );
+        ViewMapButton.SetDisabled( !KFPRI.bReadyToPlay );
     }
 }
 
@@ -278,15 +282,6 @@ function ShowMenu()
     KFPRIArray.Length = 0;
     OldPRILength = 0;
     
-    ViewMapButton.SetDisabled( true );
-    
-    /*
-    if( PC.WorldInfo.GRI != None )
-    {
-        ViewMapButton.SetDisabled( PC.WorldInfo.GRI.bMatchHasBegun );
-    }
-    */
-    
     //CheckForCustomizationPawn();
     
     HUD = KFHUDInterface(PC.myHUD);
@@ -319,6 +314,7 @@ function ButtonClicked( KFGUI_Button Sender )
         MainMenu = Owner.OpenMenu(PC.MidGameMenuClass);
         break;
     case 'ViewMap':
+        KFPRI.SetPlayerReady(true);
         bViewMapClicked = true;
         CloseAndEnableInput();
         break;
@@ -359,7 +355,14 @@ function CloseAndEnableInput()
     }
     else
     {
-        PC.StartSpectate();
+        if( PC.WorldInfo.GRI.bMatchHasBegun )
+        {
+            PC.StartSpectate();
+        }
+        else
+        {
+            PC.ForceLobbySpectate();
+        }
     }
             
     PC.MyGFxManager.CloseMenus(true);    

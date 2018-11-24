@@ -182,7 +182,10 @@ struct HUDBoxRenderInfo
 };
 
 var transient class<KFTraderVoiceGroupBase> CurrentTraderVoiceClass;
+var transient byte LastWarningTime;
 var config int iConfigVersion;
+
+var ClassicPlayerController ClassicPlayerOwner;
 
 simulated function PostBeginPlay()
 {
@@ -209,6 +212,8 @@ simulated function PostBeginPlay()
         
         SaveConfig();
     }
+    
+    ClassicPlayerOwner = ClassicPlayerController(PlayerOwner);
     
     PlayerOwner.PlayerInput.OnReceivedNativeInputKey = NotifyInputKey;
     PlayerOwner.PlayerInput.OnReceivedNativeInputAxis = NotifyInputAxis;
@@ -310,7 +315,7 @@ function PostRender()
     }
     */
     
-    if( ClassicPlayerController(PlayerOwner).LobbyMenu == None )
+    if( ClassicPlayerOwner.LobbyMenu == None )
     {
         if( TalkerPRIs.Length > 0 )
         {
@@ -599,6 +604,45 @@ function DrawHUDBox
     }
 }
 
+function DrawDeployTime(byte RemainingTime)
+{
+    local float FontScalar, XL, YL;
+    local int Min, Time;
+    local byte Glow;
+    local string S;
+    
+    Canvas.Font = GUIStyle.PickFont(FontScalar);
+    FontScalar += GUIStyle.ScreenScale(0.5);
+    
+    if( RemainingTime == -1 )
+    {
+        S = class'UI_LobbyMenu'.default.WaitingForOtherPlayers;
+        Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
+        GUIStyle.DrawTextShadow(S, (Canvas.ClipX * 0.5f) - (XL * 0.5f), Canvas.ClipY * 0.05f, int( Canvas.ClipY / 360.f ), FontScalar);
+    }
+    else
+    {
+		if( RemainingTime <= 10 )
+        {
+            Glow = Clamp(Sin(WorldInfo.TimeSeconds * 8) * 200 + 255, 0, 255);
+            Canvas.DrawColor = MakeColor(255, Glow, Glow, 255);
+            
+            if( LastWarningTime != RemainingTime )
+            {
+                LastWarningTime = RemainingTime;   
+                KFPlayerOwner.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_COUNTDOWN', 'UI');
+            }
+        }
+        
+        Min = RemainingTime / 60;
+        Time = RemainingTime - (Min * 60);
+
+        S = class'UI_LobbyMenu'.default.AutoCommence$":" @ (Min >= 10 ? string(Min) : "0" $ Min) $ ":" $ (Time >= 10 ? string(Time) : "0" $ Time);
+        Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
+        GUIStyle.DrawTextShadow(S, (Canvas.ClipX * 0.5f) - (XL * 0.5f), Canvas.ClipY * 0.05f, int( Canvas.ClipY / 360.f ), FontScalar);
+    }
+}
+
 function RenderKFHUD(KFPawn_Human KFPH)
 {
     local float scale_w, scale_w2, FontScalar, OriginalFontScalar, XL, YL, BoxXL, BoxYL, BoxSW, BoxSH, DoshXL, DoshYL, PerkXL, PerkYL, StarXL, StarYL, TempSize;
@@ -619,7 +663,15 @@ function RenderKFHUD(KFPawn_Human KFPH)
     local Color HealthFontColor;
     local HUDBoxRenderInfo HBRI;
     
-    if( KFPlayerOwner.bCinematicMode || ClassicPlayerController(PlayerOwner).LobbyMenu != None )
+    if( KFPlayerOwner.bCinematicMode )
+        return;
+        
+    if( !WorldInfo.GRI.bMatchHasBegun && ClassicPlayerOwner.LobbyMenu.bViewMapClicked )
+    {
+        DrawDeployTime(WorldInfo.GRI.RemainingTime);
+    }
+        
+    if( ClassicPlayerOwner.LobbyMenu != None )
         return;
     
     FRI.bClipText = true;
@@ -990,7 +1042,6 @@ function RenderKFHUD(KFPawn_Human KFPH)
 
 function DrawInventory()
 {
-    local Inventory CurInv;
     local InventoryCategory Categorized[MAX_WEAPON_GROUPS];
     local int i, j;
     local byte FadeAlpha, ItemIndex;
@@ -2376,7 +2427,6 @@ function LocalizedMessage
 {
     local string HexClr,TempS;
     local class<KFLocalMessage>  KFLocalMessageClass;
-    local ClassicPlayerController PC;
 
     // Stops KFAIController_ScriptedPawn and KFAIController_Monster from spamming the chatbox with team change messages.
     if( KFDummyReplicationInfo(RelatedPRI_1) != None || KFDummyReplicationInfo(RelatedPRI_2) != None )
@@ -2398,7 +2448,6 @@ function LocalizedMessage
         return;
     }
 
-    PC = ClassicPlayerController(PlayerOwner);
     MessageString = Repl(MessageString, "  ", " ");
     
     if( !InMessageClass.default.bIsSpecial )
@@ -2421,9 +2470,9 @@ function LocalizedMessage
     }
     
     TempS = "#{"$HexClr$"}"$MessageString$"<LINEBREAK>";
-    if( PC.LobbyMenu != None )
+    if( ClassicPlayerOwner.LobbyMenu != None )
     {
-        PC.LobbyMenu.ChatBox.AddText(TempS);
+        ClassicPlayerOwner.LobbyMenu.ChatBox.AddText(TempS);
     }
     
     ChatBox.AddText(TempS);
@@ -2530,7 +2579,7 @@ simulated function SearchInventoryForNewItem()
                 NewItems[0].Icon = Texture2D(DynamicLoadObject(OnlineSub.ItemPropertiesList[j].IconURL,Class'Texture2D'));
                 NewItems[0].Item = OnlineSub.ItemPropertiesList[j].Name$" ["$RarityStr(OnlineSub.ItemPropertiesList[j].Rarity)$"]";
                 NewItems[0].MsgTime = WorldInfo.TimeSeconds;
-                ClassicPlayerController(Owner).ServerItemDropGet(NewItems[0].Item);
+                ClassicPlayerOwner.ServerItemDropGet(NewItems[0].Item);
             }
         }
     }
