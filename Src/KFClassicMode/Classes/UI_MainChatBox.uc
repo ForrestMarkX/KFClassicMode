@@ -15,7 +15,7 @@ function InitMenu()
 
 function CheckForLobbyClose()
 {
-    if( PC.LobbyMenu == None || PC.LobbyMenu.bClosed )
+    if( PC.LobbyMenu == None )
     {
         if( !ChatBoxText.bVisible )
         {

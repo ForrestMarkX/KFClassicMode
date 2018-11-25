@@ -92,7 +92,7 @@ var Color DefaultHudMainColor, DefaultHudOutlineColor, DefaultFontColor;
 var Texture HealthIcon, ArmorIcon, WeightIcon, GrenadesIcon, DoshIcon, ClipsIcon, BulletsIcon, BurstBulletIcon, AutoTargetIcon, ProgressBarTex, DoorWelderBG;
 var Texture WaveCircle, BioCircle;
 var Texture ArrowIcon, FlameIcon, FlameTankIcon, FlashlightIcon, FlashlightOffIcon, RocketIcon, BoltIcon, M79Icon, PipebombIcon, SingleBulletIcon, SyringIcon, SawbladeIcon, DoorWelderIcon;
-var Texture TraderBox, TraderArrow;
+var Texture TraderBox, TraderArrow, TraderArrowLight;
 var Texture VoiceChatIcon;
 
 var    bool bDisplayInventory;
@@ -384,6 +384,8 @@ function PostRender()
 
 function LaunchHUDMenus()
 {
+    ClassicPlayerOwner.OpenLobbyMenu();
+    
     ChatBox = UI_MainChatBox(GUIController.InitializeHUDWidget(ChatBoxClass));
     ChatBox.SetVisible(false);
     
@@ -663,16 +665,13 @@ function RenderKFHUD(KFPawn_Human KFPH)
     local Color HealthFontColor;
     local HUDBoxRenderInfo HBRI;
     
-    if( KFPlayerOwner.bCinematicMode )
+    if( KFPlayerOwner.bCinematicMode || ClassicPlayerOwner.LobbyMenu != None )
         return;
         
-    if( !WorldInfo.GRI.bMatchHasBegun && ClassicPlayerOwner.LobbyMenu.bViewMapClicked )
+    if( !WorldInfo.GRI.bMatchHasBegun )
     {
         DrawDeployTime(WorldInfo.GRI.RemainingTime);
     }
-        
-    if( ClassicPlayerOwner.LobbyMenu != None )
-        return;
     
     FRI.bClipText = true;
     FRI.bEnableShadow = true;
@@ -716,16 +715,34 @@ function RenderKFHUD(KFPawn_Human KFPH)
         YPos = SubCircleText != "" ? DrawCircleSize/2 - (YL / 1.5) : DrawCircleSize/2 - YL / 2;
         
         Canvas.DrawColor = FontColor;
-        Canvas.SetPos(XPos, YPos);
-        Canvas.DrawText(CircleText, , FontScalar, FontScalar, FRI);
+        if( bLightHUD )
+        {
+            GUIStyle.DrawTextOutline(CircleText, XPos, YPos, 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
+        }
+        else
+        {
+            Canvas.SetPos(XPos, YPos);
+            Canvas.DrawText(CircleText, , FontScalar, FontScalar, FRI);
+        }
         
         if( SubCircleText != "" )
         {
             FontScalar = OriginalFontScalar;
             
             Canvas.TextSize(SubCircleText, XL, YL, FontScalar, FontScalar);
-            Canvas.SetPos(Canvas.ClipX - DrawCircleSize/2 - (XL / 2), DrawCircleSize/2 + (YL / 2.5));
-            Canvas.DrawText(SubCircleText, , FontScalar, FontScalar, FRI);
+            
+            XPos = Canvas.ClipX - DrawCircleSize/2 - (XL / 2);
+            YPos = DrawCircleSize/2 + (YL / 2.5);
+            
+            if( bLightHUD )
+            {
+                GUIStyle.DrawTextOutline(SubCircleText, XPos, YPos, 1, MakeColor(0, 0, 0, FontColor.A), FontScalar, FRI);
+            }
+            else
+            {
+                Canvas.SetPos(XPos, YPos);
+                Canvas.DrawText(SubCircleText, , FontScalar, FontScalar, FRI);
+            }
         }
     }
     
@@ -740,6 +757,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
     HBRI.IconScale = scale_w2;
     HBRI.Justification = HUDA_Right;
     HBRI.TextColor = FontColor;
+    HBRI.bUseOutline = bLightHUD;
     
     if( !bHidePlayerInfo )
     {
@@ -1123,6 +1141,7 @@ function DrawInventory()
         HBRI.JustificationPadding = 24;
         HBRI.TextColor = FontColor;
         HBRI.Alpha = FadeAlpha;
+        HBRI.bUseOutline = bLightHUD;
 
         DrawHUDBox(TempX, TempY, TempWidth, TempHeight * 0.25, GetWeaponCatagoryName(i), CatagoryFontScalar, HBRI);
         
@@ -1368,6 +1387,7 @@ function DrawNonCritialMessage( int Index, FCritialMessage Message, float X, flo
     HBRI.StringArray = SArray;
     HBRI.TextColor = FontColor;
     HBRI.Alpha = FadeAlpha;
+    HBRI.bUseOutline = bLightHUD;
     
     DrawHUDBox(BoxXS, BoxYS, XL, YL, Message.Text, FontScalar, HBRI);
 }
@@ -2173,13 +2193,15 @@ function DrawTraderIndicator()
     local float XS,YS,ArrowScale,FontScalar;
     local Canvas.FontRenderInfo FI;
     local KFGameReplicationInfo MyKFGRI;
+    local Texture TraderIndicatorArrow;
     
     MyKFGRI = KFGameReplicationInfo(WorldInfo.GRI);
     if( MyKFGRI == None || (MyKFGRI.OpenedTrader == None && MyKFGRI.NextTrader == None) )
         return;
     
     FI.bClipText = true;
-    
+    TraderIndicatorArrow = bLightHUD ? TraderArrowLight : TraderArrow;
+
     Canvas.Font = GUIStyle.PickFont(FontScalar);
     
     ArrowScale = Canvas.ClipY/33.f;
@@ -2198,7 +2220,7 @@ function DrawTraderIndicator()
             if( V.X>0 && V.Y>0 && V.X<Canvas.ClipX && V.Y<Canvas.ClipY ) // Within screen bounds.
             {
                 Canvas.SetPos(V.X-(ArrowScale*0.5),V.Y-ArrowScale);
-                Canvas.DrawRect(ArrowScale, ArrowScale, TraderArrow);
+                Canvas.DrawRect(ArrowScale, ArrowScale, TraderIndicatorArrow);
                 
                 S = class'KFGFxHUD_TraderCompass'.default.TraderString;
                 Canvas.TextSize(S,XS,YS,FontScalar,FontScalar);
@@ -2230,7 +2252,7 @@ function DrawTraderIndicator()
         
         // Draw arrow.
         Canvas.SetPos(V.X,V.Y);
-        Canvas.DrawRotatedTile(TraderArrow,R,ArrowScale,ArrowScale,0,0,TraderArrow.GetSurfaceWidth(),TraderArrow.GetSurfaceHeight());
+        Canvas.DrawRotatedTile(TraderIndicatorArrow,R,ArrowScale,ArrowScale,0,0,TraderIndicatorArrow.GetSurfaceWidth(),TraderIndicatorArrow.GetSurfaceHeight());
     }
 }
 
@@ -2669,7 +2691,8 @@ defaultproperties
     DefaultHudOutlineColor=(R=200,B=15,G=15,A=195)
     DefaultFontColor=(R=255,B=50,G=50,A=255)
     
-    TraderArrow=Texture2D'UI_Objective_Tex.UI_Obj_World_Loc'
+    TraderArrow=Texture2D'UI_LevelChevrons_TEX.UI_LevelChevron_Icon_03'
+    TraderArrowLight=Texture2D'UI_Objective_Tex.UI_Obj_World_Loc'
     VoiceChatIcon=Texture2D'UI_HUD.voip_icon'
     
     InventoryFadeTime=1.25

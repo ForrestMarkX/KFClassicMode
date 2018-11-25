@@ -101,6 +101,7 @@ defaultproperties
     
     Begin Object Name=SpecialMoveHandler_0
         SpecialMoveClasses(SM_MeleeAttack)=class'ClassicSM_MeleeAttack'
+        SpecialMoveClasses(SM_StandAndShootAttack)=class'ClassicSM_Patriarch_MissileAttack'
         SpecialMoveClasses(SM_Stumble)=None
         SpecialMoveClasses(SM_Evade)=None
         SpecialMoveClasses(SM_Evade_Fear)=None

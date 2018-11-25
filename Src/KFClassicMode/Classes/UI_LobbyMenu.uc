@@ -21,7 +21,7 @@ var ClassicPlayerController PC;
 var KFPlayerReplicationInfo KFPRI;
 
 var transient int NumButtons, FinalCountTime, OldLobbyTimeout, OldPRILength;
-var transient bool bOldReady, bFinalCountdown, bMOTDReceived, bSetGRIInfo, bViewMapClicked, bClosed;
+var transient bool bOldReady, bFinalCountdown, bMOTDReceived, bSetGRIInfo, bViewMapClicked;
 
 var string WaitingForServerStatus;
 var string WaitingForOtherPlayers;
@@ -275,14 +275,11 @@ function ShowMenu()
     SetTimer(0.01,true);
     
     bViewMapClicked = false;
-    bClosed = false;
     PC.LobbyMenu = self;
     PC.ClientGotoState( 'PlayerWaiting' );
     
     KFPRIArray.Length = 0;
     OldPRILength = 0;
-    
-    //CheckForCustomizationPawn();
     
     HUD = KFHUDInterface(PC.myHUD);
     if( HUD != None )
@@ -295,15 +292,7 @@ function ShowMenu()
 function CloseMenu()
 {
     Super.CloseMenu();
-    bClosed = true;
-}
-
-function CheckForCustomizationPawn()
-{
-    if( PC.Pawn == None || (!PC.Pawn.IsAliveAndWell() && KFPawn_Customization(PC.Pawn) == None) )
-    {
-        PC.SpawnMidGameCustomizationPawn();
-    }    
+    PC.LobbyMenu = None;
 }
 
 function ButtonClicked( KFGUI_Button Sender )

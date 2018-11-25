@@ -18,6 +18,7 @@ defaultproperties
     AfflictionHandler=Afflictions_0
     
     Begin Object Name=SpecialMoveHandler_0
+        SpecialMoveClasses(SM_SonicAttack)=class'ClassicSM_Siren_Scream'
         SpecialMoveClasses(SM_Stumble)=None
         SpecialMoveClasses(SM_Evade)=None
         SpecialMoveClasses(SM_Evade_Fear)=None

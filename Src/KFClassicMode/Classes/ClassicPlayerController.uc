@@ -27,6 +27,7 @@ var globalconfig array<SChatColorInfo> ColorTags;
 
 var transient KF2GUIController GUIController;
 var transient UIP_PerkSelection PerkSelectionBox;
+var transient KFHUDInterface HUDInterface;
 
 var config int SelectedEmoteIndex, ConfigVer;
 var globalconfig string ControllerType;
@@ -216,14 +217,19 @@ simulated function PostBeginPlay()
         }
         
         SaveConfig();
-    
-        if( LobbyMenu == None )
-        {
-            SetTimer(0.05f, true, 'OpenLobbyMenu');
-        }
     }
         
-    SetTimer(1, false, 'ApplyClassicValues');
+    if( WorldInfo.NetMode==NM_Client )
+        OldDrawCrosshair = KFHudBase(myHUD).bDrawCrosshair;
+        
+    UpdateSeasonalState();
+    bSkipNonCriticalForceLookAt = true;
+}
+
+reliable client function ClientSetHUD(class<HUD> newHUDType)
+{
+    Super.ClientSetHUD(newHUDType);
+    HUDInterface = KFHUDInterface(myHUD);
 }
 
 simulated event name GetSeasonalStateName()
@@ -252,35 +258,15 @@ simulated event name GetSeasonalStateName()
     return 'No_Event';
 }
 
-simulated function OpenLobbyMenu()
+function OpenLobbyMenu()
 {
-    if( WorldInfo.NetMode==NM_DedicatedServer )
-        return;
-        
-    if( KFHUDInterface(myHUD) == None || KFHUDInterface(myHUD).GUIController == None )
+    if( HUDInterface == None || HUDInterface.GUIController == None )
         return;
         
     if( !PlayerReplicationInfo.bOnlySpectator )
     {
-        GUIController = KFHUDInterface(myHUD).GUIController;
+        GUIController = HUDInterface.GUIController;
         GUIController.OpenMenu(LobbyMenuClass);
-    }
-    
-    SetTimer(0.1, true, 'CheckForLobbyMenuClose');
-    ClearTimer('OpenLobbyMenu');
-}
-
-simulated function CheckForLobbyMenuClose()
-{
-    if( WorldInfo.GRI.bMatchHasBegun && KFPlayerReplicationInfo(PlayerReplicationInfo).bHasSpawnedIn )
-    {
-        if( LobbyMenu != None )
-        {
-            LobbyMenu.DoClose();
-            LobbyMenu = None;
-            
-            ClearTimer('CheckForLobbyMenuClose');
-        }
     }
 }
 
@@ -290,39 +276,29 @@ reliable client function ClientSetCountdown(bool bFinalCountdown, byte Countdown
     
     if( LobbyMenu != None )
     {
-        if( bFinalCountdown )
-        {
-            LobbyMenu.SetFinalCountdown(true, CountdownTime);
-        }
-        else
-        {
-            LobbyMenu.SetFinalCountdown(false, CountdownTime);
-        }
+        LobbyMenu.SetFinalCountdown(bFinalCountdown, CountdownTime);
     }
 }
 
 function OpenChatBox()
 {
-    local KFHUDInterface HUD;
-    
     if( LobbyMenu != None && !LobbyMenu.bViewMapClicked )
         return;
     
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None && HUD.ChatBox != None )
+    if( HUDInterface != None && HUDInterface.ChatBox != None )
     {
         IgnoreLookInput(true);
         
-        HUD.ChatBox.SetVisible(true);
-        HUD.ChatBox.CurrentTextChatChannel = CurrentTextChatChannel;
+        HUDInterface.ChatBox.SetVisible(true);
+        HUDInterface.ChatBox.CurrentTextChatChannel = CurrentTextChatChannel;
         
         switch(CurrentTextChatChannel)
         {
             case ETCC_ALL:
-                HUD.ChatBox.WindowTitle = "Chat Box - All";
+                HUDInterface.ChatBox.WindowTitle = "Chat Box - All";
                 break;
             case ETCC_TEAM:
-                HUD.ChatBox.WindowTitle = "Chat Box - Team";
+                HUDInterface.ChatBox.WindowTitle = "Chat Box - Team";
                 break;
         }
     }
@@ -330,13 +306,10 @@ function OpenChatBox()
 
 function CloseChatBox()
 {
-    local KFHUDInterface HUD;
-    
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None && HUD.ChatBox != None )
+    if( HUDInterface != None && HUDInterface.ChatBox != None )
     {
         IgnoreLookInput(false);
-        HUD.ChatBox.SetVisible(false);
+        HUDInterface.ChatBox.SetVisible(false);
     }
 }
 
@@ -348,12 +321,12 @@ function OpenTraderMenu( optional bool bForce=false )
 
     if( Role == ROLE_Authority && Pawn != none )
     {
-           KFIM = KFInventoryManager(Pawn.InvManager);
-           if( KFIM != none && !KFIM.bServerTraderMenuOpen )
-           {
-             KFIM.bServerTraderMenuOpen = true;
-             ClientOpenTraderMenu(bForce);
-         }
+        KFIM = KFInventoryManager(Pawn.InvManager);
+        if( KFIM != none && !KFIM.bServerTraderMenuOpen )
+        {
+            KFIM.bServerTraderMenuOpen = true;
+            ClientOpenTraderMenu(bForce);
+        }
     }
 }
 
@@ -376,36 +349,27 @@ function CloseTraderMenu()
 
 reliable client function ClientSetCameraMode( name NewCamMode )
 {
-    local KFHUDInterface HUD;
-    
     Super.ClientSetCameraMode(NewCamMode);
     
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None && HUD.SpectatorInfo != None )
+    if( HUDInterface != None && HUDInterface.SpectatorInfo != None )
     {
         if( NewCamMode == 'FirstPerson' && ViewTarget == self )
         {
-            HUD.SpectatorInfo.SetSpectatedPRI(None);
+            HUDInterface.SpectatorInfo.SetSpectatedPRI(None);
         }
     }
 }
 
 function NotifyChangeSpectateViewTarget()
 {
-    local KFHUDInterface HUD;
     local KFPlayerReplicationInfo KFPRI;
     local KFPawn KFP;
 
-    if( WorldInfo.GRI == none || WorldInfo.GRI.ElapsedTime < 2.f )
+    if( WorldInfo.GRI == none || WorldInfo.GRI.ElapsedTime < 2.f || ViewTarget == LocalCustomizationPawn )
     {
         return;
     }
-
-    if( ViewTarget == LocalCustomizationPawn )
-    {
-        return;
-    }
-
+    
     if( LocalCustomizationPawn != none && !LocalCustomizationPawn.bPendingDelete )
     {
         if( MyGFxManager != none && MyGFxManager.CurrentMenu != none && MyGFxManager.CurrentMenu == MyGFxManager.GearMenu )
@@ -415,8 +379,7 @@ function NotifyChangeSpectateViewTarget()
         LocalCustomizationPawn.Destroy();
     }
     
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None && HUD.SpectatorInfo != None )
+    if( HUDInterface != None && HUDInterface.SpectatorInfo != None )
     {
         KFP = KFPawn( ViewTarget );
         if( KFP != none )
@@ -442,7 +405,7 @@ function NotifyChangeSpectateViewTarget()
 
         if( KFPRI != None)
         {
-            HUD.SpectatorInfo.SetSpectatedPRI(KFPRI);
+            HUDInterface.SpectatorInfo.SetSpectatedPRI(KFPRI);
         }
     }
 }
@@ -455,8 +418,6 @@ function Restart(bool bVehicleTransition)
 
 reliable client function ClientRestart(Pawn NewPawn)
 {
-    local KFHUDInterface HUD;
-    
     Super.ClientRestart(NewPawn);
     
     if(MyGFxHUD != None && MyGFxHUD.SpectatorInfoWidget != None)
@@ -469,26 +430,15 @@ reliable client function ClientRestart(Pawn NewPawn)
         LobbyMenu.DoClose();
     }
     
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None && HUD.SpectatorInfo != None )
+    if( HUDInterface != None && HUDInterface.SpectatorInfo != None )
     {
-        HUD.SpectatorInfo.SetVisibility(PlayerReplicationInfo.bOnlySpectator);
+        HUDInterface.SpectatorInfo.SetVisibility(PlayerReplicationInfo.bOnlySpectator);
     }
-}
-
-simulated function ApplyClassicValues()
-{
-    if( WorldInfo.NetMode==NM_Client )
-        OldDrawCrosshair = KFHudBase(myHUD).bDrawCrosshair;
-        
-    UpdateSeasonalState();
-    bSkipNonCriticalForceLookAt = true;
 }
 
 exec function StartFire( optional byte FireModeNum )
 {
     local KFInventoryManager KFIM;
-    local KFHUDInterface HUD;
 
     if( bCinematicMode )
     {
@@ -497,8 +447,7 @@ exec function StartFire( optional byte FireModeNum )
 
     if (!KFPlayerInput(PlayerInput).bQuickWeaponSelect)
     {
-        HUD = KFHUDInterface(myHUD);
-        if( HUD != None && HUD.bDisplayInventory )
+        if( HUDInterface != None && HUDInterface.bDisplayInventory )
         {
             KFIM = KFInventoryManager( Pawn.InvManager );
             KFIM.SetCurrentWeapon( KFIM.PendingWeapon );
@@ -533,16 +482,14 @@ function StartSpectate( optional Name SpectateType )
 
 function ForceSpectatorInput()
 {
-    local KFHUDInterface HUD;
     local KFGFxMoviePlayer_HUD GFXHUD;
     
     IgnoreMoveInput(false);
     IgnoreLookInput(false);
     
-    HUD = KFHUDInterface(myHUD);
-    if( HUD != None )
+    if( HUDInterface != None )
     {
-        GFXHUD = HUD.HudMovie;
+        GFXHUD = HUDInterface.HudMovie;
         if( GFXHUD != None )
         {
             GFXHUD.SetMovieCanReceiveFocus(false);
@@ -693,8 +640,8 @@ reliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool b
     if( bHideKillMsg || (bGlobal && KillerPRI==None) )
         return;
         
-    if( KFHUDInterface(myHUD)!=None && Victim!=None )
-        KFHUDInterface(myHUD).AddKillMessage(Victim,1,KillerPRI,byte(bGlobal));
+    if( HUDInterface!=None && Victim!=None )
+        HUDInterface.AddKillMessage(Victim,1,KillerPRI,byte(bGlobal));
 }
 
 function SetSavedPerkIndex( byte NewSavedPerkIndex )
@@ -787,8 +734,6 @@ Delegate OnSpectateChange( ClassicPlayerController PC, bool bSpectator );
 
 reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
-    local KFHUDInterface HUD;
-    local KFPlayerInput KFInput;
     local string MessageStr, KeyName, FinalString;
     local string LeftBracket, RightBracket;
     local array<String> StringArray;
@@ -825,27 +770,21 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
     }
     else if( class<KFLocalMessage_Game>(Message) != None )
     {
-        HUD = KFHUDInterface(myHUD);
-        if( HUD != None )
+        if( HUDInterface != None )
         {
-            HUD.ShowNonCriticalMessage(class'ClassicLocalMessage_Game'.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject));
+            HUDInterface.ShowNonCriticalMessage(class'ClassicLocalMessage_Game'.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject));
             return;
         }
     }
     else if( class<KFLocalMessage_Interaction>(Message) != None )
     {
-        HUD = KFHUDInterface(myHUD);
-        if( HUD != None )
+        if( HUDInterface != None )
         {
-            KFInput = KFPlayerInput(PlayerInput);
-            if( KFInput == None )
-                return;
-                
             MessageStr = Message.static.GetString(Switch, false, RelatedPRI_1, RelatedPRI_2, OptionalObject);
             if( Len(MessageStr) == 0 )
                 return;
                 
-            if( KFInput.bUsingGamepad )
+            if( PlayerInput.bUsingGamepad )
             {
                 KeyName = "<Icon>"$ControllerType$"."$class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch)$"_Asset</Icon>";
             }
@@ -874,7 +813,7 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
                 FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket $ "\n" $ StringArray[0];
             }
             
-            HUD.ShowNonCriticalMessage(FinalString, "\n");
+            HUDInterface.ShowNonCriticalMessage(FinalString, "\n");
             return;
         }
     }
@@ -928,13 +867,13 @@ simulated reliable client event bool ShowConnectionProgressPopup( EProgressMessa
     {
     case    PMT_ConnectionFailure :
     case    PMT_PeerConnectionFailure :
-        KFHUDInterface(myHUD).NotifyLevelChange();
-        KFHUDInterface(myHUD).ShowProgressMsg("Connection Error: "$ProgressTitle$"|"$ProgressDescription$"|Disconnecting...",true);
+        HUDInterface.NotifyLevelChange();
+        HUDInterface.ShowProgressMsg("Connection Error: "$ProgressTitle$"|"$ProgressDescription$"|Disconnecting...",true);
         return true;
     case    PMT_DownloadProgress :
-        KFHUDInterface(myHUD).NotifyLevelChange();
+        HUDInterface.NotifyLevelChange();
     case    PMT_AdminMessage :
-        KFHUDInterface(myHUD).ShowProgressMsg(ProgressTitle$"|"$ProgressDescription);
+        HUDInterface.ShowProgressMsg(ProgressTitle$"|"$ProgressDescription);
         return true;
     }
     return false;
@@ -1064,8 +1003,8 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
 
 simulated function CancelConnection()
 {
-    if( KFHUDInterface(myHUD)!=None )
-        KFHUDInterface(myHUD).CancelConnection();
+    if( HUDInterface!=None )
+        HUDInterface.CancelConnection();
     else class'Engine'.Static.GetEngine().GameViewport.ConsoleCommand("Disconnect");
 }
 
