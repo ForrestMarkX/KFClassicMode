@@ -245,7 +245,7 @@ function ClientCastVote( xVotingReplication V, int GameIndex, int MapIndex, bool
         SwitchToLevel(GameIndex,MapIndex,true);
         return;
     }
-    if( !Class'xUI_MapVote'.Static.BelongsToPrefix(Maps[MapIndex].MapName,GameModes[GameIndex].Prefix) )
+    if( !Class'UIP_MapVote'.Static.BelongsToPrefix(Maps[MapIndex].MapName,GameModes[GameIndex].Prefix) )
     {
         V.PlayerOwner.ClientMessage("Error: Can't vote that map (wrong Prefix to that game mode)!");
         return;
@@ -321,7 +321,7 @@ final function TallyVotes( optional bool bForce )
             
             // Pick a random gametype to win along with it.
             for( i=(GameModes.Length-1); i>=0; --i )
-                if( Class'xUI_MapVote'.Static.BelongsToPrefix(Maps[c].MapName,GameModes[i].Prefix) )
+                if( Class'UIP_MapVote'.Static.BelongsToPrefix(Maps[c].MapName,GameModes[i].Prefix) )
                     Candidates.AddItem(i);
             
             if( Candidates.Length==0 ) // Odd, a map without gametype...

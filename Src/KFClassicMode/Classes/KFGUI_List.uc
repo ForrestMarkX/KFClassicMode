@@ -2,7 +2,7 @@
 Class KFGUI_List extends KFGUI_MultiComponent;
 
 var() bool bDrawBackground, bHideScrollbar, bUseFocusSound;
-var() protected int ListCount;
+var() protectedwrite int ListCount;
 var() int ListItemsPerPage;
 var() color BackgroundColor;
 var KFGUI_ScrollBarV ScrollBar;

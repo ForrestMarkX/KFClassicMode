@@ -1,87 +1,39 @@
 class KFScoreBoard extends KFGUI_Page;
 
-const BORDERTHICKNESS = 2;
-
 var transient float PerkXPos, PlayerXPos, StateXPos, TimeXPos, HealXPos, KillsXPos, AssistXPos, CashXPos, DeathXPos, PingXPos;
+var transient float NextScoreboardRefresh;
 
 var int PlayerIndex;
-var KFPlayerReplicationInfo RightClickPlayer;
-var editinline export KFGUI_RightClickMenu PlayerContext;
 var KFGUI_List PlayersList;
-var transient int InitAdminSize;
 var Texture2D DefaultAvatar;
 
 var KFGameReplicationInfo KFGRI;
 var array<KFPlayerReplicationInfo> KFPRIArray;
 
-var KFGUI_Tooltip ToolTipItem;
+var KFPlayerController OwnerPC;
 
-var transient bool bHasSelectedPlayer,bMeAdmin;
-
-struct FAdminCmdType
-{
-    var string Cmd,Info;
-};
-var array<FAdminCmdType> AdminCommands;
+var Color PingColor;
+var int IdealPing,MaxPing,PingBars;
 
 function InitMenu()
 {
     Super.InitMenu();
     PlayersList = KFGUI_List(FindComponentID('PlayerList'));
+    OwnerPC = KFPlayerController(GetPlayer());
 }
 
-function ShowMenu()
-{
-    local KFPlayerController PC;
-    local int i;
-    local bool bAdmin;
-
-    PC = KFPlayerController(GetPlayer());
-    PC.IgnoreLookInput(true);
-    
-    Owner.bAbsorbInput = false;
-    
-    bAdmin = PC!=None && (PC.WorldInfo.NetMode!=NM_Client || (PC.PlayerReplicationInfo!=None && PC.PlayerReplicationInfo.bAdmin));
-    if( PC!=None && (InitAdminSize!=AdminCommands.Length || !bAdmin) )
-    {
-        InitAdminSize = (bAdmin ? AdminCommands.Length : 0);
-        PlayerContext.ItemRows.Length = 4+InitAdminSize;
-        for( i=0; i<InitAdminSize; ++i )
-            PlayerContext.ItemRows[4+i].Text = AdminCommands[i].Info;
-    } 
-}
-
-function CheckAvatar(KFPlayerReplicationInfo KFPRI)
+static function CheckAvatar(KFPlayerReplicationInfo KFPRI, KFPlayerController PC)
 {
     local Texture2D Avatar;
     
-    if( KFPRI.Avatar == None || KFPRI.Avatar == DefaultAvatar )
+    if( KFPRI.Avatar == None || KFPRI.Avatar == default.DefaultAvatar )
     {
-        Avatar = FindAvatar(KFPRI.UniqueId);
+        Avatar = FindAvatar(PC, KFPRI.UniqueId);
         if( Avatar == None )
-            Avatar = DefaultAvatar;
+            Avatar = default.DefaultAvatar;
             
         KFPRI.Avatar = Avatar;
     }
-}
-
-function CloseMenu()
-{
-    Owner.bAbsorbInput = true;
-    GetPlayer().IgnoreLookInput(false);
-    
-    Owner.bNoInputReset = true;
-    SetTimer(0.1, false, 'ResetInputVar');
-    
-    KFGRI = None;
-    KFPRIArray.Length = 0;
-    RightClickPlayer = None;
-    bHasSelectedPlayer = false;
-}
-
-function ResetInputVar()
-{
-    Owner.bNoInputReset = false;
 }
 
 delegate bool InOrder( KFPlayerReplicationInfo P1, KFPlayerReplicationInfo P2 )
@@ -102,34 +54,6 @@ delegate bool InOrder( KFPlayerReplicationInfo P1, KFPlayerReplicationInfo P2 )
         
     return P1.Kills < P2.Kills;
 }
-        
-function String FormatTime( int Seconds )
-{
-    local int Minutes, Hours;
-    local String Time;
-
-    if( Seconds > 3600 )
-    {
-        Hours = Seconds / 3600;
-        Seconds -= Hours * 3600;
-
-        Time = Hours$":";
-    }
-    Minutes = Seconds / 60;
-    Seconds -= Minutes * 60;
-
-    if( Minutes >= 10 )
-        Time = Time $ Minutes $ ":";
-    else
-        Time = Time $ "0" $ Minutes $ ":";
-
-    if( Seconds >= 10 )
-        Time = Time $ Seconds;
-    else
-        Time = Time $ "0" $ Seconds;
-
-    return Time;
-}    
 
 function DrawMenu()
 {
@@ -137,8 +61,8 @@ function DrawMenu()
     local PlayerController PC;
     local KFPlayerReplicationInfo KFPRI;
     local PlayerReplicationInfo PRI;
-    local float XPos, YPos, YL, FontScalar, XPosCenter, DefFontHeight;
-    local int i, j, NumSpec, NumPlayer, NumAlivePlayer, Width, NextScoreboardRefresh;
+    local float XPos, YPos, YL, XL, FontScalar, XPosCenter, DefFontHeight, BoxW;
+    local int i, j, NumSpec, NumPlayer, NumAlivePlayer, Width;
 
     PC = GetPlayer();
     if( KFGRI==None )
@@ -147,8 +71,7 @@ function DrawMenu()
         if( KFGRI==None )
             return;
     }
-    bMeAdmin = PC!=None && (PC.WorldInfo.NetMode!=NM_Client || (PC.PlayerReplicationInfo!=None && PC.PlayerReplicationInfo.bAdmin));
-
+    
     // Sort player list.
     if( NextScoreboardRefresh < PC.WorldInfo.TimeSeconds )
     {
@@ -205,7 +128,9 @@ function DrawMenu()
     DefFontHeight = YL;
 
     XPosCenter = (Canvas.ClipX * 0.5);
-    Canvas.DrawColor = MakeColor (255, 0, 0, 255);
+    
+    if( !Owner.HUDOwner.bModernScoreboard )
+        Canvas.SetDrawColor(255, 0, 0, 255);
     
     // Server Name
     
@@ -213,6 +138,16 @@ function DrawMenu()
     YPos += DefFontHeight;
     
     S = KFGRI.ServerName;
+    if( Owner.HUDOwner.bModernScoreboard )
+    {
+        Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
+        
+        BoxW = XL + (Owner.HUDOwner.ScaledBorderSize*4);
+        Canvas.SetDrawColor(10, 10, 10, 200);
+        Owner.CurrentStyle.DrawRectBox(XPos - (BoxW * 0.5), YPos, BoxW, YL, 4);
+        Canvas.SetDrawColor(250, 0, 0, 255);
+    }
+    
     Owner.CurrentStyle.DrawCenteredText(S, XPos, YPos, FontScalar,, true);
 
     // Deficulty | Wave | MapName
@@ -221,22 +156,48 @@ function DrawMenu()
     YPos += DefFontHeight;
 
     S = " " $Class'KFCommon_LocalizedStrings'.Static.GetDifficultyString (KFGRI.GameDifficulty) $"  |  "$class'KFGFxHUD_ScoreboardMapInfoContainer'.default.WaveString@KFGRI.WaveNum $"  |  " $class'KFCommon_LocalizedStrings'.static.GetFriendlyMapName(PC.WorldInfo.GetMapName(true));
+    if( Owner.HUDOwner.bModernScoreboard )
+    {
+        Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
+        
+        BoxW = XL + (Owner.HUDOwner.ScaledBorderSize*4);
+        Canvas.SetDrawColor(10, 10, 10, 200);
+        Owner.CurrentStyle.DrawRectBox(XPos - (BoxW * 0.5), YPos, BoxW, YL, 4);
+        Canvas.SetDrawColor(0, 250, 0, 255);
+    }
+    
     Owner.CurrentStyle.DrawCenteredText(S, XPos, YPos, FontScalar,, true);
     
-    // Time Elapsed
+    // Players | Spectators | Alive | Time
 
     XPos = XPosCenter;
     YPos += DefFontHeight;
     
-    S = "Elapsed Time: "$FormatTime(KFGRI.ElapsedTime);
+    S = " Players : " $ NumPlayer $ "  |  Spectators : " $ NumSpec $ "  |  Alive : " $ NumAlivePlayer $ "  |  Elapsed Time : " $ Owner.CurrentStyle.GetTimeString(KFGRI.ElapsedTime) $ " ";
+    if( Owner.HUDOwner.bModernScoreboard )
+    {
+        Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
+        
+        BoxW = XL + (Owner.HUDOwner.ScaledBorderSize*4);
+        Canvas.SetDrawColor(10, 10, 10, 200);
+        Owner.CurrentStyle.DrawRectBox(XPos - (BoxW * 0.5), YPos, BoxW, YL, 4);
+        Canvas.SetDrawColor(250, 250, 0, 255);
+    }
+    
     Owner.CurrentStyle.DrawCenteredText(S, XPos, YPos, FontScalar,, true);
     
     Width = Canvas.ClipX * 0.625;
 
     XPos = (Canvas.ClipX - Width) * 0.5;
     YPos += DefFontHeight * 2.0;
+    
+    if( Owner.HUDOwner.bModernScoreboard )
+    {
+        Canvas.SetDrawColor (10, 10, 10, 200);
+        Owner.CurrentStyle.DrawRectBox(XPos, YPos, Width, DefFontHeight, 4);
+    }
 
-    Canvas.DrawColor = MakeColor (250, 250, 250, 255);
+    Canvas.SetDrawColor(250, 250, 250, 255);
 
     // Calc X offsets
     PerkXPos = Width * 0.01;
@@ -268,7 +229,7 @@ function DrawMenu()
 
     Canvas.SetPos (XPos + PingXPos, YPos);
     Canvas.DrawText (class'KFGFxHUD_ScoreboardWidget'.default.PingString, , FontScalar, FontScalar);
-    
+
     PlayersList.XPosition = ((Canvas.ClipX - Width) * 0.5) / InputPos[2];
     PlayersList.YPosition = (YPos + (YL + 4)) / InputPos[3];
     PlayersList.YSize = (1.f - PlayersList.YPosition) - 0.15;
@@ -281,7 +242,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     local string S, StrValue;
     local float FontScalar, TextYOffset, XL, YL;
     local KFPlayerReplicationInfo KFPRI;
-    local Texture PerkIcon, PerkStarIcon;
+    local Texture2D PerkIcon, PerkStarIcon;
     local byte PerkLevel;
     local bool bIsZED;
     local int Ping;
@@ -289,39 +250,23 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     YOffset *= 1.05;
     KFPRI = KFPRIArray[Index];
     
-    CheckAvatar(KFPRI);
-    
     if( KFGRI.bVersusGame )
         bIsZED = KFTeamInfo_Zeds(KFPRI.Team) != None;
-        
-    bFocus = bFocus || (bHasSelectedPlayer && RightClickPlayer==KFPRI);
     
     C.Font = Owner.CurrentStyle.PickFont(FontScalar);
     
-    if (PlayerIndex == Index)
+    TextYOffset = YOffset + (Height / 2) - (Owner.CurrentStyle.DefaultHeight / 2);
+    if( Owner.HUDOwner.bModernScoreboard )
     {
-        if( bFocus )
-            C.SetDrawColor(0, 83, 255, 150);
-        else C.SetDrawColor (51, 30, 101, 150);
-    }
-    else 
-    {
-        if( bFocus )
-            C.SetDrawColor(0, 83, 255, 150);
+        if (PlayerIndex == Index)
+            C.SetDrawColor (51, 30, 101, 150);
         else C.SetDrawColor (30, 30, 30, 150);
+        
+        Owner.CurrentStyle.DrawRectBox(0.f, YOffset, Width, Height, 4);
     }
-    C.SetPos(0.f,YOffset);
-    Owner.CurrentStyle.DrawWhiteBox(Width,Height);
-    
-    if( KFGRI.bVersusGame )
-        C.DrawColor = KFPRI.GetTeamNum() == 0 ? MakeColor(200, 0, 0, 200) : MakeColor(0, 71, 200, 200);
-    else C.DrawColor = MakeColor(120, 120, 0, 200);
-    Owner.CurrentStyle.DrawBoxHollow(0.f,YOffset,Width,Height,BORDERTHICKNESS);
+    else Owner.CurrentStyle.DrawOutlinedBox(0.f,YOffset,Width,Height,Owner.HUDOwner.ScaledBorderSize,PlayerIndex == Index ? MakeColor(51, 30, 101, 150) : MakeColor(30, 30, 30, 150),KFGRI.bVersusGame ? (KFPRI.GetTeamNum() == 0 ? MakeColor(200, 0, 0, 200) : MakeColor(0, 71, 200, 200)) : MakeColor(120, 120, 0, 200));
     
     C.SetDrawColor(250,250,250,255);
-    
-    C.TextSize("ABC", XL, YL, FontScalar, FontScalar);
-    TextYOffset = YOffset + (Height / 2) - (YL / 1.75f);
 
     // Perk
     if( bIsZED )
@@ -339,7 +284,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
         if( KFPRI.CurrentPerkClass!=None )
         {
             PerkLevel = class<ClassicPerk_Base>(KFPRI.CurrentPerkClass).static.PreDrawPerk(C, KFPRI.GetActivePerkLevel(), PerkIcon, PerkStarIcon);
-            DrawPerkWithStars(C,PerkXPos,YOffset+(BORDERTHICKNESS / 2),Height-(BORDERTHICKNESS * 2),PerkLevel,PerkIcon,PerkStarIcon);
+            DrawPerkWithStars(C,PerkXPos,YOffset+(Owner.HUDOwner.ScaledBorderSize * 2),Height-(Owner.HUDOwner.ScaledBorderSize * 4),PerkLevel,PerkIcon,PerkStarIcon);
         }
         else
         {
@@ -353,11 +298,16 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     // Avatar
     if( KFPRI.Avatar != None )
     {
+        if( KFPRI.Avatar == default.DefaultAvatar )
+            CheckAvatar(KFPRI, OwnerPC);
+            
         C.SetDrawColor(255,255,255,255);
         C.SetPos(PlayerXPos - (Height * 1.075), YOffset + (Height / 2) - ((Height - 6) / 2));
         C.DrawTile(KFPRI.Avatar,Height - 6,Height - 6,0,0,KFPRI.Avatar.SizeX,KFPRI.Avatar.SizeY);
         Owner.CurrentStyle.DrawBoxHollow(PlayerXPos - (Height * 1.075), YOffset + (Height / 2) - ((Height - 6) / 2), Height - 6, Height - 6, 1);
     } 
+    else if( !KFPRI.bBot )
+        CheckAvatar(KFPRI, OwnerPC);
 
     // Player
     C.SetPos (PlayerXPos, TextYOffset);
@@ -387,11 +337,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     else
     {
         C.SetDrawColor(250, 250, 100, 255);
-        StrValue = "£"$int(KFPRI.Score);
-        if(KFPRI.Score >= 1000)
-        {
-            StrValue = "£"@string(int(KFPRI.Score/1000.f))$"K" ;
-        }
+        StrValue = "£"$GetNiceSize(int(KFPRI.Score));
     }
     C.DrawText (StrValue, , FontScalar, FontScalar);
     
@@ -439,7 +385,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
         S = "-";
     else
     {
-        Ping = int(KFPRI.Ping * `PING_SCALE);
+        Ping = Clamp(int(KFPRI.Ping * `PING_SCALE), 1, MaxPing);
         
         if (Ping <= 100)
             C.SetDrawColor(0,250,0,255);
@@ -449,9 +395,55 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
         
         S = string(Ping);
     }
+        
+    if( Owner.HUDOwner.bModernScoreboard )
+    {
+        C.TextSize(MaxPing, XL, YL, FontScalar, FontScalar);
+        
+        C.SetPos(PingXPos, TextYOffset);
+        C.DrawText(S,, FontScalar, FontScalar);
+        
+        DrawPingBars(C, YOffset + (Height/2) - ((Height*0.5)/2), PingXPos+XL, Height*0.5, Height*0.5, Ping);
+    }
+    else
+    {
+        C.SetPos (PingXPos, TextYOffset);
+        C.DrawText (S, , FontScalar, FontScalar);
+    }
+}
 
-    C.SetPos (PingXPos, TextYOffset);
-    C.DrawText (S, , FontScalar, FontScalar);
+final function DrawPingBars( Canvas C, float YOffset, float XOffset, float W, float H, int Ping )
+{
+    local float PingMul, BarW, BarH, BaseH, XPos, YPos;
+    local byte i;
+    
+	PingMul = 1.f - FClamp(Max(Ping - IdealPing, 1) / MaxPing, 0.f, 1.f);
+	BarW = W / PingBars;
+	BaseH = H / PingBars;
+
+	PingColor.R = (1.f - PingMul) * 255;
+	PingColor.G = PingMul * 255;
+
+    for(i=1; i<PingBars+1; i++)
+    {
+		BarH = BaseH * i;
+        XPos = XOffset + ((i - 1) * BarW);
+        YPos = YOffset + (H - BarH);
+
+        C.SetPos(XPos,YPos);
+        C.SetDrawColor(20, 20, 20, 255);
+        Owner.CurrentStyle.DrawWhiteBox(BarW,BarH);
+
+		if( i == 1 || PingMul >= i / PingBars )
+        {
+            C.SetPos(XPos,YPos);
+            C.DrawColor = PingColor;
+            Owner.CurrentStyle.DrawWhiteBox(BarW,BarH);
+		}
+
+        C.SetDrawColor(80, 80, 80, 255);
+        Owner.CurrentStyle.DrawBoxHollow(XPos,YPos,BarW,BarH,1);
+	}
 }
 
 final function DrawPerkWithStars( Canvas C, float X, float Y, float Scale, int Stars, Texture PerkIcon, Texture StarIcon )
@@ -465,15 +457,13 @@ final function DrawPerkWithStars( Canvas C, float X, float Y, float Scale, int S
         return;
         
     Y+=Scale*0.9f;
-    X+=Scale*0.8f;
+    X+=(Scale*0.8f)+(Owner.HUDOwner.ScaledBorderSize*2);
     Scale*=0.2f;
     
     while( Stars>0 )
     {
         if( (X+Scale) >= PlayerXPos )
-        {
             break;
-        }
         
         for( i=1; i<=Min(5,Stars); ++i )
         {
@@ -481,152 +471,52 @@ final function DrawPerkWithStars( Canvas C, float X, float Y, float Scale, int S
             C.DrawTile(StarIcon, Scale, Scale, 0, 0, StarIcon.GetSurfaceWidth(), StarIcon.GetSurfaceHeight());
         }
         
-        X+=Scale;
+        X+=Scale+Owner.HUDOwner.ScaledBorderSize;
         Stars-=5;
     }
 }
 
-function ShowPlayerTooltip( int Index )
-{
-    local KFPlayerReplicationInfo PRI;
-    local string S, HealthString;
-    
-    PRI = KFPRIArray[Index];
-    if( PRI!=None )
-    {
-        if( ToolTipItem==None )
-        {
-            ToolTipItem = New(None)Class'KFGUI_Tooltip';
-            ToolTipItem.Owner = Owner;
-            ToolTipItem.ParentComponent = Self;
-            ToolTipItem.InitMenu();
-        }
-        HealthString = GetPlayer().PlayerReplicationInfo.GetTeamNum() != PRI.GetTeamNum() ? "Unknown" : (PRI.PlayerHealthPercent<=0 ? "0" : string(PRI.PlayerHealth));
-        S = "Player: "$PRI.PlayerName$"<SEPERATOR>Health: "$HealthString;
-        if( KFGRI.bVersusGame )
-            S = S$"<SEPERATOR>Team: "$PRI.Team.GetHumanReadableName();
-        if( PRI.bAdmin )
-            S = S$"<SEPERATOR> Admin";
-        S = S$"<SEPERATOR>(Right click for options)";
-        ToolTipItem.SetText(S);
-        ToolTipItem.ShowMenu();
-        ToolTipItem.CompPos[0] = Owner.MousePosition.X;
-        ToolTipItem.CompPos[1] = Owner.MousePosition.Y;
-        ToolTipItem.GetInputFocus();
-    }
-}
-
-function ClickedPlayer( int Index, bool bRight, int MouseX, int MouseY )
-{
-    local PlayerController PC;
-    local int i;
-
-    if( !bRight || Index<0 )
-        return;
-    bHasSelectedPlayer = true;
-    RightClickPlayer = KFPRIArray[Index];
-    
-    // Check what items to disable.
-    PC = GetPlayer();
-    PlayerContext.ItemRows[0].bDisabled = (PlayerIndex==Index || !PC.IsSpectating() || !PC.WorldInfo.GRI.bMatchHasBegun);
-    PlayerContext.ItemRows[1].bDisabled = RightClickPlayer.bBot;
-    PlayerContext.ItemRows[2].bDisabled = (PlayerIndex==Index || RightClickPlayer.bBot);
-    PlayerContext.ItemRows[2].Text = (PlayerContext.ItemRows[2].bDisabled || PC.IsPlayerMuted(RightClickPlayer.UniqueId)) ? "Unmute player" : "Mute player";
-
-    if( PlayerIndex==Index ) // Selected self.
-    {
-        for( i=4; i<PlayerContext.ItemRows.Length; ++i )
-            PlayerContext.ItemRows[i].bDisabled = true;
-    }
-    else
-    {
-        for( i=4; i<PlayerContext.ItemRows.Length; ++i )
-            PlayerContext.ItemRows[i].bDisabled = false;
-    }
-
-    PlayerContext.OpenMenu(Self);
-}
-
-function HidRightClickMenu( KFGUI_RightClickMenu M )
-{
-    bHasSelectedPlayer = false;
-}
-function SelectedRCItem( int Index )
-{
-    local PlayerController PC;
-    local KFPlayerReplicationInfo KFPRI;
-    local String S;
-
-    PC = GetPlayer();
-    KFPRI = KFPlayerReplicationInfo(PC.PlayerReplicationInfo);
-    switch( Index )
-    {
-    case 0: // Spectate this player.
-        PC.ConsoleCommand("ViewPlayerID "$RightClickPlayer.PlayerID);
-        break;
-    case 1: // Steam profile.
-        OnlineSubsystemSteamworks(class'GameEngine'.static.GetOnlineSubsystem()).ShowProfileUI(0,,RightClickPlayer.UniqueId);
-        break;
-    case 2: // Mute voice.
-        if( !PC.IsPlayerMuted(RightClickPlayer.UniqueId) )
-        {
-            PC.ClientMessage("You've muted "$RightClickPlayer.PlayerName);
-            PC.ClientMutePlayer(RightClickPlayer.UniqueId);
-        }
-        else
-        {
-            PC.ClientMessage("You've unmuted "$RightClickPlayer.PlayerName);
-            PC.ClientUnmutePlayer(RightClickPlayer.UniqueId);
-        }
-        break;
-    case 3: // Vote kick.
-        KFPRI.ServerStartKickVote(RightClickPlayer, KFPRI);
-        break;
-    default:
-        if( Index>=5 )
-        {
-            S = "Admin ";
-            PC.ConsoleCommand(S$AdminCommands[Index-5].Cmd@RightClickPlayer.PlayerName);
-        }
-    }
-}
-
-final function Texture2D FindAvatar( UniqueNetId ClientID )
+static final function Texture2D FindAvatar( KFPlayerController PC, UniqueNetId ClientID )
 {
     local string S;
     
-    S = KFPlayerController(GetPlayer()).GetSteamAvatar(ClientID);
+    S = PC.GetSteamAvatar(ClientID);
     if( S=="" )
         return None;
-    return Texture2D(FindObject(S,class'Texture2D'));
+    return Texture2D(PC.FindObject(S,class'Texture2D'));
+}
+
+final static function string GetNiceSize(int Num)
+{
+    if( Num < 1000 ) return string(Num);
+    else if( Num < 1000000 ) return (Num / 1000) $ "K";
+    else if( Num < 1000000000 ) return (Num / 1000000) $ "M";
+
+    return (Num / 1000000000) $ "B";
+}
+
+function ScrollMouseWheel( bool bUp )
+{
+    PlayersList.ScrollMouseWheel(bUp);
 }
 
 defaultproperties
 {
+    bEnableInputs=true
+    
+    PingColor=(R=255,G=255,B=60,A=255)
+    IdealPing=50
+    MaxPing=1024
+    PingBars=4
+    
     Begin Object Class=KFGUI_List Name=PlayerList
         XSize=0.625
         OnDrawItem=DrawPlayerEntry
-        OnClickedItem=ClickedPlayer
         ID="PlayerList"
-        bClickable=true
-        OnMouseRest=ShowPlayerTooltip
+        bClickable=false
         ListItemsPerPage=16
     End Object
     Components.Add(PlayerList)
     
-    Begin Object Class=KFGUI_RightClickMenu Name=PlayerContextMenu
-        ItemRows.Add((Text="Spectate this player"))
-        ItemRows.Add((Text="View player Steam profile"))
-        ItemRows.Add((Text="Mute Player"))
-        ItemRows.Add((Text="Vote Kick Player"))
-        ItemRows.Add((bSplitter=true))
-        OnSelectedItem=SelectedRCItem
-        OnBecameHidden=HidRightClickMenu
-    End Object
-    PlayerContext=PlayerContextMenu
-    
     DefaultAvatar=Texture2D'UI_HUD.ScoreBoard_Standard_SWF_I26'
-    
-    AdminCommands.Add((Info="Kick Player",Cmd="Kick"))
-    AdminCommands.Add((Info="Ban Player",Cmd="KickBan"))
 }

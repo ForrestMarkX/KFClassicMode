@@ -299,47 +299,47 @@ function SkinVariant UpdateOutfitVariants(string OutfitKey, string KeyName, out 
 
 function UpdateAttachmentsList(array<AttachmentVariants> Attachments)
 {
-	local int i, ItemIndex;
-	local GFxObject DataProvider, SlotObject;
-	local string TexturePath;
-	local AttachmentVariants Variant;
-	local Pawn MyPawn;
-	local SkinVariant FirstSkin;
-	local string AttachmentName;
+    local int i, ItemIndex;
+    local GFxObject DataProvider, SlotObject;
+    local string TexturePath;
+    local AttachmentVariants Variant;
+    local Pawn MyPawn;
+    local SkinVariant FirstSkin;
+    local string AttachmentName;
     
-	ItemIndex = 0;
-	DataProvider = CreateArray();
-	MyPawn = GetPC().Pawn;
+    ItemIndex = 0;
+    DataProvider = CreateArray();
+    MyPawn = GetPC().Pawn;
 
-	// Insert blank object
-	SlotObject = CreateObject( "Object" );
-	SlotObject.SetString("label", class'KFGFxMenu_Gear'.default.NoneString);
-	SlotObject.SetString("source", "img://"$class'KFGFxMenu_Gear'.default.ClearImagePath);
-	SlotObject.SetInt("ItemIndex", INDEX_NONE);
-	SlotObject.SetBool("enabled", true);
-	DataProvider.SetElementObject(ItemIndex, SlotObject);
-	ItemIndex++;
+    // Insert blank object
+    SlotObject = CreateObject( "Object" );
+    SlotObject.SetString("label", class'KFGFxMenu_Gear'.default.NoneString);
+    SlotObject.SetString("source", "img://"$class'KFGFxMenu_Gear'.default.ClearImagePath);
+    SlotObject.SetInt("ItemIndex", INDEX_NONE);
+    SlotObject.SetBool("enabled", true);
+    DataProvider.SetElementObject(ItemIndex, SlotObject);
+    ItemIndex++;
 
-	for (i = 0; i < Attachments.Length; i++)
-	{
-		Variant = Attachments[i];
-		if ( class'ClassicCharacterInfo'.static.IsAttachmentAvailable(CurrentCharInfo, Variant, MyPawn) )
-		{
-			SlotObject = CreateObject( "Object" );
-			SlotObject.SetInt("ItemIndex", i);
+    for (i = 0; i < Attachments.Length; i++)
+    {
+        Variant = Attachments[i];
+        if ( class'ClassicCharacterInfo'.static.IsAttachmentAvailable(CurrentCharInfo, Variant, MyPawn) )
+        {
+            SlotObject = CreateObject( "Object" );
+            SlotObject.SetInt("ItemIndex", i);
             FirstSkin = UpdateCosmeticVariants( class'KFGFxMenu_Gear'.default.AttachmentKey, class'KFGFxMenu_Gear'.default.AttachmentSkinKey, Variant.AttachmentItem, i, SlotObject );
-			AttachmentName = bIsCustomChar ? GetMenuNameStr(Variant.MeshName) : Localize(string(Variant.AttachmentItem.Name), class'KFGFxMenu_Gear'.default.AttachmentKey,  class'KFGFxMenu_Gear'.default.KFCharacterInfoString);
-			SlotObject.SetString("label", AttachmentName);
-			SlotObject.SetBool("enabled", true);
-			TexturePath = "img://"$PathName(FirstSkin.UITexture);
-			SlotObject.SetString("source", TexturePath);
-			
-			DataProvider.SetElementObject(ItemIndex, SlotObject);
-			ItemIndex++;
-		}
-	}
-	
-	SetObject("attachmentsArray", DataProvider);
+            AttachmentName = bIsCustomChar ? GetMenuNameStr(Variant.MeshName) : Localize(string(Variant.AttachmentItem.Name), class'KFGFxMenu_Gear'.default.AttachmentKey,  class'KFGFxMenu_Gear'.default.KFCharacterInfoString);
+            SlotObject.SetString("label", AttachmentName);
+            SlotObject.SetBool("enabled", true);
+            TexturePath = "img://"$PathName(FirstSkin.UITexture);
+            SlotObject.SetString("source", TexturePath);
+            
+            DataProvider.SetElementObject(ItemIndex, SlotObject);
+            ItemIndex++;
+        }
+    }
+    
+    SetObject("attachmentsArray", DataProvider);
 }
 
 function SkinVariant UpdateCosmeticVariants(string OutfitKey, string KeyName, KFCharacterAttachment Attachment, int OutfitIndex, out GFxObject MeshObject)

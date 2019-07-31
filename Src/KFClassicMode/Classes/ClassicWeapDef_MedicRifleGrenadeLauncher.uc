@@ -1,4 +1,4 @@
-class ClassicWeapDef_M7A3 extends KFWeapDef_MedicRifleGrenadeLauncher;
+class ClassicWeapDef_MedicRifleGrenadeLauncher extends KFWeapDef_MedicRifleGrenadeLauncher;
 
 static function string GetItemLocalization( string KeyName )
 {

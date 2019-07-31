@@ -65,6 +65,10 @@ function DrawMenu()
             ScrollBar.AddValue(1);
             ScrollBar.bDisabled = false;
             bScrollCompleted = true;
+            
+            //Temp fix! The last line in the string seems to be skipped
+            AddText(LineSplitter);
+            
             return;
         }
         else if( MaxIndex != 0 && RowsCompleted[MaxIndex] )
@@ -92,7 +96,7 @@ function DrawMenu()
         }
     }
     
-    DTime = GetPlayer().WorldInfo.TimeSeconds - CharStartTime;
+    DTime = `TimeSinceEx(GetPlayer(), CharStartTime);
     if( i<Lines.Length )
     {
         CurrentCursor = Owner.DefaultPens[GetCursorStyle()];
@@ -131,7 +135,7 @@ function DrawMenu()
                         {
                             if( CurrentIndex == k )
                             {
-                                Canvas.SetDrawColor(255,255,255,Owner.FastCursorFade);
+                                Canvas.SetDrawColor(255,255,255,255);
                                 Canvas.SetPos(MainX+XL,MainY);
                                 Canvas.DrawTile(CurrentCursor, YL/2, YL, 0, 0, CurrentCursor.GetSurfaceWidth(), CurrentCursor.GetSurfaceHeight());
                             }
@@ -163,10 +167,16 @@ function bool CaptureMouse()
 
 function MouseClick( bool bRight )
 {
+    if( bScrollCompleted )
+        return;
+        
     if( ScrollBar != None )
         ScrollBar.bDisabled = false;
         
     bScrollCompleted = true;
+    
+    //Temp fix! The last line in the string seems to be skipped
+    AddText(LineSplitter);
 }
 
 defaultproperties

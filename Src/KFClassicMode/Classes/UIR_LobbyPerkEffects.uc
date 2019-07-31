@@ -34,11 +34,11 @@ function Timer()
         return;
         
     CurrentVetLevel = CurrentPerk.GetLevel();
-    S = CurrentPerk.static.GetCustomLevelInfo(CurrentVetLevel);
+    S = CurrentPerk.GetCustomLevelInfo(CurrentVetLevel);
     
     if( CurrentVetLevel < CurrentPerk.MaximumLevel )
     {
-        S = S $ "|| --- Next Level Effects --- ||" $ CurrentPerk.static.GetCustomLevelInfo(CurrentVetLevel+1);
+        S = S $ "|| --- Next Level Effects --- ||" $ CurrentPerk.GetCustomLevelInfo(CurrentVetLevel+1);
     }
         
     CurrentPerkLevel = CurrentVetLevel;

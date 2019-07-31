@@ -2,6 +2,8 @@ class KFGameInfo_LegacySurvival extends KFGameInfo_Survival;
 
 var config bool bSavedGametypes;
 
+`include(ClassicGameInfo.uci);
+
 function PostBeginPlay()
 {
     local sGameMode GameMode;
@@ -24,26 +26,15 @@ function PostBeginPlay()
     }
 }
 
-function int GetLivingPlayerCount()
+static event class<GameInfo> SetGameType(string MapName, string Options, string Portal)
 {
-    local KFPlayerController P;
-    local int UsedLivingHumanPlayersCount;
- 
-    foreach WorldInfo.AllControllers(class'KFPlayerController', P)
-    {
-        if( P != None && P.Pawn != None && P.Pawn.IsAliveAndWell() )
-        {
-            UsedLivingHumanPlayersCount++;
-        }
-    }
- 
-    return UsedLivingHumanPlayersCount;
-}
+	// if we're in the menu level, use the menu gametype
+	if ( class'WorldInfo'.static.IsMenuLevel(MapName) )
+	{
+        return class<GameInfo>(DynamicLoadObject("KFClassicMenu.KFGameInfo_LegacyEntry", class'Class'));
+	}
 
-// Objective maps break when using a gameinfo that isn't the default
-function bool IsMapObjectiveEnabled()
-{
-	return false;
+	return Default.class;
 }
 
 defaultproperties

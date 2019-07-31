@@ -10,13 +10,6 @@ static simulated event EFilterTypeUI GetTraderFilter()
     return FT_SMG;
 }
 
-simulated function KFProjectile SpawnProjectile( class<KFProjectile> KFProjClass, vector RealStartLoc, vector AimDir )
-{
-    return Super(KFWeapon).SpawnProjectile(KFProjClass, RealStartLoc, AimDir);
-}
-
-function CheckTargetLock();
-
 defaultproperties
 {
     // Healing charge

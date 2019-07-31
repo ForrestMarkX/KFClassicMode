@@ -1,35 +1,35 @@
 var bool bKeepMoving;
-var float MeleeFinishTime;
+var float MeleeFinishTime,GrabFinishTime;
 
 `if(`notdefined(OVERRIDEDOSTRIKEFUNC))
-    function DoStrike()
-    {
-        local KFZEDInterface ZedInterface;
-        local byte PendingStrikeFlags;
-        
-        PendingStrikeFlags = MyKFPawn.PawnAnimInfo.GetStrikeFlags(PendingAnimStrikeIndex);
-        
-        ZedInterface = KFZEDInterface(Pawn);
-        if( ZedInterface != None )
-        {
-            bKeepMoving = ZedInterface.AttackWhileMoving(PendingAnimStrikeIndex, PendingStrikeFlags);
-            class'AICommand_Attack_MeleeClassic'.static.Melee( self, Enemy, PendingStrikeFlags );
-            if( KFPawn(Pawn).PawnAnimInfo!=None )
-                KFPawn(Pawn).PawnAnimInfo.UpdateAttackCooldown(self, PendingAnimStrikeIndex);
-        }
-        else
-        {
-            Super.DoStrike();
-        }
-    }
+function DoStrike()
+{
+	local KFZEDInterface ZedInterface;
+	local byte PendingStrikeFlags;
+	
+	PendingStrikeFlags = MyKFPawn.PawnAnimInfo.GetStrikeFlags(PendingAnimStrikeIndex);
+	
+	ZedInterface = KFZEDInterface(Pawn);
+	if( ZedInterface != None )
+	{
+		bKeepMoving = ZedInterface.AttackWhileMoving(PendingAnimStrikeIndex, PendingStrikeFlags);
+		class'AICommand_Attack_MeleeClassic'.static.Melee( self, Enemy, PendingStrikeFlags );
+		if( KFPawn(Pawn).PawnAnimInfo!=None )
+			KFPawn(Pawn).PawnAnimInfo.UpdateAttackCooldown(self, PendingAnimStrikeIndex);
+	}
+	else
+	{
+		Super.DoStrike();
+	}
+}
 `endif
 
 `if(`notdefined(OVERRIDEMELEEFINISHFUNC))
-    function NotifyMeleeAttackFinished()
-    {
-        bKeepMoving = false;
-        Super.NotifyMeleeAttackFinished();
-    }
+function NotifyMeleeAttackFinished()
+{
+	bKeepMoving = false;
+	Super.NotifyMeleeAttackFinished();
+}
 `endif
 
 function bool GetKeepMoving()
@@ -50,4 +50,66 @@ function SetMeleeFinishTime(float Time)
 function float GetMeleeFinishTime()
 {
 	return MeleeFinishTime;
+}
+
+`if(`notdefined(OVERRIDEFRIENDLYDAMAGEFUNC))
+function NotifyFriendlyAIDamageTaken( Controller DamagerController, int Damage, Actor DamageCauser, class<KFDamageType> DamageType )
+{
+	local int Idx;
+	local Pawn BlockerPawn;
+    
+    if (DamageType == None)
+        return;
+		
+	if (DamageType.default.bIgnoreAggroOnDamage)
+	{
+		return;
+	}
+    
+	// Retrieves the index and, if necessary, creates a new entry
+	Idx = UpdateFriendlyDamageHistory( DamagerController, Damage );
+	if( Idx == INDEX_NONE )
+	{
+		return;
+	}
+
+	if( IsAggroEnemySwitchAllowed()
+		&& DoorEnemy == none
+		&& PendingDoor == none
+		&& DamagerController.Pawn != Enemy
+		&& FriendlyDamageHistory[Idx].Damage >= float(Pawn.HealthMax) * AggroZedHealthPercentage  )
+	{
+		BlockerPawn = GetPawnBlockingPathTo( DamagerController.Pawn );
+		if( BlockerPawn == none )
+		{
+			SetEnemyToZed( DamagerController.Pawn );
+		}
+	}
+}
+`endif
+
+`if(`notdefined(OVERRIDECANGRABATTACK))
+function bool CanGrabAttack()
+{
+    local bool Ret;
+    
+    Ret = Super.CanGrabAttack();
+    if( KFZEDInterface(Pawn) == None )
+        return Ret;
+        
+    if( Ret )
+        class'AICommand_Attack_GrabClassic'.static.Grab( self );
+    
+    return false;
+}
+`endif
+
+function SetGrabFinishTime(float Time)
+{
+	GrabFinishTime = Time;
+}
+
+function float GetGrabFinishTime()
+{
+	return GrabFinishTime;
 }

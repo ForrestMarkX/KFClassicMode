@@ -1,3 +1,22 @@
+`define WM_WAVEINBOUND 			1
+`define WM_WAVESURVIVED 		2
+`define WM_FINALWAVEINBOUND 	3
+`define WM_BOSSINBOUND 			4
+`define WM_DEFEATED 			5
+`define WM_SURVIVED 			6
+
+`define TRADER_ALMOSTOPEN 		0
+`define TRADER_MOVING 			1
+`define TRADER_OPEN 			2
+`define TRADER_CLOSED 			3
+`define TRADER_THIRTYSECONDS 	4
+`define TRADER_TENSECONDS 		5
+`define TRADER_LASTWAVE 		6
+`define TRADER_WELCOME 			7
+`define TRADER_TOOEXPENSIVE 	8
+`define TRADER_TOOHEAVY 		9
+`define TRADER_WALKIEBEEP 		10
+
 `define BOX_INNERBORDER 					0
 `define	BOX_INNERBORDER_TRANSPARENT 		1
 `define	BOX_MEDIUM 							2
@@ -9,6 +28,11 @@
 `define	BOX_SMALL 							8
 `define	BOX_SMALL_SLIGHTTRANSPARENT 		9
 `define	BOX_SMALL_TRANSPARENT				10
+`define	BOX_CORNER_8						11
+`define	BOX_CORNER_16						12
+`define	BOX_CORNER_32						13
+`define	BOX_CORNER_64						14
+`define	BOX_CORNER_512						15
 
 `define ITEMBOX_NORMAL		0
 `define ITEMBOX_DISABLED	1
@@ -41,25 +65,6 @@
 `define	TAB_TOP			0
 `define	TAB_BOTTOM		1
 
-`define WM_WAVEINBOUND 			1
-`define WM_WAVESURVIVED 		2
-`define WM_FINALWAVEINBOUND 	3
-`define WM_BOSSINBOUND 			4
-`define WM_DEFEATED 			5
-`define WM_SURVIVED 			6
-
-`define TRADER_ALMOSTOPEN 		0
-`define TRADER_MOVING 			1
-`define TRADER_OPEN 			2
-`define TRADER_CLOSED 			3
-`define TRADER_THIRTYSECONDS 	4
-`define TRADER_TENSECONDS 		5
-`define TRADER_LASTWAVE 		6
-`define TRADER_WELCOME 			7
-`define TRADER_TOOEXPENSIVE 	8
-`define TRADER_TOOHEAVY 		9
-`define TRADER_WALKIEBEEP 		10
-
 `define PEN_WHITE	0
 `define PEN_BLACK	1
 `define PEN_GRAY	2
@@ -72,3 +77,5 @@
 `define CURSOR_SELECTION 	1
 `define CURSOR_RESIZEVERT	2
 `define CURSOR_RESIZEHORZ 	3
+
+`define Print(log) LocalPlayer(class'WorldInfo'.static.GetWorldInfo().GetALocalPlayerController().Player).ViewportClient.ViewportConsole.OutputText(`log)

@@ -29,9 +29,9 @@ var array<Texture2D> CursorTextures;
 var Color CursorColor;
 var int CurrentCursorIndex, CursorSize;
 
-var    Texture    DefaultPens[3];
-var    byte CursorFade, FastCursorFade, CursorFlash;
-var    int    CursorStep, FastCursorStep;
+var Texture DefaultPens[3];
+var byte CursorFade, FastCursorFade, CursorFlash;
+var int CursorStep, FastCursorStep;
 var int FontBlurX,FontBlurX2,FontBlurY,FontBlurY2,FastFontBlurX,FastFontBlurX2,FastFontBlurY,FastFontBlurY2;
 
 var bool bMouseWasIdle,bIsInMenuState,bAbsorbInput,bIsInvalid,bFinishedReplication,bHideCursor,bUsingGamepad,bForceEngineCursor,bNoInputReset;
@@ -45,7 +45,7 @@ static function KF2GUIController GetGUIController( PlayerController PC )
         return None;
     }
         
-    foreach PC.ChildActors(class'KF2GUIController',G)
+    foreach PC.ChildActors(class'KFClassicMode.KF2GUIController',G)
     {
         if( !G.bIsInvalid )
         {
@@ -55,7 +55,7 @@ static function KF2GUIController GetGUIController( PlayerController PC )
     
     if( G==None )
     {
-        G = PC.Spawn(class'KF2GUIController',PC);
+        G = PC.Spawn(class'KFClassicMode.KF2GUIController',PC);
     }
         
     return G;
@@ -104,6 +104,7 @@ simulated function SetupStyleTextures()
     if( RepObject != None )
     {
         CurrentStyle.MainFont = Font(RepObject.ReferencedObjects[104]);
+        CurrentStyle.InfiniteFont = Font(RepObject.ReferencedObjects[155]);
         
         CurrentStyle.BorderTextures[`BOX_INNERBORDER] = Texture2D(RepObject.ReferencedObjects[35]);
         CurrentStyle.BorderTextures[`BOX_INNERBORDER_TRANSPARENT] = Texture2D(RepObject.ReferencedObjects[36]);
@@ -116,6 +117,11 @@ simulated function SetupStyleTextures()
         CurrentStyle.BorderTextures[`BOX_SMALL] = Texture2D(RepObject.ReferencedObjects[82]);
         CurrentStyle.BorderTextures[`BOX_SMALL_SLIGHTTRANSPARENT] = Texture2D(RepObject.ReferencedObjects[83]);
         CurrentStyle.BorderTextures[`BOX_SMALL_TRANSPARENT] = Texture2D(RepObject.ReferencedObjects[84]);
+        CurrentStyle.BorderTextures[`BOX_CORNER_8] = Texture2D(RepObject.ReferencedObjects[160]);
+        CurrentStyle.BorderTextures[`BOX_CORNER_16] = Texture2D(RepObject.ReferencedObjects[156]);
+        CurrentStyle.BorderTextures[`BOX_CORNER_32] = Texture2D(RepObject.ReferencedObjects[157]);
+        CurrentStyle.BorderTextures[`BOX_CORNER_64] = Texture2D(RepObject.ReferencedObjects[159]);
+        CurrentStyle.BorderTextures[`BOX_CORNER_512] = Texture2D(RepObject.ReferencedObjects[158]);
         
         CurrentStyle.ArrowTextures[`ARROW_DOWN] = Texture2D(RepObject.ReferencedObjects[10]);
         CurrentStyle.ArrowTextures[`ARROW_LEFT] = Texture2D(RepObject.ReferencedObjects[45]);
@@ -236,7 +242,7 @@ simulated function HandleDrawMenu()
 {
     if( HackConsole==None )
     {
-        HackConsole = new(ClientViewport)class'KFGUIConsoleHack';
+        HackConsole = new(ClientViewport)class'KFClassicMode.KFGUIConsoleHack';
         HackConsole.OutputObject = Self;
     }
     if( HackConsole!=ClientViewport.ViewportConsole )
@@ -333,7 +339,7 @@ simulated final function SetMenuState( bool bActive )
     {
         if( CustomInput==None )
         {
-            CustomInput = new (KFPlayerController(PlayerOwner)) class'KF2GUIInput';
+            CustomInput = new (KFPlayerController(PlayerOwner)) class'KFClassicMode.KF2GUIInput';
             CustomInput.ControllerOwner = Self;
             CustomInput.OnReceivedNativeInputKey = ReceivedInputKey;
             CustomInput.BaseInput = PlayerOwner.PlayerInput;

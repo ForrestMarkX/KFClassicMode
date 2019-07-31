@@ -4,6 +4,13 @@ function ShowMenu()
 {
     Super.ShowMenu();
     Owner.bForceEngineCursor = true;
+    SetTimer(1.f, true, 'CheckFlashMenus');
+}
+
+function CheckFlashMenus()
+{
+    if( !KFPlayerController(GetPlayer()).MyGFxManager.bMenusActive )
+        DoClose();
 }
 
 function ButtonClicked( KFGUI_Button Sender )
@@ -13,11 +20,11 @@ function ButtonClicked( KFGUI_Button Sender )
 
 function PreDraw()
 {
-    local ClassicMoviePlayer_Manager MovieManager;
+    local KFGFxMoviePlayer_Manager MovieManager;
     
     Super.PreDraw();
     
-    MovieManager = ClassicMoviePlayer_Manager(KFPlayerController(GetPlayer()).MyGFxManager);
+    MovieManager = KFPlayerController(GetPlayer()).MyGFxManager;
     if( CaptureMouse() )
     {
         MovieManager.SetMovieCanReceiveInput(false);
@@ -25,11 +32,6 @@ function PreDraw()
     else
     {
         MovieManager.SetMovieCanReceiveInput(true);
-    }
-    
-    if( !MovieManager.bMenusActive )
-    {
-        DoClose();
     }
 }
 

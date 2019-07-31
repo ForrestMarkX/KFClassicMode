@@ -15,17 +15,26 @@ var editinline export KFGUI_RightClickMenu PlayerContext;
 var Texture ItemBoxTexture, ItemBarTexture, CheckBoxTexture, CheckMarkTexture;
 var array<KFPlayerReplicationInfo> KFPRIArray;
 
+struct FTalkerPRIEntry
+{
+    var KFPlayerReplicationInfo PRI;
+    var bool bIsTalking;
+};
+var array<FTalkerPRIEntry> TalkingArray;
+
 var OnlineSubsystem OnlineSub;
 var KFGameReplicationInfo KFGRI;
 var ClassicPlayerController PC;
 var KFPlayerReplicationInfo KFPRI;
 
-var transient int NumButtons, FinalCountTime, OldLobbyTimeout, OldPRILength;
+var transient int NumButtons, FinalCountTime, OldLobbyTimeout;
 var transient bool bOldReady, bFinalCountdown, bMOTDReceived, bSetGRIInfo, bViewMapClicked;
 
 var string WaitingForServerStatus;
 var string WaitingForOtherPlayers;
 var string AutoCommence;
+
+var KFHUDInterface HUD;
 
 function InitMenu()
 {
@@ -86,9 +95,9 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
         case 'XboxTypeS_Y':
             if( Event == IE_Pressed )
             {
-                if (PC != None && PC.MyGFxHUD != None)
+                if( PC != None )
                 {
-                    PC.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_READYUP_BUTTON_CLICK', 'UI');
+                    PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PARTYWIDGET_READYUP_BUTTON_CLICK');
                 }
                 
                 ReadyButton.HandleMouseClick(false);
@@ -120,9 +129,9 @@ function SetFinalCountdown(bool B, int CountdownTime)
 function FinalCountdown()
 {
     FinalCountTime -= 1;
-    if (PC != None && PC.MyGFxHUD != None && !bViewMapClicked)
+    if (PC != None && !bViewMapClicked)
     {
-        PC.MyGFxHUD.PlaySoundFromTheme('PARTYWIDGET_COUNTDOWN', 'UI');
+        PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PARTYWIDGET_COUNTDOWN');
     }
     
     if( FinalCountTime == 0 )
@@ -131,11 +140,37 @@ function FinalCountdown()
     }
 }
 
+function CheckLobbyRefresh()
+{
+    local array<KFPlayerReplicationInfo> PRIList;
+    local int i;
+    
+    if( KFGRI == None )
+        return;
+    
+    KFGRI.GetKFPRIArray(PRIList);
+	if ( PRIList.Length <= 0 )
+	 	return;
+        
+    if( KFPRIArray.Length != PRIList.Length )
+    {
+        KFPRIArray = PRIList;
+        PlayersList.ChangeListSize(KFPRIArray.Length);
+        
+        for( i=0; i<TalkingArray.Length; i++ )
+        {
+            if( TalkingArray[i].PRI == None )
+                TalkingArray.RemoveItem(TalkingArray[i]);
+        }
+    }
+    
+    ChatBox.SetVisibility(PRIList.Length > 1);
+}
+
 function Timer()
 {
-    local int i, WaveMax;
+    local int WaveMax;
     local string S;
-    local KFPlayerReplicationInfo PRI;
     
     if( OnlineSub == None )
     {
@@ -183,17 +218,6 @@ function Timer()
         DifficultyLabel.SetText("Difficulty Level:"@Class'KFCommon_LocalizedStrings'.Static.GetDifficultyString(KFGRI.GameDifficulty));
         WaveLabel.SetText(S);
     }
-        
-    KFPRIArray.Length = 0;
-    for( i=0; i<KFGRI.PRIArray.Length; ++i )
-    {
-        PRI = KFPlayerReplicationInfo(KFGRI.PRIArray[i]);
-        if( PRI==None || PRI.bOnlySpectator )
-            continue;
-            
-        KFPRIArray.AddItem(PRI);
-    }
-    PlayersList.ChangeListSize(KFPRIArray.Length);
     
     if( KFPRI==None )
         return;
@@ -229,7 +253,7 @@ function Timer()
 function DrawMenu()
 {
     local byte Glow;
-    local int LobbyTimeout, Min, Time;
+    local int LobbyTimeout;
     
     Super.DrawMenu();
     
@@ -257,29 +281,24 @@ function DrawMenu()
                 return;
             }
             
-            Min = LobbyTimeout / 60;
-            Time = LobbyTimeout - (Min * 60);
-            
-            TimeoutLabel.SetText(AutoCommence$":" @ (Min >= 10 ? string(Min) : "0" $ Min) $ ":" $ (Time >= 10 ? string(Time) : "0" $ Time));
+            TimeoutLabel.SetText(AutoCommence$":" @ Owner.CurrentStyle.GetTimeString(LobbyTimeout));
         }
     }
 }
 
 function ShowMenu()
 {
-    local KFHUDInterface HUD;
-    
     Super.ShowMenu();
     
     Timer();
     SetTimer(0.01,true);
     
+    SetTimer(1,true,'CheckLobbyRefresh');
+    CheckLobbyRefresh();
+    
     bViewMapClicked = false;
     PC.LobbyMenu = self;
     PC.ClientGotoState( 'PlayerWaiting' );
-    
-    KFPRIArray.Length = 0;
-    OldPRILength = 0;
     
     HUD = KFHUDInterface(PC.myHUD);
     if( HUD != None )
@@ -384,22 +403,20 @@ final function KFGUI_Button AddMenuButton( name ButtonID, string Text, optional 
 
 function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, float Width, bool bFocus )
 {
-    local byte PerkLevel;
-    local float FontScalar, TextYOffset, XL, YL, PerkXL, PerkYL, NameXPos, AvatarXPos, AvatarYPos, ImageBorder;
+    local byte PerkLevel,TalkerIndex;
+    local float FontScalar, TextYOffset, XL, YL, PerkXL, PerkYL, NameXPos, AvatarXPos, AvatarYPos, ImageBorder, PerkLevelXPos;
     local KFPlayerReplicationInfo PRI;
     local string S;
-    local Texture PerkIcon, PerkStarIcon, VoiceChatIcon;
-    
-    if( KFPRIArray.Length <= 0 )
-        return;
+    local Texture2D PerkIcon, PerkStarIcon, VoiceChatIcon;
+    local class<ClassicPerk_Base> CurrentPerk;
     
     PRI = KFPRIArray[Index];
-    if( PRI == None || PRI.bIsInactive )
+    if( PRI == None )
         return;
     
     YOffset *= 1.05;
-    NameXPos = Width * 0.2;
     ImageBorder = Owner.CurrentStyle.ScreenScale(6);
+    NameXPos = (Height * 2) + (Height * 0.75) + (ImageBorder * 2);
     
     C.Font = Owner.CurrentStyle.PickFont(FontScalar);
     
@@ -432,14 +449,15 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     C.TextSize("ABC", XL, YL, FontScalar, FontScalar);
     TextYOffset = YOffset + (Height / 2) - (YL / 1.75f);
     
-    if( PRI.CurrentPerkClass!=None && class<ClassicPerk_Base>(PRI.CurrentPerkClass) != None )
+    CurrentPerk = class<ClassicPerk_Base>(PRI.CurrentPerkClass);
+    if( CurrentPerk!=None )
     {
         PerkLevel = PRI.GetActivePerkLevel();
 
-        PerkXL = Height-ImageBorder;
-        PerkYL = Height-ImageBorder;
+        PerkXL = Height*0.75;
+        PerkYL = PerkXL;
         
-        class<ClassicPerk_Base>(PRI.CurrentPerkClass).static.PreDrawPerk(C, PerkLevel, PerkIcon, PerkStarIcon);
+        CurrentPerk.static.PreDrawPerk(C, PerkLevel, PerkIcon, PerkStarIcon);
         
         C.SetPos((Height / 2) - (PerkXL / 2), YOffset + (Height / 2) - (PerkYL / 2));
         C.DrawRect(PerkXL, PerkYL, PerkIcon);
@@ -447,6 +465,9 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     
     if( PRI.Avatar != None )
     {
+        if( PRI.Avatar == class'KFScoreBoard'.default.DefaultAvatar )
+            class'KFScoreBoard'.static.CheckAvatar(PRI, KFPlayerController(GetPlayer()));
+            
         AvatarXPos = NameXPos - (Height * 1.075);
         AvatarYPos = YOffset + (Height / 2) - ((Height - ImageBorder) / 2);
     
@@ -458,34 +479,59 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     else
     {
         if( !PRI.bBot )
-            PRI.Avatar = FindAvatar(PRI.UniqueId);
+            class'KFScoreBoard'.static.CheckAvatar(PRI, KFPlayerController(GetPlayer()));
     }
     
-    if( PRI.VOIPStatus > 0 )
+    if( TalkingArray.Length > 0 )
     {
-        VoiceChatIcon = Texture2D'UI_HUD.voip_icon';
-        
-        C.SetDrawColor(255,255,255,255);
-        C.SetPos(AvatarXPos - (Height * 0.75) - ImageBorder, YOffset + (Height / 2) - ((Height * 0.75) / 2));
-        C.DrawTile(VoiceChatIcon,Height * 0.75,Height * 0.75,0,0,256,256);    
+        TalkerIndex = TalkingArray.Find('PRI', PRI);
+        if( TalkerIndex != INDEX_NONE && TalkingArray[TalkerIndex].bIsTalking )
+        {
+            VoiceChatIcon = Texture2D'UI_HUD.voip_icon';
+            
+            C.SetDrawColor(255,255,255,255);
+            C.SetPos(AvatarXPos - (Height * 0.5) - ImageBorder, YOffset + (Height / 2) - ((Height * 0.5) / 2));
+            C.DrawTile(VoiceChatIcon,Height * 0.5,Height * 0.5,0,0,256,256);
+        }
     }
     
     C.SetDrawColor(255, 255, 255, 255);
     C.SetPos(NameXPos, TextYOffset);
-    if( Len(PRI.PlayerName) > 25 )
-        S = Left(PRI.PlayerName, 25);
+    if( Len(PRI.PlayerName) > 30 )
+        S = Left(PRI.PlayerName, 30) $ "...";
     else S = PRI.PlayerName;
-    C.DrawText (S, , FontScalar, FontScalar);
+    C.DrawText(S,, FontScalar, FontScalar);
+    
+    if( CurrentPerk != None )
+    {
+        S = "Lv" @ PerkLevel @ CurrentPerk.static.GetPerkName();
+        
+        C.TextSize(S, XL, YL, FontScalar, FontScalar);
+        PerkLevelXPos = (Width-(Height * 2.5)) - XL + (ImageBorder * 2);
+        
+        C.SetPos(PerkLevelXPos, TextYOffset);
+        C.DrawText(S,, FontScalar, FontScalar);
+    }
 }
 
-final function Texture2D FindAvatar( UniqueNetId ClientID )
+function UpdateVOIP( PlayerReplicationInfo PRI, bool bIsTalking)
 {
-    local string S;
+    local int Index;
+    local FTalkerPRIEntry Talker;
     
-    S = KFPlayerController(GetPlayer()).GetSteamAvatar(ClientID);
-    if( S=="" )
-        return None;
-    return Texture2D(FindObject(S,class'Texture2D'));
+    Index = TalkingArray.Find('PRI', KFPlayerReplicationInfo(PRI));
+    if( Index != INDEX_NONE )
+    {
+        TalkingArray[Index].PRI = KFPlayerReplicationInfo(PRI);
+        TalkingArray[Index].bIsTalking = bIsTalking;
+    }
+    else
+    {
+        Talker.PRI = KFPlayerReplicationInfo(PRI);
+        Talker.bIsTalking = bIsTalking;
+        
+        TalkingArray.AddItem(Talker);
+    }
 }
 
 function GetStyleTextures()
@@ -671,7 +717,7 @@ defaultproperties
     Begin Object Class=KFGUI_Frame Name=StoryBoxBackground
         ID="StoryBoxBackground"
         bDrawHeader=true
-         YPosition=0.109808
+        YPosition=0.109808
         XPosition=0.489062
         XSize=0.487374
         YSize=0.309092
@@ -680,9 +726,9 @@ defaultproperties
     
     Begin Object Class=KFGUI_TextScroll Name=MOTDText
         ID="MOTDText"
-         YPosition=0.119808
+        YPosition=0.119808
         XPosition=0.499062
-        XSize=0.492374
+        XSize=0.477374
         YSize=0.314092
         ScrollSpeed=0.025
         LineSplitter="<LINEBREAK>"

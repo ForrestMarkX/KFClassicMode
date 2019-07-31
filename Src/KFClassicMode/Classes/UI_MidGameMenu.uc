@@ -8,7 +8,7 @@ struct FPageInfo
 var KFGUI_SwitchMenuBar PageSwitcher;
 var() array<FPageInfo> Pages;
 
-var KFGUI_Button SkipTraderButton,SpectateButton,SuicideButton,SettingsButton,MapvoteButton,GearButton;
+var KFGUI_Button SkipTraderButton,SpectateButton,SuicideButton,SettingsButton,MapvoteButton,GearButton,KickVotingButton;
 
 var transient KFGUI_Button PrevButton;
 var transient int NumButtons,NumButtonRows;
@@ -65,8 +65,13 @@ function Timer()
 
 function ShowMenu()
 {
+    local KFPlayerReplicationInfo PRI;
+    
     Super.ShowMenu();
 
+    PageSwitcher.SelectPage(1);
+    
+    PRI = KFPlayerReplicationInfo(GetPlayer().PlayerReplicationInfo);
     if( GetPlayer().WorldInfo.GRI!=None )
         WindowTitle = GetPlayer().WorldInfo.GRI.ServerName;
         
@@ -82,7 +87,7 @@ function ShowMenu()
     else
     {
         SuicideButton.SetDisabled( false );
-        SkipTraderButton.SetDisabled( false );
+        SkipTraderButton.SetDisabled( PRI.bVotedToSkipTraderTime );
         MapvoteButton.SetDisabled( false );
         SpectateButton.SetDisabled( false );
         
@@ -193,9 +198,11 @@ defaultproperties
     bAlwaysTop=true
     bOnlyThisFocus=true
     
+    Pages.Add((PageClass=Class'UIP_News',Caption="News",Hint="Server news page"))
     Pages.Add((PageClass=Class'UIP_PerkSelection',Caption="Perks",Hint="Select your perk"))
     Pages.Add((PageClass=Class'UIP_Settings',Caption="Settings",Hint="Show additional Classic Mode settings"))
     Pages.Add((PageClass=Class'UIP_ColorSettings',Caption="Colors",Hint="Settings to adjust the hud colors"))
+    Pages.Add((PageClass=Class'UIP_KickVoteMenu',Caption="Players",Hint="List of players with various options"))
 
     Begin Object Class=KFGUI_SwitchMenuBar Name=MultiPager
         ID="Pager"
@@ -204,7 +211,7 @@ defaultproperties
         XSize=0.975
         YSize=0.8
         BorderWidth=0.05
-        ButtonAxisSize=0.08
+        ButtonAxisSize=0.1
     End Object
     
     Components.Add(MultiPager)

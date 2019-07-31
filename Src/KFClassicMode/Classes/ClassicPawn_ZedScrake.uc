@@ -22,11 +22,6 @@ defaultproperties
         SpecialMoveClasses(SM_Block)=None
     End Object
     
-    Health=1000
-    
-    GroundSpeed=162.775f
-    SprintSpeed=569.7125f
-    
     HeadlessBleedOutTime=6.f
     
     RageHealthThresholdNormal=0.5
@@ -41,6 +36,4 @@ defaultproperties
         BaseDamage=20.f
         MomentumTransfer=-45000.f
     End Object
-    
-    DamageTypeModifiers.Empty
 }

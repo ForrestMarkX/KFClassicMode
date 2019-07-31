@@ -4,83 +4,18 @@ class ClassicPlayerInput extends KFPlayerInput within ClassicPlayerController
 var bool bHandledTravel;
 var KF2GUIController MyGUIController;
 
-/*
-simulated exec function ToggleFlashlight()
-{
-    local KFPawn_Human KFP;
-    local KFInventoryManager InvMan;
-    local Inventory Inv;
-    local KFWeapon Wep;
-    
-    if( Pawn == none || Pawn.InvManager == none || bGamepadWeaponSelectOpen )
-    {
-         return;
-    }
-    
-    InvMan = KFInventoryManager(Pawn.InvManager);
-    if( InvMan != None )
-    {
-        for( Inv = InvMan.InventoryChain; Inv != None; Inv = Inv.Inventory )
-        {
-            if( Inv.Class == class'KFWeap_Pistol_9mm' || Inv.Class == class'KFWeap_Pistol_9mm' )
-            {
-                Wep = KFWeapon(Inv);
-                break;
-            }
-        }
-        
-        if( Wep != None )
-        {
-            Pawn.InvManager.SetCurrentWeapon(Wep);
-
-            KFP = KFPawn_Human(Pawn);
-            if( KFP != None && KFP.MyKFWeapon != None )
-            {
-                InternalToggleFlashlight();
-            }
-        }
-    }
-}
-*/
-
-function PlayerInput( float DeltaTime )
-{
-    local KFHUDInterface HUD;
-    
-    HUD = KFHUDInterface(Outer.myHUD);
-    if( HUD != None && HUD.bChatOpen )
-    {
-        aMouseX = 0;
-        aMouseY = 0;
-        aBaseX = 0;
-        aBaseY = 0;
-        aBaseZ = 0;
-        aForward = 0;
-        aTurn = 0;
-        aStrafe = 0;
-        aUp = 0;
-        aLookUp = 0;
-        return;
-    }
-    
-    Super.PlayerInput(DeltaTime);
-}
-
 exec function GamepadDpadLeft()
 {
-    local KFHUDInterface HUD;
-    
     if(Outer.IsSpectating())
     {
         Outer.ServerViewPrevPlayer();
     }
     else if( bGamepadWeaponSelectOpen || CheckForWeaponMenuTimerInterrupt() )
     {
-        HUD = KFHUDInterface(Outer.myHUD);
-        if( HUD != None )
+        if( HUDInterface != None )
         {
-            SwitchWeaponGroup( Clamp(HUD.SelectedInventoryCategory-1, 0, HUD.MAX_WEAPON_GROUPS) );
-            HUD.SelectedInventoryIndex = 0;
+            SwitchWeaponGroup( Clamp(HUDInterface.SelectedInventoryCategory-1, 0, HUDInterface.MAX_WEAPON_GROUPS) );
+            HUDInterface.SelectedInventoryIndex = 0;
         }
     }
     else
@@ -97,19 +32,16 @@ exec function GamepadDpadLeft()
 
 exec function GamepadDpadRight()
 {
-    local KFHUDInterface HUD;
-    
     if(Outer.IsSpectating())
     {
         Outer.ServerViewNextPlayer();
     }
     else if( bGamepadWeaponSelectOpen || CheckForWeaponMenuTimerInterrupt() )
     {
-        HUD = KFHUDInterface(Outer.myHUD);
-        if( HUD != None )
+        if( HUDInterface != None )
         {
-            SwitchWeaponGroup( Clamp(HUD.SelectedInventoryCategory+1, 0, HUD.MAX_WEAPON_GROUPS) );
-            HUD.SelectedInventoryIndex = 0;
+            SwitchWeaponGroup( Clamp(HUDInterface.SelectedInventoryCategory+1, 0, HUDInterface.MAX_WEAPON_GROUPS) );
+            HUDInterface.SelectedInventoryIndex = 0;
         }
     }
     else
@@ -197,54 +129,53 @@ exec function ReleaseGamepadWeaponSelect()
 function GamepadWeaponMenuTimer()
 {
     local KFWeapon KFW;
-    local KFHUDInterface HUD;
 
     if( MyGFxHUD != none && MyGFxHUD.VoiceCommsWidget != none && MyGFxHUD.VoiceCommsWidget.bActive )
-    {
         return;
-    }
+        
     if (Pawn != none && bUsingGamepad)
     {
         KFW = KFWeapon(Pawn.Weapon);
         if ( KFW != None && !KFW.CanSwitchWeapons())
-        {
            return;
-        }
         
-        HUD = KFHUDInterface(Outer.myHUD);
-        if( HUD != None )
+        if( HUDInterface != None )
         {
             bGamepadWeaponSelectOpen = true;
             KFInventoryManager(Pawn.InvManager).HighlightWeapon(Pawn.Weapon);
             
-            if( !HUD.bDisplayInventory )
+            if( !HUDInterface.bDisplayInventory )
             {
-                HUD.bDisplayInventory = true;
-                HUD.InventoryFadeStartTime = WorldInfo.TimeSeconds;
+                HUDInterface.bDisplayInventory = true;
+                HUDInterface.InventoryFadeStartTime = WorldInfo.TimeSeconds;
             }
             else
             {
-                if ( WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime > HUD.InventoryFadeInTime )
+                if ( `TimeSince(HUDInterface.InventoryFadeStartTime) > HUDInterface.InventoryFadeInTime )
                 {
-                    if ( WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime > HUD.InventoryFadeTime - HUD.InventoryFadeOutTime )
-                    {
-                        HUD.InventoryFadeStartTime = WorldInfo.TimeSeconds - HUD.InventoryFadeInTime + ((HUD.InventoryFadeTime - (WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime)) * HUD.InventoryFadeInTime);
-                    }
-                    else
-                    {
-                        HUD.InventoryFadeStartTime = WorldInfo.TimeSeconds - HUD.InventoryFadeInTime;
-                    }
+                    if ( `TimeSince(HUDInterface.InventoryFadeStartTime) > HUDInterface.InventoryFadeTime - HUDInterface.InventoryFadeOutTime )
+                        HUDInterface.InventoryFadeStartTime = `TimeSince(HUDInterface.InventoryFadeInTime + ((HUDInterface.InventoryFadeTime - `TimeSince(HUDInterface.InventoryFadeStartTime)) * HUDInterface.InventoryFadeInTime));
+                    else HUDInterface.InventoryFadeStartTime = `TimeSince(HUDInterface.InventoryFadeInTime);
                 }
             }
         }
     }
 }
 
+exec function ShowVoiceComms()
+{
+    if( (bVersusInput && PlayerReplicationInfo.GetTeamNum() == 255) || IsBossCameraMode() )
+        return;
+
+    if( HUDInterface.VoiceComms != None )
+        HUDInterface.VoiceComms.SetVisibility(!HUDInterface.VoiceComms.bVisible);
+}
+
 exec function OnVoteYesPressed()
 {
     local KFPlayerReplicationInfo KFPRI;
     
-    if( !KFHUDInterface(Outer.myHUD).bVoteActive )
+    if( !HUDInterface.bVoteActive )
         return;
     
     KFPRI = KFPlayerReplicationInfo(Outer.PlayerReplicationInfo);
@@ -255,7 +186,7 @@ exec function OnVoteNoPressed()
 {
     local KFPlayerReplicationInfo KFPRI;
     
-    if( !KFHUDInterface(Outer.myHUD).bVoteActive )
+    if( !HUDInterface.bVoteActive )
         return;
     
     KFPRI = KFPlayerReplicationInfo(Outer.PlayerReplicationInfo);
@@ -264,7 +195,7 @@ exec function OnVoteNoPressed()
 
 exec function CustomStartFire( optional Byte FireModeNum )
 {
-    if( FireModeNum == class'KFWeapon'.const.BASH_FIREMODE )
+    if( !Outer.bDisableGameplayChanges && FireModeNum == class'KFWeapon'.const.BASH_FIREMODE )
         return;
         
     Super.CustomStartFire(FireModeNum);
@@ -274,15 +205,13 @@ exec function SwitchFire()
 {
     local KFWeapon Wep;
     
-    if( Pawn != None )
+    if( !Outer.bDisableGameplayChanges && Pawn != None )
     {
         Wep = KFWeapon(Pawn.Weapon);
         if( Wep != None )
         {
             if( Wep.IsMeleeWeapon() )
-            {
                 return;
-            }
         }
     }
     
@@ -297,14 +226,9 @@ exec function GamepadSwitchFire()
     {
         W = Pawn.InvManager.PendingWeapon != none ? Pawn.InvManager.PendingWeapon : Pawn.Weapon;
         if( W != None && W.CanThrow() )
-        {
             ServerThrowOtherWeapon(W);
-        }
     }
-    else
-    {
-        SwitchFire();
-    }
+    else SwitchFire();
 }
 
 function PreClientTravel( string PendingURL, ETravelType TravelType, bool bIsSeamlessTravel)
@@ -313,8 +237,8 @@ function PreClientTravel( string PendingURL, ETravelType TravelType, bool bIsSea
     if( !bHandledTravel )
     {
         bHandledTravel = true;
-        if( KFHUDInterface(MyHUD)!=None )
-            KFHUDInterface(MyHUD).NotifyLevelChange(true);
+        if( HUDInterface!=None )
+            HUDInterface.NotifyLevelChange(true);
     }
 }
 
@@ -356,14 +280,10 @@ function bool FilterButtonInput(int ControllerId, Name Key, EInputEvent Event, f
         }
         
         if( MyGUIController.bIsInMenuState )
-        {
             return true;
-        }
             
         if( MyGFxManager.bMenusOpen )
-        {
             return MyGFxManager.ToggleMenus();
-        }
         else
         {
             if( WorldInfo.GRI.bMatchIsOver )
@@ -376,17 +296,15 @@ function bool FilterButtonInput(int ControllerId, Name Key, EInputEvent Event, f
                     
                 return true;
             }
-            else
-            {
-                MyGUIController.OpenMenu(Outer.MidGameMenuClass);
-            }
+            else MyGUIController.OpenMenu(Outer.MidGameMenuClass);
         }
     }
     
     return false;
 }
 
+exec function HideVoiceComms();
+
 defaultproperties
 {
-    bQuickWeaponSelect=false
 }

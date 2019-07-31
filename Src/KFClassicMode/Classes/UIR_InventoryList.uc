@@ -101,9 +101,9 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
                 {
                     if( !Item.FillAmmoB.bDisabled )
                     {
-                        if (PC != None && PC.MyGFxHUD != None)
+                        if( PC != None )
                         {
-                            PC.MyGFxHUD.PlaySoundFromTheme('PERK_MENU_BUTTON_CLICK', 'UI');
+                            PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PERK_MENU_BUTTON_CLICK');
                         }
                     }
                     
@@ -113,9 +113,9 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
                 {
                     if( !Item.PurchaseVest.bDisabled )
                     {
-                        if (PC != None && PC.MyGFxHUD != None)
+                        if( PC != None )
                         {
-                            PC.MyGFxHUD.PlaySoundFromTheme('PERK_MENU_BUTTON_CLICK', 'UI');
+                            PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_PERK_MENU_BUTTON_CLICK');
                         }
                     }
                     
@@ -158,7 +158,7 @@ function RefreshItemComponents()
         Inv = UIR_TraderPlayerInventory(InventoryBox.ItemComponents[i]);
         if( Inv != None )
             Inv.Refresh();
-    }    
+    }
     
     for(i=0; i < Components.Length; i++)
     {
@@ -186,14 +186,14 @@ function DoSellItem( UIR_ItemBase Sender, bool bRight, int MouseX, int MouseY )
         TraderMenu.Sale.DeselectAll();
         DeselectAll();
         
+        TraderMenu.BuyWeaponInfoPanel.ResetValues();
+        TraderMenu.MyBuyable = TraderMenu.default.MyBuyable;
+        
         TraderMenu.IScrollText.SetText(TraderMenu.InfoText[0]);
         TraderMenu.WeightB.NewBoxes = 0;
         TraderMenu.bDidBuyableUpdate = true;
         
-        if( PC.MyGFxHUD != None )
-        {
-            PC.MyGFxHUD.PlaySoundFromTheme('TRADER_SELL_WEAPON', 'UI');
-        }
+        PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_SELL_WEAPON');
     }
 }
 
@@ -216,6 +216,7 @@ function InventoryDoClick( UIR_ItemBase Sender, bool bRight, int MouseX, int Mou
     Info.bSecondary = Sender.bIsSecondaryAmmo;
     
     TraderMenu.MyBuyable = Info;
+    TraderMenu.CurrentItem = Sender.Sellable;
     TraderMenu.BuyWeaponInfoPanel.SetDisplay(Sender.Sellable);
 }
 
@@ -288,7 +289,7 @@ defaultproperties
 {
     EdgeSize(0)=10
     EdgeSize(1)=45
-    EdgeSize(2)=-23
+    EdgeSize(2)=-50
     EdgeSize(3)=-55
     
     Begin Object class=KFGUI_ComponentList Name=InventoryBox
@@ -329,7 +330,6 @@ defaultproperties
         ID="KnifeInventory"
         YPosition=0.7
         XPosition=0
-        XSize=0.955
         YSize=0.1
     End Object
     Components.Add(KnifeInventory)
@@ -338,7 +338,6 @@ defaultproperties
         ID="GrenadeInventory"
         YPosition=0.8
         XPosition=0
-        XSize=0.955
         YSize=0.1
     End Object
     Components.Add(GrenadeInventory)
@@ -347,7 +346,6 @@ defaultproperties
         ID="ArmorInventory"
         YPosition=0.9
         XPosition=0
-        XSize=0.955
         YSize=0.1
     End Object
     Components.Add(ArmorInventory)

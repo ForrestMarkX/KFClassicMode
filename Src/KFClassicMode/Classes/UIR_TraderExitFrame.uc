@@ -25,7 +25,7 @@ function InitMenu()
 function ShowMenu()
 {
     Super.ShowMenu();
-    SetTimer(0.25f, true, nameOf(Refresh));
+    SetTimer(0.01f, true, nameOf(Refresh));
 }
 
 function Refresh()
@@ -76,9 +76,9 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
         case 'XboxTypeS_Back':
             if( Event == IE_Pressed )
             {
-                if (KFPlayerController(GetPlayer()) != None && KFPlayerController(GetPlayer()).MyGFxHUD != None)
+                if( KFPlayerController(GetPlayer()) != None )
                 {
-                    KFPlayerController(GetPlayer()).MyGFxHUD.PlaySoundFromTheme('TRADER_MAGFILL_BUTTON_CLICK', 'UI');
+                    KFPlayerController(GetPlayer()).PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_MAGFILL_BUTTON_CLICK');
                 }
                 
                 AutoFill.HandleMouseClick(false);
@@ -87,9 +87,9 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
         case 'XboxTypeS_Start':
             if( Event == IE_Pressed )
             {
-                if (KFPlayerController(GetPlayer()) != None && KFPlayerController(GetPlayer()).MyGFxHUD != None)
+                if( KFPlayerController(GetPlayer()) != None )
                 {
-                    KFPlayerController(GetPlayer()).MyGFxHUD.PlaySoundFromTheme('TRADER_EXIT_BUTTON_CLICK', 'UI');
+                    KFPlayerController(GetPlayer()).PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_EXIT_BUTTON_CLICK');
                 }
                 
                 DoClose();

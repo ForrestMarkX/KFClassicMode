@@ -6,7 +6,7 @@ defaultproperties
     InventorySize=6
     GroupPriority=85
     
-       AssociatedPerkClasses(1)=class'KFPerk_Sharpshooter'
+    AssociatedPerkClasses(1)=class'KFPerk_Sharpshooter'
     
     // Ammo
     MagazineCapacity[0]=10
@@ -19,4 +19,5 @@ defaultproperties
     // DEFAULT_FIREMODE
     InstantHitDamage(DEFAULT_FIREMODE)=140
     FireInterval(DEFAULT_FIREMODE)=0.9
+    InstantHitDamageTypes(DEFAULT_FIREMODE)=class'ClassicDT_Ballistic_Winchester'
 }

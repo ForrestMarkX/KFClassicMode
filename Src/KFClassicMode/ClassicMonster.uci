@@ -1,11 +1,13 @@
 `if(`notdefined(OVERRIDECHARACTERARCHFUNC))
-    simulated function SetCharacterArch( KFCharacterInfoBase Info, optional bool bForce )
-    {
-        Super.SetCharacterArch(class'ClassicZEDHelper'.static.GetCharacterArch(self, Info), bForce);
-        
-        if( SoundGroupArch.EntranceSound != None )
-            SoundGroupArch.EntranceSound = None;
-    }
+simulated function SetCharacterArch( KFCharacterInfoBase Info, optional bool bForce )
+{
+	Super.SetCharacterArch(class'ClassicZEDHelper'.static.GetCharacterArch(self, Info), bForce);
+	
+    `if(`notdefined(PLAYENTRANCESOUND))
+	if( SoundGroupArch.EntranceSound != None )
+		SoundGroupArch.EntranceSound = None;
+    `endif
+}
 `endif
 
 static function string GetSeasonalLocalizationSuffix()
@@ -14,13 +16,13 @@ static function string GetSeasonalLocalizationSuffix()
 }
 
 `if(`notdefined(OVERRIDECHARACTERANIMFUNC))
-    simulated function SetCharacterAnimationInfo()
-    {
-        Super.SetCharacterAnimationInfo();
-        
-        if( PawnAnimInfo != default.PawnAnimInfo )
-            PawnAnimInfo = default.PawnAnimInfo;
-    }
+simulated function SetCharacterAnimationInfo()
+{
+	Super.SetCharacterAnimationInfo();
+	
+	if( PawnAnimInfo != default.PawnAnimInfo )
+		PawnAnimInfo = default.PawnAnimInfo;
+}
 `endif
 
 function bool AttackWhileMoving( byte AttackIndex, byte StrikeFlags )
@@ -29,9 +31,9 @@ function bool AttackWhileMoving( byte AttackIndex, byte StrikeFlags )
 }
 
 `if(`notdefined(OVERRIDEMOVEMENTFUNC))
-    simulated function ZeroMovementVariables()
-    {
-        if( class'ClassicZEDHelper'.static.CanZeroMovement(self) )
-            Super.ZeroMovementVariables();
-    }
+simulated function ZeroMovementVariables()
+{
+	if( class'ClassicZEDHelper'.static.CanZeroMovement(self) )
+		Super.ZeroMovementVariables();
+}
 `endif

@@ -81,6 +81,11 @@ final function ChangeToolTip( string S )
         ToolTipItem.SetText(S);
     else ToolTip = S;
 }
+function SetVisibility(bool Visible)
+{
+    Super.SetVisibility(Visible);
+    SetDisabled(!Visible);
+}
 
 function HandleMouseClick( bool bRight );
 

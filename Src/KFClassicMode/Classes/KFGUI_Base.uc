@@ -29,7 +29,7 @@ var transient KFGUI_Base MouseArea; // Next in recurse line of the mouse pointer
 var() bool bDisabled,bClickable,bCanFocus;
 var bool bFocusedPostDrawItem; // If this component has been given input focus, should it receive draw menu call after everything else been drawn?
 var transient bool bFocused,bTextureInit,bVisible;
-var bool bIsHUDWidget;
+var bool bIsHUDWidget,bEnableInputs;
 var array<name> TimerNames;
 
 function InitMenu(); // Menu was initialized for the first time.
@@ -63,7 +63,7 @@ final function SetTimer(float InRate, optional bool inbLoop, optional Name inTim
         TimerNames.AddItem(inTimerFunc);
     }
     
-    Owner.WorldInfo.TimerHelper.SetTimer( InRate, inbLoop, inTimerFunc, self );
+    `TimerHelper.SetTimer( InRate, inbLoop, inTimerFunc, self );
 }
 final function ClearTimer(optional Name inTimerFunc='Timer')
 {
@@ -72,7 +72,7 @@ final function ClearTimer(optional Name inTimerFunc='Timer')
         TimerNames.RemoveItem(inTimerFunc);
     }
         
-    Owner.WorldInfo.TimerHelper.ClearTimer( inTimerFunc, self );
+    `TimerHelper.ClearTimer( inTimerFunc, self );
 }
 function Timer();
 
@@ -122,7 +122,7 @@ final function ComputeCoords()
 
 function bool CaptureMouse()
 {
-    return ( Owner.MousePosition.X>=CompPos[0] && Owner.MousePosition.Y>=CompPos[1] && Owner.MousePosition.X<=(CompPos[0]+CompPos[2]) && Owner.MousePosition.Y<=(CompPos[1]+CompPos[3]) );
+    return bVisible && ( Owner.MousePosition.X>=CompPos[0] && Owner.MousePosition.Y>=CompPos[1] && Owner.MousePosition.X<=(CompPos[0]+CompPos[2]) && Owner.MousePosition.Y<=(CompPos[1]+CompPos[3]) );
 }
 
 final function KFGUI_Base GetMouseFocus()
@@ -225,6 +225,29 @@ function LostKeyFocus();
 
 function bool NotifyInputKey( int ControllerId, name Key, EInputEvent Event, float AmountDepressed, bool bGamepad )
 {
+    if( bIsHUDWidget && bEnableInputs )
+    {
+        switch( Key )
+        {
+        case 'XboxTypeS_Start':
+        case 'Escape':
+            if( Event==IE_Pressed )
+                UserPressedEsc();
+            return true;
+        case 'XboxTypeS_DPad_Up':
+        case 'XboxTypeS_DPad_Down':
+        case 'XboxTypeS_DPad_Left':
+        case 'XboxTypeS_DPad_Right':
+        case 'MouseScrollDown':
+        case 'MouseScrollUp':
+        case 'MouseScrollDown':
+        case 'MouseScrollUp':
+            if( Event==IE_Pressed )
+                ScrollMouseWheel(Key=='MouseScrollUp' || Key=='XboxTypeS_DPad_Up' || Key=='XboxTypeS_DPad_Left');
+            return true;
+        }
+    }
+    
     return false;
 }
 function bool NotifyInputAxis( int ControllerId, name Key, float Delta, float DeltaTime, bool bGamepad )

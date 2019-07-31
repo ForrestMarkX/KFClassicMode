@@ -31,7 +31,7 @@ function InitMenu()
     bAllSelected = true;
 }
 
-function SetText(string NewText)
+function SetText(string NewText, optional bool bIgnoreDelegate)
 {
     local bool bChanged;
 
@@ -39,7 +39,7 @@ function SetText(string NewText)
     TextStr = NewText;
     CaretPos = Len(TextStr);
 
-    if (bChanged)
+    if (bChanged && !bIgnoreDelegate)
         TextChanged();
 
     bAllSelected=true;
@@ -56,7 +56,7 @@ function bool NotifyInputChar(int Key, string Unicode)
         S = Unicode;
     else S = Chr(Key);
     
-    if( Asc(S) == 13 || Asc(S) == 8 )
+    if( Asc(S) == 13 || Asc(S) == 8 || Asc(S) == 27 )
         return false;
         
     if( bCtrl )
@@ -187,13 +187,21 @@ function bool NotifyInputKey(int ControllerId, name Key, EInputEvent Event, floa
     {
         return false;
     }
-    else if( Key == 'Escape' && Event == IE_Released )
+    else if( Key == 'Escape' && Event == IE_Pressed )
     {
         if( TextStr!="" )
         {
             SetInputText("");
             CaretPos = 0;
             return true;
+        }
+        else
+        {
+            if( ParentComponent != None )
+            {
+                ParentComponent.UserPressedEsc();
+                return true;
+            }
         }
     }
     else if( Key=='Enter' && Event == IE_Released )
@@ -321,9 +329,9 @@ function DrawMenu()
         StorageLength = Len(Storage);
         
         Storage = "";
-        for(MaskIndex=0; MaskIndex <= StorageLength; MaskIndex++ )
+        for(MaskIndex=1; MaskIndex <= StorageLength; MaskIndex++ )
         {
-            Storage $= "#";
+            Storage $= "*";
         }
     }
     
@@ -372,19 +380,19 @@ function DrawMenu()
             Canvas.TextSize(TmpString, XL, YL, FontScale, FontScale);
         }
 
-        CursorY = (CompPos[3]/2) - (YL/2);
+        CursorY = (CompPos[3]/2) - ((YL-Owner.HUDOwner.ScaledBorderSize)/2);
 
         if(bAllSelected)
         {
             Canvas.SetDrawColor(255,255,255,195);
             Canvas.SetPos(BorderSize, CursorY);
-            Canvas.DrawTile( Owner.DefaultPens[`PEN_WHITE], XL, YL, 0, 0, Owner.DefaultPens[`PEN_WHITE].GetSurfaceWidth(), Owner.DefaultPens[`PEN_WHITE].GetSurfaceHeight() );
+            Canvas.DrawTile( Owner.DefaultPens[`PEN_WHITE], XL, YL-Owner.HUDOwner.ScaledBorderSize, 0, 0, Owner.DefaultPens[`PEN_WHITE].GetSurfaceWidth(), Owner.DefaultPens[`PEN_WHITE].GetSurfaceHeight() );
         }
         else
         {
             Canvas.SetDrawColor(255,255,255,Owner.CursorFlash);
             Canvas.SetPos(XL + (Len(FinalDraw) == 0 ? 0 : 3), CursorY);
-            Canvas.DrawTile( Owner.DefaultPens[`PEN_WHITE], 3, YL, 0, 0, Owner.DefaultPens[`PEN_WHITE].GetSurfaceWidth(), Owner.DefaultPens[`PEN_WHITE].GetSurfaceHeight() );
+            Canvas.DrawTile( Owner.DefaultPens[`PEN_WHITE], 3, YL-Owner.HUDOwner.ScaledBorderSize, 0, 0, Owner.DefaultPens[`PEN_WHITE].GetSurfaceWidth(), Owner.DefaultPens[`PEN_WHITE].GetSurfaceHeight() );
         }
     }
     

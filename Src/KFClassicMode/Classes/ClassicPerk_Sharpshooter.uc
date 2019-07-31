@@ -1,9 +1,8 @@
 class ClassicPerk_Sharpshooter extends ClassicPerk_Base;
 
-var const PerkSkill    HeadshotDamage;
-var const PerkSkill    FireSpeed;
-var const PerkSkill    ReloadSpeed;
-var const PerkSkill    Recoil;
+var const PerkSkill FireSpeed;
+var const PerkSkill ReloadSpeed;
+var const PerkSkill Recoil;
 
 struct HeadshotDamagetypes
 {
@@ -21,6 +20,8 @@ simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCau
     local float TempDamage;
     local int DamageTypeIdx;
 
+    Super.ModifyDamageGiven(InDamage, DamageCauser, MyKFPM, DamageInstigator, DamageType, HitZoneIdx);
+    
     TempDamage = InDamage;
 
     if( DamageCauser != none )
@@ -37,8 +38,6 @@ simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCau
             {
                 TempDamage *= HeadshotDamageMultipliers[DamageTypeIdx].HeadshotDamageMult;
             }
-            
-            TempDamage += InDamage * GetPassiveValue( HeadshotDamage, CurrentVetLevel );
         }
     }
 
@@ -49,7 +48,7 @@ simulated function ModifyRateOfFire( out float InRate, KFWeapon KFW )
 {
     if( IsWeaponOnPerk( KFW,, self.class ) )
     {
-        InRate -= InRate * GetPassiveValue( FireSpeed, CurrentVetLevel );
+        InRate *= FMax(1 - GetPassiveValue(FireSpeed, CurrentVetLevel), 0.01);
     }
 }
 
@@ -111,25 +110,25 @@ simulated static function class<KFWeaponDefinition> GetWeaponDef(int Level)
 
 simulated static function GetPassiveStrings( out array<string> PassiveValues, out array<string> Increments, byte Level )
 {
-    PassiveValues[0] = Round((GetPassiveValue( default.HeadshotDamage, Level ) + default.HeadshotDamage.StartingValue) * 100) $ "%";
+    PassiveValues[0] = Round((GetPassiveValue( default.WeaponDamage, Level ) + default.WeaponDamage.StartingValue) * 100) $ "%";
     PassiveValues[1] = Round(GetPassiveValue( default.FireSpeed, Level ) * 100) $ "%";
     PassiveValues[2] = Round(GetPassiveValue( default.ReloadSpeed, Level ) * 100) $ "%";
     PassiveValues[3] = Round(GetPassiveValue( default.Recoil, Level ) * 100) $ "%";
 
-    Increments[0] = "[" @ Left( string( default.HeadshotDamage.Increment * 100 ), InStr(string(default.HeadshotDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
+    Increments[0] = "[" @ Left( string( default.WeaponDamage.Increment * 100 ), InStr(string(default.WeaponDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[1] = "[" @ Left( string( default.FireSpeed.Increment * 100 ), InStr(string(default.FireSpeed.Increment * 100), ".") + 2 )$ "% /" @ default.LevelString @ "]";
     Increments[2] = "[" @ Left( string( default.ReloadSpeed.Increment * 100 ), InStr(string(default.ReloadSpeed.Increment * 100), ".") + 2 )$ "% /" @ default.LevelString @ "]";
     Increments[3] = "[" @ Left( string( default.Recoil.Increment * 100 ), InStr(string(default.Recoil.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
 }
 
-simulated static function string GetCustomLevelInfo( byte Level )
+simulated function string GetCustomLevelInfo( byte Level )
 {
     local string S;
     local class<KFWeaponDefinition> SpawnDef;
 
     S = default.CustomLevelInfo;
 
-    ReplaceText(S,"%d",GetPercentStr(default.HeadshotDamage, Level));
+    ReplaceText(S,"%d",GetPercentStr(default.WeaponDamage, Level));
     ReplaceText(S,"%s",GetPercentStr(default.FireSpeed, Level));
     ReplaceText(S,"%a",GetPercentStr(default.ReloadSpeed, Level));
     ReplaceText(S,"%m",GetPercentStr(default.Recoil, Level));
@@ -144,14 +143,25 @@ simulated static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+simulated function GetPerkIcons(ObjectReferencer RepInfo)
+{
+    local int i;
+    
+    for (i = 0; i < OnHUDIcons.Length; i++)
+    {
+        OnHUDIcons[i].PerkIcon = Texture2D(RepInfo.ReferencedObjects[66]);
+        OnHUDIcons[i].StarIcon = Texture2D(RepInfo.ReferencedObjects[28]);
+    }
+}
+
 DefaultProperties
 {
     BasePerk=class'KFPerk_Sharpshooter'
     
     AdditionalOnPerkWeaponNames(0)="ClassicWeap_Pistol_9mm"
-       AdditionalOnPerkWeaponNames(1)="ClassicWeap_Pistol_Dual9mm"
-       AdditionalOnPerkWeaponNames(2)="KFWeap_Revolver_Rem1858"
-       AdditionalOnPerkWeaponNames(3)="ClassicWeap_Revolver_SW500"
+    AdditionalOnPerkWeaponNames(1)="ClassicWeap_Pistol_Dual9mm"
+    AdditionalOnPerkWeaponNames(2)="KFWeap_Revolver_Rem1858"
+    AdditionalOnPerkWeaponNames(3)="ClassicWeap_Revolver_SW500"
     AdditionalOnPerkDTNames(0)="KFDT_Ballistic_9mm"
     AdditionalOnPerkDTNames(1)="KFDT_Ballistic_SW500"
     AdditionalOnPerkDTNames(2)="KFDT_Ballistic_Rem1858"
@@ -169,8 +179,8 @@ DefaultProperties
     PassiveInfos(2)=(Title="Reload Speed")
     PassiveInfos(3)=(Title="Recoil")
     
-    HeadshotDamage=(Name="Sniper Weapon Damage",Increment=0.05,Rank=0,StartingValue=0.05,MaxValue=0.6f)
-    FireSpeed=(Name="Fire Speed",Increment=0.1f,Rank=0,StartingValue=0.f,MaxValue=0.6f)
+    WeaponDamage=(Name="Sniper Weapon Damage",Increment=0.05,Rank=0,StartingValue=0.05,MaxValue=0.6f)
+    FireSpeed=(Name="Fire Speed",Increment=0.01f,Rank=0,StartingValue=0.f,MaxValue=0.3f)
     ReloadSpeed=(Name="Reload Speed",Increment=0.025f,Rank=0,StartingValue=0.f,MaxValue=0.5f)
     Recoil=(Name="Recoil",Increment=0.1,Rank=0,StartingValue=0.f,MaxValue=0.5f)
     

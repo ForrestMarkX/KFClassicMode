@@ -12,20 +12,112 @@ var float DefaultHeight; // Default font text size.
 var transient Canvas Canvas;
 var transient KF2GUIController Owner;
 
-var Font MainFont, NumberFont;
+var Font MainFont, NumberFont, InfiniteFont;
 var Color BlurColor, BlurColor2;
+
+struct FColorInfo
+{
+    var name Code;
+    var Color Color;
+};
+var array<FColorInfo> ColorCodes;
 
 function InitStyle()
 {
+    local FColorInfo ColorInfo;
+    
     ItemTex=Texture2D(DynamicLoadObject("UI_LevelChevrons_TEX.UI_LevelChevron_Icon_02",class'Texture2D'));
     if( ItemTex==None )
         ItemTex=Texture2D'EngineMaterials.DefaultWhiteGrid';
         
-    MainFont = Font(DynamicLoadObject("KFClassicMode_Assets.Font.KFMainFont", class'Font'));
     NumberFont = Font(DynamicLoadObject("UI_Canvas_Fonts.Font_General", class'Font'));
     
     BlurColor = MakeColor(60, 60, 60, 220);
     BlurColor2 = MakeColor(40, 40, 40, 140);
+    
+    ColorInfo.Code='Q';
+    ColorInfo.Color = MakeColor(0,140,0,255); // Dark Green
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='E';
+    ColorInfo.Color = MakeColor(210,180,140,255); // Tan
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='R';
+    ColorInfo.Color = MakeColor(128,0,0,255); // Dark Red
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='T';
+    ColorInfo.Color = MakeColor(153,102,204,255); // Purple
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='U';
+    ColorInfo.Color = MakeColor(128,128,128,255); // Dark Gray
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='I';
+    ColorInfo.Color = MakeColor(255,170,0,255); // Orange
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='O';
+    ColorInfo.Color = MakeColor(255,204,153,255); // Cream
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='P';
+    ColorInfo.Color = MakeColor(209,216,168,255); // Olive
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='A';
+    ColorInfo.Color = MakeColor(204,51,51,255); // Brick
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='S';
+    ColorInfo.Color = MakeColor(153,102,51,255); // Brown
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='D';
+    ColorInfo.Color = MakeColor(0,204,0,255); // Green
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='F';
+    ColorInfo.Color = MakeColor(238,238,51,255); // Yellow
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='G';
+    ColorInfo.Color = MakeColor(200,0,0,255); // Red
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='H';
+    ColorInfo.Color = MakeColor(153,153,255,255); // Blue
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='J';
+    ColorInfo.Color = MakeColor(192,192,192,255); // Silver
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='K';
+    ColorInfo.Color = MakeColor(255,204,0,255); // Gold
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='C';
+    ColorInfo.Color = MakeColor(255,255,255,255); // White
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='V';
+    ColorInfo.Color = MakeColor(0,191,255,255); // Sky Blue
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='B';
+    ColorInfo.Color = MakeColor(204,204,204,255); // Gray
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='N';
+    ColorInfo.Color = MakeColor(0,128,255,255); // Dark Sky Blue
+    ColorCodes.AddItem(ColorInfo);
+    
+    ColorInfo.Code='M';
+    ColorInfo.Color = MakeColor(18,18,18,255); // Black
+    ColorCodes.AddItem(ColorInfo);
 }
 
 function RenderFramedWindow( KFGUI_FloatingWindow P );
@@ -39,10 +131,16 @@ function RenderCheckbox( KFGUI_CheckBox C );
 function RenderComboBox( KFGUI_ComboBox C );
 function RenderComboList( KFGUI_ComboSelector C );
 
-function Font PickFont( out float Scaler, optional bool bNumbersOnly )
+function Font PickFont( out float Scaler, optional bool bNumbersOnly, optional bool bInfinite )
 {
     Scaler = GetFontScaler();
-    return bNumbersOnly ? NumberFont : MainFont;
+    
+    if( bNumbersOnly )
+        return NumberFont;
+    else if( bInfinite )
+        return InfiniteFont;
+    
+    return MainFont;
 }
 
 function PickDefaultFontSize( float YRes )
@@ -57,11 +155,23 @@ function PickDefaultFontSize( float YRes )
 }
 final function float ScreenScale( float Size, optional float MaxRes=1920.f )
 {
-    return Size * ( Owner.ScreenSize.X / MaxRes );
+    local float SizeX;
+    
+    if( Owner == None )
+        SizeX = Canvas.SizeX;
+    else SizeX = Owner.ScreenSize.X;
+    
+    return Size * ( SizeX / MaxRes );
 }
 final function float GetFontScaler(optional float Scaler=0.375f, optional float Min=0.175f, optional float Max=0.375f)
 {
-    return FClamp((Owner.ScreenSize.X / 1920.f) * Scaler, Min, Max);
+    local float SizeX;
+    
+    if( Owner == None )
+        SizeX = Canvas.SizeX;
+    else SizeX = Owner.ScreenSize.X;
+    
+    return FClamp((SizeX / 1920.f) * Scaler, Min, Max);
 }
 final function DrawText( coerce string S )
 {
@@ -80,8 +190,91 @@ final function DrawCenteredText( coerce string S, float X, float Y, optional flo
     else Canvas.SetPos(X-(XL*Scale*0.5),Y);
     
     if( bUseOutline )
-        DrawTextOutline(S, Canvas.CurX, Canvas.CurY, 1, MakeColor(0, 0, 0, Canvas.DrawColor.A), Scale);
+        DrawTextShadow(S, Canvas.CurX, Canvas.CurY, 1, Scale);
     else Canvas.DrawText(S,,Scale,Scale);
+}
+final function string StripColorTags( coerce string S )
+{
+    local int Pos;
+    
+    Pos = InStr(S, "\\c");
+    while( Pos != INDEX_NONE )
+    {
+        S = Left(S,Pos) $ Mid(S,Pos+3);
+        Pos = InStr(S, "\\c");
+    }
+    
+    return S;
+}
+final function DrawColoredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bUseOutline )
+{
+    local float XL,YL;
+    local int i, Index;
+    local array<string> SArray;
+    local string T, PrevT;
+    local Color TextColor;
+    local Color OrgC;
+    
+    OrgC = Canvas.DrawColor;
+    Canvas.TextSize(S,XL,YL);
+    
+    if( InStr(S, "\\c") == INDEX_NONE )
+    {
+        if( bUseOutline )
+            DrawTextShadow(S, X, Y, 1, Scale);
+        else 
+        {
+            Canvas.SetPos(X,Y);
+            Canvas.DrawText(S,,Scale,Scale);
+        }
+    }
+    else
+    {
+        SArray = SplitString(S, "\\c");
+        
+        PrevT = Left(S,InStr(S, "\\c"));
+        if( Len(PrevT) > 0 )
+        {
+            Canvas.TextSize(PrevT,XL,YL,Scale,Scale);
+
+            if( bUseOutline )
+                DrawTextShadow(PrevT, X, Y, 1, Scale);
+            else 
+            {
+                Canvas.SetPos(X,Y);
+                Canvas.DrawText(PrevT,,Scale,Scale);
+            }
+        }
+        
+        for( i=0; i<SArray.Length; i++ )
+        {
+            T = SArray[i];
+            if( i>0 || Left(S, 2)~="\\c" )
+            {
+                Index = ColorCodes.Find('Code', name(Left(T, 1)));
+                if( Index != INDEX_NONE )
+                    TextColor = ColorCodes[Index].Color;
+                else TextColor = class'HUD'.default.WhiteColor;
+                
+                TextColor.A = OrgC.A;
+                
+                T = Mid(T, 1);
+            }
+            
+            Canvas.DrawColor = TextColor;
+            Canvas.TextSize(T,XL,YL,Scale,Scale);
+            
+            if( bUseOutline )
+                DrawTextShadow(T, X, Y, 1, Scale);
+            else 
+            {
+                Canvas.SetPos(X,Y);
+                Canvas.DrawText(T,,Scale,Scale);
+            }
+
+            X += XL;
+        }
+    }
 }
 final function DrawTextBlurry( coerce string S, float X, float Y, optional float Scale=1.f )
 {
@@ -146,7 +339,7 @@ final function DrawTextShadow( coerce string S, float X, float Y, float ShadowSi
     Canvas.DrawColor = OldDrawColor;
     Canvas.DrawText(S,, Scale, Scale);
 }
-final function DrawTexturedString( coerce string S, float X, float Y, float W, float H, optional float TextScaler=1.f, optional FontRenderInfo FRI, optional bool bUseOutline )
+final function DrawTexturedString( coerce string S, float X, float Y, optional float TextScaler=1.f, optional FontRenderInfo FRI, optional bool bUseOutline, optional bool bOnlyTexture )
 {
     local Texture2D Mat;
     local string D;
@@ -165,18 +358,14 @@ final function DrawTexturedString( coerce string S, float X, float Y, float W, f
         D = Left(S,i);
         S = Mid(S,j+2);
         
-        Canvas.TextSize(D,XL,YL,TextScaler,TextScaler);
-        if( bUseOutline )
+        if( !bOnlyTexture )
         {
-            DrawTextOutline(D,X,Y,1,MakeColor(0, 0, 0, OrgC.A),TextScaler,FRI);
+            Canvas.TextSize(StripColorTags(D),XL,YL,TextScaler,TextScaler);
+            DrawColoredText(D,X,Y,TextScaler,bUseOutline);
+            
+            X += XL;
         }
-        else
-        {
-            Canvas.SetPos(X,Y);
-            Canvas.DrawText(D,,TextScaler,TextScaler,FRI);
-        }
-        
-        X += XL;
+        else Canvas.TextSize("W",XL,YL,TextScaler,TextScaler);
         
         Canvas.DrawColor = class'HUD'.default.WhiteColor;
         Canvas.DrawColor.A = OrgC.A;
@@ -190,16 +379,7 @@ final function DrawTexturedString( coerce string S, float X, float Y, float W, f
         Mat = FindNextTexture(S);
     }
     
-    Canvas.TextSize(S,XL,YL,TextScaler,TextScaler);
-    if( bUseOutline )
-    {
-        DrawTextOutline(S,X,Y,1,MakeColor(0, 0, 0, OrgC.A),TextScaler,FRI);
-    }
-    else
-    {
-        Canvas.SetPos(X,Y);
-        Canvas.DrawText(S,,TextScaler,TextScaler,FRI);
-    }
+    DrawColoredText(S,X,Y,TextScaler,bUseOutline);
 }
 final function Texture2D FindNextTexture(out string S)
 {
@@ -235,7 +415,32 @@ final function string StripTextureFromString(string S, optional bool bNoStringAd
         S = Left(S,i)$(bNoStringAdd ? "" : "W")$Mid(S, j+Len("</Icon>"));
     }
 
-    return S;
+    return StripColorTags(S);
+}
+final function string GetTimeString(int Seconds)
+{
+    local int Minutes, Hours;
+    local string Time;
+
+    if( Seconds > 3600 )
+    {
+        Hours = Seconds / 3600;
+        Seconds -= Hours * 3600;
+
+        Time = Hours$":";
+    }
+    Minutes = Seconds / 60;
+    Seconds -= Minutes * 60;
+
+    if( Minutes >= 10 )
+        Time = Time $ Minutes $ ":";
+    else Time = Time $ "0" $ Minutes $ ":";
+
+    if( Seconds >= 10 )
+        Time = Time $ Seconds;
+    else Time = Time $ "0" $ Seconds;
+
+    return Time;
 }
 
 final function DrawCornerTexNU( int SizeX, int SizeY, byte Dir ) // Draw non-uniform corner.
@@ -272,16 +477,18 @@ final function DrawCornerTex( int Size, byte Dir )
         Canvas.DrawTile(ItemTex,Size,Size,11,73,66,-58);
     }
 }
-final function DrawWhiteBox( int XS, int YS, optional bool bClip )
+final function DrawWhiteBox( float XS, float YS, optional bool bClip )
 {
     Canvas.DrawTile(ItemTex,XS,YS,19,45,1,1,,bClip);
 }
 
-final function DrawRectBox( int X, int Y, int XS, int YS, int Edge, optional byte Extrav )
+final function DrawRectBox( float X, float Y, float XS, float YS, int Edge, optional byte Extrav )
 {
     if( Extrav==2 )
         Edge=Min(FMin(Edge,(XS)*0.5),YS);// Verify size.
     else Edge=Min(FMin(Edge,(XS)*0.5),(YS)*0.5);// Verify size.
+    
+    Canvas.PreOptimizeDrawTiles(Extrav==0 ? 7 : 6, ItemTex);
 
     // Top left
     Canvas.SetPos(X,Y);
@@ -350,28 +557,136 @@ final function DrawRectBox( int X, int Y, int XS, int YS, int Edge, optional byt
     }
 }
 
-final function DrawBoxHollow( float X, float Y, float Width, float Height, int Thickness )
+final function DrawBoxHollow( float X, float Y, float Width, float Height, float Thickness )
 {
     Canvas.PreOptimizeDrawTiles(4, ItemTex);
-    
-    Canvas.SetPos( X + Thickness, Y );
-    Canvas.DrawTile( ItemTex, Width - Thickness * 2, Thickness, 19, 45, 1, 1 );
-    Canvas.SetPos( X + Thickness, Y+Height-Thickness );
-    Canvas.DrawTile( ItemTex, Width - Thickness * 2, Thickness, 19, 45, 1, 1 );
-    Canvas.SetPos( X, Y );
-    Canvas.DrawTile( ItemTex, Thickness, Height, 19, 45, 1, 1 );
-    Canvas.SetPos( X + Width - Thickness, Y );
-    Canvas.DrawTile( ItemTex, Thickness, Height, 19, 45, 1, 1 );
+
+    Canvas.SetPos(X + Thickness, Y);
+    DrawWhiteBox(Width - Thickness * 2, Thickness);
+
+    Canvas.SetPos(X + Thickness, Y+Height-Thickness);
+    DrawWhiteBox(Width - Thickness * 2, Thickness);
+
+    Canvas.SetPos(X, Y);
+    DrawWhiteBox(Thickness, Height);
+
+    Canvas.SetPos(X + Width - Thickness, Y);
+    DrawWhiteBox(Thickness, Height);
 }
 
-final function DrawOutlinedBox( float X, float Y, float Width, float Height, int Thickness, Color BoxColor, Color OutlineColor )
+final function DrawOutlinedBox( float X, float Y, float Width, float Height, float Thickness, Color BoxColor, Color OutlineColor )
 {
-    Canvas.SetPos(X,Y);
-    
     Canvas.DrawColor = BoxColor;
-    DrawWhiteBox(Width, Height);
+    Canvas.SetPos(X + Thickness, Y + Thickness);
+    DrawWhiteBox(Width - (Thickness*2), Height - (Thickness*2));
+    
     Canvas.DrawColor = OutlineColor;
-    DrawBoxHollow( X - Thickness, Y - Thickness, Width + Thickness, Height + Thickness, Thickness );
+    DrawBoxHollow(X, Y, Width, Height, Thickness);
+}
+
+final function DrawBoxCorners(float BorderSize, float X, float Y, float W, float H, optional bool TopLeft, optional bool TopRight, optional bool BottomLeft, optional bool BottomRight)
+{
+    // Top left
+    Canvas.SetPos(X,Y);
+    if( TopLeft )
+        DrawCornerTex(BorderSize,0);
+    else DrawWhiteBox(BorderSize, BorderSize);
+    
+    // Top right
+    Canvas.SetPos(X+W-BorderSize,Y);
+    if( TopRight )
+        DrawCornerTex(BorderSize,1);
+    else DrawWhiteBox(BorderSize, BorderSize);
+    
+    // Bottom left
+    Canvas.SetPos(X,Y+H-BorderSize);
+    if( BottomLeft )
+        DrawCornerTex(BorderSize,2);
+    else DrawWhiteBox(BorderSize, BorderSize);
+    
+    // Bottom right
+    Canvas.SetPos(X+W-BorderSize,Y+H-BorderSize);
+    if( BottomRight )
+        DrawCornerTex(BorderSize,3);
+    else DrawWhiteBox(BorderSize, BorderSize);
+}
+
+final function DrawRoundedBox( float BorderSize, float X, float Y, float W, float H, Color BoxColor )
+{
+    DrawRoundedBoxEx(BorderSize, X, Y, W, H, BoxColor, true, true, true, true);
+}
+
+final function DrawRoundedBoxEx( float BorderSize, float X, float Y, float W, float H, Color BoxColor, optional bool TopLeft, optional bool TopRight, optional bool BottomLeft, optional bool BottomRight )
+{
+    Canvas.DrawColor = BoxColor;
+
+    if( BorderSize <= 0 )
+    {
+        Canvas.SetPos(X, Y);
+        DrawWhiteBox(W, H);
+        return;
+    }
+    
+    Canvas.PreOptimizeDrawTiles(7, ItemTex);
+
+    BorderSize = Min(FMin(BorderSize,(W)*0.5),(H)*0.5);
+
+    Canvas.SetPos(X + BorderSize, Y);
+    DrawWhiteBox(W - BorderSize * 2, H);
+    
+    Canvas.SetPos(X, Y + BorderSize);
+    DrawWhiteBox(BorderSize, H - BorderSize * 2);
+    
+    Canvas.SetPos(X + W - BorderSize, Y + BorderSize);
+    DrawWhiteBox(BorderSize, H - BorderSize * 2);
+
+    DrawBoxCorners(BorderSize, X, Y, W, H, TopLeft, TopRight, BottomLeft, BottomRight);
+}
+
+final function DrawRoundedBoxHollow( float BorderSize, float X, float Y, float W, float H, Color BoxColor )
+{
+    DrawRoundedBoxHollowEx(BorderSize, X, Y, W, H, BoxColor, true, true, true, true);
+}
+
+final function DrawRoundedBoxHollowEx( float BorderSize, float X, float Y, float W, float H, Color BoxColor, optional bool TopLeft, optional bool TopRight, optional bool BottomLeft, optional bool BottomRight )
+{
+    Canvas.PreOptimizeDrawTiles(8, ItemTex);
+    
+    BorderSize = Min(FMin(BorderSize,(W)*0.5),(H)*0.5);
+
+    Canvas.DrawColor = BoxColor;
+
+    Canvas.SetPos(X + BorderSize, Y);
+    DrawWhiteBox(W - BorderSize * 2, BorderSize);
+    
+    Canvas.SetPos(X + BorderSize, Y+H-BorderSize);
+    DrawWhiteBox(W - BorderSize * 2, BorderSize);
+    
+    Canvas.SetPos(X, Y + BorderSize);
+    DrawWhiteBox(BorderSize, H - BorderSize * 2);    
+    
+    Canvas.SetPos(X + W - BorderSize, Y + BorderSize);
+    DrawWhiteBox(BorderSize, H - BorderSize * 2);
+
+    DrawBoxCorners(BorderSize, X, Y, W, H, TopLeft, TopRight, BottomLeft, BottomRight);
+}
+
+final function DrawRoundedBoxOutlined( float BorderSize, float X, float Y, float Width, float Height, Color BoxColor, Color OutlineColor )
+{
+    Canvas.DrawColor = BoxColor;
+    Canvas.SetPos(X + BorderSize, Y + BorderSize);
+    DrawWhiteBox(Width - (BorderSize*2), Height - (BorderSize*2));
+    
+    DrawRoundedBoxHollow(BorderSize, X, Y, Width, Height, OutlineColor);
+}
+
+final function DrawRoundedBoxOutlinedEx( float BorderSize, float X, float Y, float Width, float Height, Color BoxColor, Color OutlineColor, optional bool TopLeft, optional bool TopRight, optional bool BottomLeft, optional bool BottomRight )
+{
+    Canvas.DrawColor = BoxColor;
+    Canvas.SetPos(X + BorderSize, Y + BorderSize);
+    DrawWhiteBox(Width - (BorderSize*2), Height - (BorderSize*2));
+    
+    DrawRoundedBoxHollowEx(BorderSize, X, Y, Width, Height, OutlineColor, TopLeft, TopRight, BottomLeft, BottomRight);
 }
 
 final function DrawArrowBox( int Direction, float X, float Y, float Width, float Height )
@@ -510,6 +825,33 @@ final function DrawTextJustified( byte Justification, float X1, float Y1, float 
     Canvas.DrawText(S,,XS, YS);
 }
 
+static final function float TimeFraction( float Start, float End, float Current )
+{
+	return FClamp((Current - Start) / (End - Start), 0.f, 1.f);
+}
+
+static final function string LTrim(coerce string S)
+{
+	while (Left(S, 1) == " ")
+		S = Right(S, Len(S) - 1);
+	return S;
+}
+
+static final function string RTrim(coerce string S)
+{
+	while (Right(S, 1) == " ")
+		S = Left(S, Len(S) - 1);
+	return S;
+}
+
+static final function string Trim(coerce string S)
+{
+	return LTrim(RTrim(S));
+}
+
 defaultproperties
 {
+    MainFont=Font'KFClassicMode_Assets.Font.KFMainFont'
+    NumberFont=Font'UI_Canvas_Fonts.Font_General'
+    InfiniteFont=Font'KFClassicMode_Assets.Font.KFInfiniteFont'
 }

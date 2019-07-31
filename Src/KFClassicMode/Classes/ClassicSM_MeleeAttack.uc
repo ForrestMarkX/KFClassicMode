@@ -23,17 +23,17 @@ function PlayAnimation()
 {
     local float D, InterruptTime;
     
-	if( AnimName == '' )
-	{
-		`warn( KFPOwner$" "$GetFuncName()$" "$self$" attempting special move attack but the AttackAnims array is empty!" );
-		return;
-	}
+    if( AnimName == '' )
+    {
+        `warn( KFPOwner$" "$GetFuncName()$" "$self$" attempting special move attack but the AttackAnims array is empty!" );
+        return;
+    }
 
-	if( bCanBeInterrupted )
-	{
-		InterruptTime = KFSkeletalMeshComponent(PawnOwner.Mesh).GetAnimInterruptTime(AnimName);
-		PawnOwner.SetTimer(InterruptTime, false, nameof(InterruptCheckTimer), self);
-	}
+    if( bCanBeInterrupted )
+    {
+        InterruptTime = KFSkeletalMeshComponent(PawnOwner.Mesh).GetAnimInterruptTime(AnimName);
+        PawnOwner.SetTimer(InterruptTime, false, nameof(InterruptCheckTimer), self);
+    }
 
     D = PlaySpecialMoveAnim( AnimName, AnimStance, BlendInTime, BlendOutTime, KFPOwner.AttackSpeedModifier);
     if( KFZEDAIInterface(KFPOwner.Controller)!=None )
@@ -42,6 +42,6 @@ function PlayAnimation()
 
 defaultproperties
 {
-	bUseHigherMeshSmoothingThreshold=false
+    bUseHigherMeshSmoothingThreshold=false
     bDisableMovement=false
 }

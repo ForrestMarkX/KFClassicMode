@@ -6,25 +6,57 @@ var KFGameReplicationInfo GRI;
 var bool bWaveIsActive, bInitialBossMusicTrackCreated;
 var byte UpdateCounter, TimerCount;
 var KFMusicTrackInfo CurrentTrackInfo;
-var SoundCue BossMusic;
-var KFMusicTrackInfo_Custom BossTrack;
+var SoundCue BossMusic, MenuMusic;
+var KFMusicTrackInfo_Custom BossTrack, MenuTrack;
 
 var string WaveMusic, TraderMusic;
 var string SummerWaveMusic, SummerTraderMusic;
 var string XmasWaveMusic, XmasTraderMusic;
 
+var KFGameEngine Engine;
+var float CurrentMusicMultiplier, CurrentMasterMultiplier;
+var KFMapInfo KFMI;
+
+var array<KFMusicTrackInfo> OriginalActionMusicTracks, OriginalAmbientMusicTracks, ClassicActionMusicTracks, ClassicAmbientMusicTracks;
+
+simulated static final function MusicGRI FindMusicGRI( WorldInfo Level )
+{
+    local MusicGRI H;
+    
+    foreach Level.DynamicActors(class'MusicGRI',H)
+    {
+        if( H != None )
+            return H;
+    }
+    
+    return None;
+}
+
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-    SetupMusicInfo();
+    
+    Engine = KFGameEngine(class'Engine'.static.GetEngine());
+    if ( class'WorldInfo'.static.IsMenuLevel() )
+    {
+        MenuTrack = New(None) class'KFMusicTrackInfo_Custom';
+        MenuTrack.StandardSong = MenuMusic;
+        MenuTrack.InstrumentalSong = MenuMusic;
+        
+        UpdateMusicTrack(MenuTrack);
+    }
+    else SetupMusicInfo();
 }
 
 simulated function SetupMusicInfo()
 {
     local KFMusicTrackInfo_Custom Track;
-    local KFMapInfo KFMI;
     local KFEventHelper EventHelper;
     local EEventTypes EventType;
+    local bool bNoClassicMusic;
+    
+    if( WorldInfo.NetMode == NM_DedicatedServer )
+        return;
     
     EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
     if( EventHelper == None || EventHelper.GetEventType() == EV_NONE )
@@ -40,7 +72,12 @@ simulated function SetupMusicInfo()
         return;
     }
     
+    bNoClassicMusic = ClassicPlayerController(GetALocalPlayerController()).bDisableClassicMusic;
+    
     EventType = EventHelper.GetEventType();
+        
+    OriginalActionMusicTracks = KFMI.ActionMusicTracks;
+    OriginalAmbientMusicTracks = KFMI.AmbientMusicTracks;
         
     KFMI.ActionMusicTracks.Length = 0;
     KFMI.AmbientMusicTracks.Length = 0;
@@ -70,6 +107,20 @@ simulated function SetupMusicInfo()
     
     KFMI.ShuffledAmbientMusicTrackIdxes.Length = 0;
     KFMI.CurrShuffledAmbientMusicTrackIdx = 0;
+   
+    ClassicActionMusicTracks = KFMI.ActionMusicTracks;
+    ClassicAmbientMusicTracks = KFMI.AmbientMusicTracks;
+    
+    if( bNoClassicMusic )
+    {
+        KFMI.ActionMusicTracks = OriginalActionMusicTracks;
+        KFMI.AmbientMusicTracks = OriginalAmbientMusicTracks;
+        
+        if( GRI != None )
+            GRI.PlayNewMusicTrack(false, !GRI.bWaveIsActive);
+        
+        return;
+    }
     
     ForceStartMusic();
 }
@@ -94,10 +145,6 @@ simulated function UpdateMusicTrack( KFMusicTrackInfo NextMusicTrackInfo )
     local MusicTrackStruct Music;
     
     ForceStopMusic(CurrentMusicTrack.FadeOutTime);
-    if( GRI.IsBossWave() )
-    {
-        NextMusicTrackInfo = BossTrack;
-    }
     
     CurrentTrackInfo = NextMusicTrackInfo;
     CustomInfo = KFMusicTrackInfo_Custom(NextMusicTrackInfo);
@@ -106,16 +153,19 @@ simulated function UpdateMusicTrack( KFMusicTrackInfo NextMusicTrackInfo )
     
     CurrentTrack = SoundCue(CustomInfo.StandardSong);
     
-    GRI.CurrentMusicTrackInfo = CustomInfo;
-    
     CurrentTrack.SoundClass = 'Music';
     Music.TheSoundCue = CurrentTrack;
     Music.FadeInTime = CustomInfo.FadeInTime;
     Music.FadeOutTime = 2.f;
 
     PlaySoundTrack(Music);
-    GRI.bPendingMusicTrackChange = false;
-    GRI.MusicComp = None;
+    
+    if( GRI != None )
+    {
+        GRI.CurrentMusicTrackInfo = CustomInfo;
+        GRI.bPendingMusicTrackChange = false;
+        GRI.MusicComp = None;
+    }
 }
 
 simulated function ForceStopMusic(optional float FadeOutTime=1.0f)
@@ -132,9 +182,6 @@ simulated function ForceStopMusic(optional float FadeOutTime=1.0f)
 simulated function PlaySoundTrack(MusicTrackStruct Music)
 {
     local AudioComponent A;
-    local KFGameEngine Engine;
-    
-    Engine = KFGameEngine(class'Engine'.static.GetEngine());
     
     A = WorldInfo.CreateAudioComponent(Music.TheSoundCue,false,false,false,,false);
     if( A!=None )
@@ -149,6 +196,9 @@ simulated function PlaySoundTrack(MusicTrackStruct Music)
         A.VolumeMultiplier = (Engine.MusicVolumeMultiplier/100.f) * (Engine.MasterVolumeMultiplier/100.f);
         A.FadeIn( Music.FadeInTime, Music.FadeInVolumeLevel );
         
+        CurrentMusicMultiplier = Engine.MusicVolumeMultiplier;
+        CurrentMasterMultiplier = Engine.MasterVolumeMultiplier;
+        
         SetTimer((A.SoundCue.Duration - (Music.FadeOutTime + Music.FadeInTime)) * 0.95, false, nameof(SelectNewTrack));
     }
 
@@ -158,16 +208,21 @@ simulated function PlaySoundTrack(MusicTrackStruct Music)
 
 simulated function PlayNewMusicTrack( optional bool bGameStateChanged, optional bool bForceAmbient )
 {
-    local KFMapInfo             KFMI;
     local KFMusicTrackInfo      NextMusicTrackInfo;
     local bool                  bLoop;
-    local bool                    bPlayActionTrack;
+    local bool                  bPlayActionTrack;
     
     if ( class'KFGameEngine'.static.CheckNoMusic() )
         return;
+        
+    if ( class'WorldInfo'.static.IsMenuLevel() )
+    {
+        UpdateMusicTrack(MenuTrack);
+        return;
+    }
 
     //Required or else on servers the first waves action music never starts
-    bPlayActionTrack = (!bForceAmbient && bWaveIsActive);
+    bPlayActionTrack = (!bForceAmbient && bWaveIsActive) || (GRI != None && GRI.IsBossWave());
     
     if( bGameStateChanged )
     {
@@ -183,13 +238,14 @@ simulated function PlayNewMusicTrack( optional bool bGameStateChanged, optional 
     else if( CurrentTrackInfo != none )
         bLoop = CurrentTrackInfo.bLoop;
 
-    if( bLoop )
+    if( GRI != None && GRI.IsBossWave() )
+        NextMusicTrackInfo = BossTrack;
+    else if( bLoop )
         NextMusicTrackInfo = CurrentTrackInfo;
     else
     {
-        KFMI = KFMapInfo(WorldInfo.GetMapInfo());
         if ( KFMI != none )
-            NextMusicTrackInfo = KFMI.GetNextMusicTrackByGameIntensity(bPlayActionTrack, GRI.MusicIntensity);
+            NextMusicTrackInfo = KFMI.GetNextMusicTrackByGameIntensity(bPlayActionTrack, GRI != None ? GRI.MusicIntensity : 255);
         else NextMusicTrackInfo = class'KFMapInfo'.static.StaticGetRandomTrack(bPlayActionTrack);
     }
     
@@ -198,45 +254,41 @@ simulated function PlayNewMusicTrack( optional bool bGameStateChanged, optional 
 
 simulated function Tick(float DT)
 {
-    if( WorldInfo.NetMode == NM_DedicatedServer )
-        return;
+    if( MusicCompCue != None )
+    {
+        if( !MusicCompCue.IsPlaying() )
+            SelectNewTrack();
+           
+        if( CurrentMusicMultiplier != Engine.MusicVolumeMultiplier || CurrentMasterMultiplier != Engine.MasterVolumeMultiplier )
+        {
+            CurrentMusicMultiplier = Engine.MusicVolumeMultiplier;
+            CurrentMasterMultiplier = Engine.MasterVolumeMultiplier;
         
+            MusicCompCue.VolumeMultiplier = (CurrentMusicMultiplier/100.f) * (CurrentMasterMultiplier/100.f);
+        }
+    }
+    
+    if( WorldInfo.NetMode == NM_DedicatedServer || (ClassicPlayerController(GetALocalPlayerController()).bDisableClassicMusic && !class'WorldInfo'.static.IsMenuLevel()) )
+        return;
+
     GRI = KFGameReplicationInfo(WorldInfo.GRI);
     if( GRI == None )
         return;
         
-    // I hate this so much but it's the only way to stop the original GRI from spamming songs
-    if( MusicCompCue != None )
+    GRI.bPendingMusicTrackChange = false;
+    
+    if( GRI.MusicComp != None )
     {
-        GRI.bPendingMusicTrackChange = false;
-        
-        if( GRI.MusicComp != None && GRI.MusicComp.IsPlaying() )
-        {
-            GRI.MusicComp.StopEvents();
-            GRI.MusicComp = None;
-        }
-        
-        if( !MusicCompCue.IsPlaying() )
-        {
-            SelectNewTrack();
-        }
+        GRI.MusicComp.StopEvents();
+        GRI.MusicComp = None;
     }
     
-    if( GRI.IsBossWave() && !bInitialBossMusicTrackCreated )
+    if( bWaveIsActive != GRI.bWaveIsActive )
     {
-        BossTrack = New(KFMapInfo(WorldInfo.GetMapInfo())) class'KFMusicTrackInfo_Custom';
-        BossTrack.StandardSong = BossMusic;
-        BossTrack.InstrumentalSong = BossMusic;
-        BossTrack.bLoop = true;
-        
-        UpdateMusicTrack(BossTrack);
-        
-        bInitialBossMusicTrackCreated = true;
-    }
-    else if( bWaveIsActive != GRI.bWaveIsActive && !GRI.IsBossWave() )
-    {
+        CurrentTrackInfo = None;
         bWaveIsActive = GRI.bWaveIsActive;
         PlayNewMusicTrack( true, false );
+        return;
     }
 }
 
@@ -254,6 +306,14 @@ simulated function ForceStartMusic()
     }
     
     PlayNewMusicTrack(false, !bWaveIsActive);
+}
+
+reliable client function ForceBossMusic()
+{
+    if( GRI.IsBossWave() && !ClassicPlayerController(GetALocalPlayerController()).bDisableClassicMusic )
+    {
+        UpdateMusicTrack(BossTrack);
+    }
 }
 
 defaultproperties

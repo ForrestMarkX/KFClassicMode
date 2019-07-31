@@ -8,18 +8,44 @@ var array<KFGUI_Base> ItemComponents;
 // REMEMBER to call InitMenu() on the newly created component after values are init!!!
 final function KFGUI_Base AddListComponent( class<KFGUI_Base> CompClass, optional float XS=1.f, optional float YS=1.f )
 {
+    return AddComponentAtIndex(ItemComponents.Length, CompClass, XS, YS);
+}
+
+final function KFGUI_Base CreateComponent(class<KFGUI_Base> CompClass, optional float XS=1.f, optional float YS=1.f)
+{
     local KFGUI_Base G;
     
     G = new(Self)CompClass;
     if( G==None )
         return None;
+        
     G.XPosition = (1.f - XS) * 0.5f;
     G.YPosition = (1.f - YS) * 0.5f;
     G.XSize = XS;
     G.YSize = YS;
+        
+    return G;
+}
+
+final function AddItem( KFGUI_Base Item )
+{
+    AddItemAtIndex(ItemComponents.Length, Item);
+}
+
+final function AddItemAtIndex( int i, KFGUI_Base Item )
+{
+    ItemComponents.InsertItem(i, Item);
+}
+
+final function KFGUI_Base AddComponentAtIndex( int i, class<KFGUI_Base> CompClass, optional float XS=1.f, optional float YS=1.f )
+{
+    local KFGUI_Base G;
+    
+    G = CreateComponent(CompClass, XS, YS);
     G.Owner = Owner;
     G.ParentComponent = Self;
-    ItemComponents[ItemComponents.Length] = G;
+    ItemComponents.InsertItem(i, G);
+    
     return G;
 }
 
@@ -47,9 +73,8 @@ function DrawMenu()
 
 function PreDraw()
 {
-    local int i,XNum,r;
+    local int i;
     local byte j;
-    local float XS,YS;
     
     if( !bVisible )
         return;
@@ -63,25 +88,41 @@ function PreDraw()
         ListCount = i;
         UpdateListVis();
     }
-
-    // First draw scrollbar to allow it to resize itself.
-    for( j=0; j<4; ++j )
-        ScrollBar.InputPos[j] = CompPos[j];
-    if( OldXSize!=InputPos[2] )
-    {
-        OldXSize = InputPos[2];
-        ScrollBar.XPosition = 1.f - ScrollBar.GetWidth();
-    }
-    ScrollBar.Canvas = Canvas;
-    ScrollBar.PreDraw();
     
-    // Then downscale our selves to give room for scrollbar.
-    CompPos[2] -= ScrollBar.CompPos[2];
-    Canvas.SetOrigin(CompPos[0],CompPos[1]);
-    Canvas.SetClip(CompPos[0]+CompPos[2],CompPos[1]+CompPos[3]);
-    DrawMenu();
+    if( !ScrollBar.bDisabled && !ScrollBar.bHideScrollbar )
+    {
+        // First draw scrollbar to allow it to resize itself.
+        for( j=0; j<4; ++j )
+            ScrollBar.InputPos[j] = CompPos[j];
+        if( OldXSize!=InputPos[2] )
+        {
+            OldXSize = InputPos[2];
+        }
+        ScrollBar.Canvas = Canvas;
+        ScrollBar.PreDraw();
+        
+        // Then downscale our selves to give room for scrollbar.
+        CompPos[2] -= ScrollBar.CompPos[2];
+        Canvas.SetOrigin(CompPos[0],CompPos[1]);
+        Canvas.SetClip(CompPos[0]+CompPos[2],CompPos[1]+CompPos[3]);
+        DrawMenu();
+        PreDrawListItems();
+        CompPos[2] += ScrollBar.CompPos[2];
+    }
+    else
+    {
+        Canvas.SetOrigin(CompPos[0],CompPos[1]);
+        Canvas.SetClip(CompPos[0]+CompPos[2],CompPos[1]+CompPos[3]);
+        DrawMenu();
+        PreDrawListItems();
+    }
+}
 
-    // Then draw rest of components.
+function PreDrawListItems()
+{
+    local int i,XNum,r;
+    local float XS,YS;
+    
     XNum = 0;
     r = 0;
     XS = CompPos[2] / NumColumns;
@@ -107,7 +148,6 @@ function PreDraw()
             }
         }
     }
-    CompPos[2] += ScrollBar.CompPos[2];
 }
 
 function ChangeListSize( int NewSize );

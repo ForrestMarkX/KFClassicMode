@@ -16,6 +16,7 @@ function InitMenu()
     PC = ClassicPlayerController(GetPlayer());
     TraderMenu = UI_TraderMenu(ParentComponent);
     SaleItemBox = KFGUI_ComponentList(FindComponentID('SaleItemBox'));
+    SaleItemBox.ScrollBar.YSize = 1.f;
 }
 
 function ShowMenu()
@@ -247,14 +248,14 @@ function DoPurchaseItem( UIR_ItemBase Sender, bool bRight, int MouseX, int Mouse
         TraderMenu.Inv.DeselectAll();
         DeselectAll();
         
+        TraderMenu.BuyWeaponInfoPanel.ResetValues();
+        TraderMenu.MyBuyable = TraderMenu.default.MyBuyable;
+        
         TraderMenu.IScrollText.SetText(TraderMenu.InfoText[0]);
         TraderMenu.WeightB.NewBoxes = 0;
         TraderMenu.bDidBuyableUpdate = true;
         
-        if( PC.MyGFxHUD != None )
-        {
-            PC.MyGFxHUD.PlaySoundFromTheme('TRADER_BUY_WEAPON', 'UI');
-        }
+        PC.PlayAKEvent(AkEvent'WW_UI_Menu.Play_TRADER_BUY_WEAPON');
     }
 }
 
@@ -279,6 +280,7 @@ function SaleItemDoClick( UIR_ItemBase Sender, bool bRight, int MouseX, int Mous
     Info.bInventory = KFAPH.DoIOwnThisWeapon(Sender.Buyable);
     
     TraderMenu.MyBuyable = Info;
+    TraderMenu.CurrentItem = TraderMenu.default.CurrentItem;
     TraderMenu.BuyWeaponInfoPanel.SetDisplay(Item);
 }
 
@@ -299,17 +301,12 @@ defaultproperties
 {
     EdgeSize(0)=10
     EdgeSize(1)=45
-    EdgeSize(2)=-23
+    EdgeSize(2)=-18
     EdgeSize(3)=-55
     
-    Begin Object class=KFGUI_ComponentList Name=SaleItemBox
+    Begin Object class=KFGUI_CategoryList Name=SaleItemBox
         ID="SaleItemBox"
-        YPosition=0
-        XPosition=0
-        XSize=1
-        YSize=1
         ListItemsPerPage=10
-        bHideScrollbar=true
     End Object
     Components.Add(SaleItemBox)
 }

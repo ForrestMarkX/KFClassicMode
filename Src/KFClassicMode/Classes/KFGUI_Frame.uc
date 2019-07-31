@@ -13,6 +13,15 @@ function InitMenu()
 
 function DrawMenu()
 {
+    local float TempSize;
+    
+    if( bUseAnimation )
+    {
+        TempSize = `TimeSinceEx(GetPlayer(), OpenStartTime);
+        if ( WindowFadeInTime - TempSize > 0 && FrameOpacity != default.FrameOpacity )
+            FrameOpacity = (1.f - ((WindowFadeInTime - TempSize) / WindowFadeInTime)) * default.FrameOpacity;
+    }
+    
     if( bDrawBackground )
     {
         OnDrawFrame(Canvas, CompPos[2], CompPos[3]);
@@ -21,7 +30,7 @@ function DrawMenu()
 
 delegate OnDrawFrame(Canvas C, float W, Float H)
 {
-    local float T,XL,YL;
+    local float T,XL,YL,HeaderH;
     local FontRenderInfo FRI;
     
     if( FrameTex == None )
@@ -46,14 +55,15 @@ delegate OnDrawFrame(Canvas C, float W, Float H)
         FRI.bEnableShadow = true;
     
         C.Font = Owner.CurrentStyle.MainFont;
-        T = FontScale;
+        T = Owner.CurrentStyle.ScreenScale(FontScale);
         
         C.SetDrawColor(250,250,250,FrameOpacity);
         C.TextSize(WindowTitle, XL, YL, T, T);
         
+        HeaderH = EdgeSize[1]-HeaderSize[1];
         if( bHeaderCenter )
-            C.SetPos((W/2) - (XL/2),HeaderSize[1]);
-        else C.SetPos(HeaderSize[0],HeaderSize[1]);
+            C.SetPos((W/2) - (XL/2),(HeaderH/2) - (YL/2));
+        else C.SetPos(HeaderSize[0],(HeaderH/2) - (YL/2));
         
         C.DrawText(WindowTitle,,T,T,FRI);
     }
@@ -63,9 +73,23 @@ function PreDraw()
 {
     local int i;
     local byte j;
+    local float Frac, CenterX, CenterY;
     
     if( !bVisible )
         return;
+        
+    if( bUseAnimation )
+    {
+        Frac = Owner.CurrentStyle.TimeFraction(OpenStartTime, OpenEndTime, GetPlayer().WorldInfo.RealTimeSeconds);
+        XSize = Lerp(default.XSize*0.75, default.XSize, Frac);
+        YSize = Lerp(default.YSize*0.75, default.YSize, Frac);
+        
+        CenterX = (default.XPosition + default.XSize * 0.5) - ((default.XSize*0.75)/2);
+        CenterY = (default.YPosition + default.YSize * 0.5) - ((default.YSize*0.75)/2);
+        
+        XPosition = Lerp(CenterX, default.XPosition, Frac);
+        YPosition = Lerp(CenterY, default.YPosition, Frac);
+    }
  
     ComputeCoords();
     Canvas.SetDrawColor(255,255,255);
@@ -86,6 +110,7 @@ function PreDraw()
 
 defaultproperties
 {
+    bUseAnimation=false
     bDrawHeader=true
     bUseLegacyDrawTile=true
     bDrawBackground=true
@@ -94,7 +119,7 @@ defaultproperties
     FrameOpacity=255
     
     HeaderSize(0)=26.f
-    HeaderSize(1)=0.f
+    HeaderSize(1)=8.f
    
     EdgeSize(0)=20
     EdgeSize(1)=35

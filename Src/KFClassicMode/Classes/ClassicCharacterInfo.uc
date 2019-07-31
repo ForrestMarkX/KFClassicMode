@@ -74,10 +74,10 @@ static function InitCharacterMICs(KFCharacterInfo_Human C, KFPawn P, optional bo
             P.CharacterMICs.AddItem(P.ThirdPersonAttachments[i].CreateAndSetMaterialInstanceConstant(0));
         }
         
-		if (P.FirstPersonAttachments[i] != none)
-		{
-			P.CharacterMICs.AddItem(P.FirstPersonAttachments[i].CreateAndSetMaterialInstanceConstant(0));
-		}
+        if (P.FirstPersonAttachments[i] != none)
+        {
+            P.CharacterMICs.AddItem(P.FirstPersonAttachments[i].CreateAndSetMaterialInstanceConstant(0));
+        }
     }
 }
 
@@ -100,13 +100,15 @@ static final function SetCharacterMeshFromArch( KFCharacterInfo_Human C, KFPawn 
     SetBodyMeshAndSkin(C,
         bCustom ? EPRI.CustomCharacter.BodyMeshIndex : KFPRI.RepCustomizationInfo.BodyMeshIndex,
         bCustom ? EPRI.CustomCharacter.BodySkinIndex : KFPRI.RepCustomizationInfo.BodySkinIndex,
-        KFP);
+        KFP,
+        KFPRI);
 
     // Head mesh & skin. Index of 255 implies use index 0 (default).
     SetHeadMeshAndSkin(C,
         bCustom ? EPRI.CustomCharacter.HeadMeshIndex : KFPRI.RepCustomizationInfo.HeadMeshIndex,
         bCustom ? EPRI.CustomCharacter.HeadSkinIndex : KFPRI.RepCustomizationInfo.HeadSkinIndex,
-        KFP);
+        KFP,
+        KFPRI);
 
     // skip dedicated for purely cosmetic stuff
     if ( KFP.WorldInfo.NetMode != NM_DedicatedServer )
@@ -143,10 +145,11 @@ static final function SetCharacterMeshFromArch( KFCharacterInfo_Human C, KFPawn 
 static final function SetBodyMeshAndSkin( KFCharacterInfo_Human C,
     byte CurrentBodyMeshIndex,
     byte CurrentBodySkinIndex,
-    KFPawn KFP )
+    KFPawn KFP,
+    KFPlayerReplicationInfo KFPRI )
 {
-	local string CharBodyMeshName;
-	local SkeletalMesh CharBodyMesh;
+    local string CharBodyMeshName;
+    local SkeletalMesh CharBodyMesh;
 
     //Always use default body on servers
     if (KFP.WorldInfo.NetMode == NM_DedicatedServer)
@@ -155,34 +158,39 @@ static final function SetBodyMeshAndSkin( KFCharacterInfo_Human C,
         CurrentBodySkinIndex = 0;
     }
 
-	// Character Mesh
-	if( C.BodyVariants.length > 0 )
-	{
-		// Assign a skin to the body mesh as a material override
-		CurrentBodyMeshIndex = (CurrentBodyMeshIndex < C.BodyVariants.length) ? CurrentBodyMeshIndex : 0;
+    // Character Mesh
+    if( C.BodyVariants.length > 0 )
+    {
+        // Assign a skin to the body mesh as a material override
+        CurrentBodyMeshIndex = (CurrentBodyMeshIndex < C.BodyVariants.length) ? CurrentBodyMeshIndex : 0;
+        
+        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Body, CurrentBodyMeshIndex))
+        {
+            return;
+        }
 
-		// Retrieve the name of the meshes to be used from the archetype
-		CharBodyMeshName = C.BodyVariants[CurrentBodyMeshIndex].MeshName;
+        // Retrieve the name of the meshes to be used from the archetype
+        CharBodyMeshName = C.BodyVariants[CurrentBodyMeshIndex].MeshName;
 
-		// Load the meshes
-		CharBodyMesh = SkeletalMesh(SafeLoadObject(CharBodyMeshName, class'SkeletalMesh'));
+        // Load the meshes
+        CharBodyMesh = SkeletalMesh(SafeLoadObject(CharBodyMeshName, class'SkeletalMesh'));
 
-		// Assign the body mesh to the pawn
-		if ( CharBodyMesh != KFP.Mesh.SkeletalMesh )
-		{
-			KFP.Mesh.SetSkeletalMesh(CharBodyMesh);
-			KFP.OnCharacterMeshChanged();
-		}
+        // Assign the body mesh to the pawn
+        if ( CharBodyMesh != KFP.Mesh.SkeletalMesh )
+        {
+            KFP.Mesh.SetSkeletalMesh(CharBodyMesh);
+            KFP.OnCharacterMeshChanged();
+        }
 
-		if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
-		{
+        if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
+        {
             SetBodySkinMaterial(C, C.BodyVariants[CurrentBodyMeshIndex], CurrentBodySkinIndex, KFP);
-		}
-	}
-	else
-	{
-		`warn("Character does not have a valid mesh");
-	}
+        }
+    }
+    else
+    {
+        `warn("Character does not have a valid mesh");
+    }
 }
 
 static final function SetBodySkinMaterial( KFCharacterInfo_Human C, OutfitVariants CurrentVariant, byte NewSkinIndex, KFPawn KFP)
@@ -234,7 +242,8 @@ static final function SetHeadSkinMaterial( KFCharacterInfo_Human C, OutfitVarian
 static final function SetHeadMeshAndSkin( KFCharacterInfo_Human C,
     byte CurrentHeadMeshIndex,
     byte CurrentHeadSkinIndex,
-    KFPawn KFP )
+    KFPawn KFP,
+    KFPlayerReplicationInfo KFPRI )
 {
     local string CharHeadMeshName;
     local SkeletalMesh CharHeadMesh;
@@ -242,6 +251,11 @@ static final function SetHeadMeshAndSkin( KFCharacterInfo_Human C,
     if ( C.HeadVariants.length > 0 )
     {
         CurrentHeadMeshIndex = (CurrentHeadMeshIndex < C.HeadVariants.length) ? CurrentHeadMeshIndex : 0;
+        
+        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Head, CurrentHeadMeshIndex))
+        {
+            return;
+        }
 
         CharHeadMeshName = C.HeadVariants[CurrentHeadMeshIndex].MeshName;
         CharHeadMesh = SkeletalMesh(DynamicLoadObject(CharHeadMeshName, class'SkeletalMesh'));
@@ -346,16 +360,21 @@ static final function SetAttachmentMeshAndSkin( KFCharacterInfo_Human C,
     // Get a slot where this attachment could fit
     AttachmentSlotIndex = GetAttachmentSlotIndex(C, CurrentAttachmentMeshIndex, KFP, KFPRI);
     
-	if (AttachmentSlotIndex == INDEX_NONE)
-	{
-		return;
-	}
+    if (AttachmentSlotIndex == INDEX_NONE)
+    {
+        return;
+    }
 
     // Since cosmetic attachments are optional, do not choose index 0 if none is
     // specified unlike the the head and body meshes
     if ( C.CosmeticVariants.Length > 0 &&
          CurrentAttachmentMeshIndex < C.CosmeticVariants.Length )
     {
+        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Attachment, CurrentAttachmentMeshIndex))
+        {
+            return;
+        }
+        
         // Cache values from character info
         CharAttachmentMeshName = bIsFirstPerson ? C.Get1pMeshByIndex(CurrentAttachmentMeshIndex) : C.GetMeshByIndex(CurrentAttachmentMeshIndex);
         CharAttachmentSocketName = bIsFirstPerson ? C.CosmeticVariants[CurrentAttachmentMeshIndex].AttachmentItem.SocketName1p : C.CosmeticVariants[CurrentAttachmentMeshIndex].AttachmentItem.SocketName;
@@ -596,7 +615,8 @@ static final function SetFirstPersonArmsFromArch( KFCharacterInfo_Human C, KFPaw
     C.SetArmsMeshAndSkin(
         bCustom ? EPRI.CustomCharacter.BodyMeshIndex : KFPRI.RepCustomizationInfo.BodyMeshIndex,
         bCustom ? EPRI.CustomCharacter.BodySkinIndex : KFPRI.RepCustomizationInfo.BodySkinIndex,
-        KFP);
+        KFP,
+        KFPRI);
         
     for (AttachmentIdx = 0; AttachmentIdx < `MAX_COSMETIC_ATTACHMENTS; AttachmentIdx++)
     {
@@ -622,41 +642,41 @@ static final function SetFirstPersonArmsFromArch( KFCharacterInfo_Human C, KFPaw
 
 static function int GetAttachmentSlotIndex(
     KFCharacterInfo_Human C,
-	int CurrentAttachmentMeshIndex,
-	KFPawn KFP,
-	KFPlayerReplicationInfo KFPRI)
+    int CurrentAttachmentMeshIndex,
+    KFPawn KFP,
+    KFPlayerReplicationInfo KFPRI)
 {
-	local int AttachmentIdx,CosmeticMeshIdx;
+    local int AttachmentIdx,CosmeticMeshIdx;
     local ClassicPlayerReplicationInfo EPRI;
     local bool bCustom;
 
-	if( KFPRI == None )
-	{
-		`warn("GetAttachmentSlotIndex - NO KFPRI");
-		return INDEX_NONE;
-	}
+    if( KFPRI == None )
+    {
+        `warn("GetAttachmentSlotIndex - NO KFPRI");
+        return INDEX_NONE;
+    }
     
     EPRI = ClassicPlayerReplicationInfo(KFPRI);
     bCustom = (EPRI!=None ? EPRI.UsesCustomChar() : false);
     
-	// Return the next available attachment index or the index that matches this mesh
-	for( AttachmentIdx = 0; AttachmentIdx < `MAX_COSMETIC_ATTACHMENTS; AttachmentIdx++ )
-	{
+    // Return the next available attachment index or the index that matches this mesh
+    for( AttachmentIdx = 0; AttachmentIdx < `MAX_COSMETIC_ATTACHMENTS; AttachmentIdx++ )
+    {
         CosmeticMeshIdx = bCustom ? EPRI.CustomCharacter.AttachmentMeshIndices[AttachmentIdx] : KFPRI.RepCustomizationInfo.AttachmentMeshIndices[AttachmentIdx];
-		if( CosmeticMeshIdx == INDEX_NONE || CosmeticMeshIdx == CurrentAttachmentMeshIndex )
-		{
-			return AttachmentIdx;
-		}
-	}
-	return INDEX_NONE;
+        if( CosmeticMeshIdx == INDEX_NONE || CosmeticMeshIdx == CurrentAttachmentMeshIndex )
+        {
+            return AttachmentIdx;
+        }
+    }
+    return INDEX_NONE;
 }
 
 static function bool IsAttachmentAvailable(KFCharacterInfo_Human C, const out AttachmentVariants Attachment, Pawn PreviewPawn)
 {
-	if ( Attachment.AttachmentItem.SocketName != '' && PreviewPawn.Mesh.GetSocketByName(Attachment.AttachmentItem.SocketName) == None )
-	{
-		return false;
-	}
+    if ( Attachment.AttachmentItem.SocketName != '' && PreviewPawn.Mesh.GetSocketByName(Attachment.AttachmentItem.SocketName) == None )
+    {
+        return false;
+    }
 
-	return true;
+    return true;
 }

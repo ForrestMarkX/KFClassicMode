@@ -5,6 +5,7 @@ struct FColumnItem
 {
     var() string Text;
     var() float Width;
+    var() bool bOnlyTextures;
     
     var transient bool bHidden;
     var transient int X,XSize;
@@ -262,17 +263,17 @@ function InitMenu()
     ColumnComp = KFGUI_ColumnTop(FindComponentID('Columns'));
 }
 
-final function DrawStrClipped( string S )
+final function DrawStrClipped( string S, optional bool bOnlyTextures )
 {
     Canvas.PushMaskRegion(Canvas.OrgX,Canvas.OrgY,Canvas.ClipX,Canvas.ClipY);
-    Canvas.DrawText(S,,TextScaler,TextScaler,LineFontInfo);
+    Owner.CurrentStyle.DrawTexturedString(S,Canvas.CurX,Canvas.CurY,TextScaler,LineFontInfo,false,bOnlyTextures);
     Canvas.PopMaskRegion();
 }
 
 function DrawMenu()
 {
     local int i,n,j;
-    local float Y,TextY,YClip,XOffset;
+    local float Y,TextY,XOffset;
     local KFGUI_ListItem C;
     local bool bCheckMouse;
 
@@ -294,7 +295,6 @@ function DrawMenu()
     Y = 0.f;
     TextY = (ItemHeight-TextHeight)*0.5f;
     XOffset = TextY*0.75;
-    YClip = CompPos[1]+CompPos[3];
     Canvas.SetDrawColor(250,250,250,255);
 
     for( i=0; (i<ListItemsPerPage && C!=None); ++i )
@@ -327,9 +327,9 @@ function DrawMenu()
         for( j=0; j<Columns.Length; ++j )
             if( !Columns[j].bHidden )
             {
-                Canvas.SetClip(Columns[j].X+Columns[j].XSize+EdgeSize,YClip);
+                //Canvas.SetClip(Columns[j].X+Columns[j].XSize+EdgeSize,YClip);
                 Canvas.SetPos(Columns[j].X+XOffset+EdgeSize,TextY);
-                DrawStrClipped(C.GetDisplayStr(j));
+                DrawStrClipped(C.GetDisplayStr(j), Columns[j].bOnlyTextures);
             }
         Y+=ItemHeight;
         TextY+=ItemHeight;

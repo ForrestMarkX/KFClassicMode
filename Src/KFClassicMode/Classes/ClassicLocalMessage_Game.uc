@@ -23,6 +23,10 @@ static function string GetString(
                 {
                     TempString = TraderItems.SaleItems[Index].WeaponDef.static.GetItemName();
                 }
+                else
+                {
+                    TempString = Inventory( OptionalObject ).ItemName;
+                }
             }
             else
             {

@@ -6,6 +6,7 @@ struct SBuyableInfo
     var bool bInventory,bSecondary;
 };
 var SBuyableInfo MyBuyable,OldBuyable;
+var SItemInformation CurrentItem;
 
 struct SCurrentPerkInfo
 {
@@ -33,12 +34,17 @@ var KFAutoPurchaseHelper KFAPH;
 var KFInventoryManager MyKFIM;
 var ClassicPlayerController PC;
 var KFPlayerReplicationInfo MyKFPRI;
+var KFGameReplicationInfo GRI;
+var KFPawn_Human KFHP;
 
 var transient bool bDidBuyableUpdate;
 
 var array<string> InfoText;
 var string CurrentPerk,NoActivePerk,TraderClose,WaveString,LvAbbrString,AutoFillString;
 var int PrevArmor;
+
+var int OldWaveNum, OldTotalDosh;
+var KFPerk OldCurrentPerk;
 
 function InitMenu()
 {
@@ -102,19 +108,22 @@ function ShowMenu()
 {
     Super.ShowMenu();
 
+    GRI = KFGameReplicationInfo(PC.WorldInfo.GRI);
     KFAPH = PC.GetPurchaseHelper(true);
-    MyKFIM = KFInventoryManager(PC.Pawn.InvManager);
+    KFHP = KFPawn_Human(PC.Pawn);
+    MyKFIM = KFInventoryManager(KFHP.InvManager);
     MyKFPRI = KFPlayerReplicationInfo(PC.PlayerReplicationInfo);
     
-    if( CurrentPerkInfo == default.CurrentPerkInfo )
-    {
-        SelectedPerkIndex = PC.GetPerkIndexFromClass(PC.CurrentPerk.Class);
-        CurrentPerkInfo.CurrentPerk = ClassicPerk_Base(PC.CurrentPerk); 
-        CurrentPerkInfo.PerkClass = ClassicPerk_Base(PC.CurrentPerk).BasePerk; 
-    }
+    CurrentPerkInfo = default.CurrentPerkInfo;
+    SelectedPerkIndex = PC.GetPerkIndexFromClass(PC.CurrentPerk.Class);
+    CurrentPerkInfo.CurrentPerk = ClassicPerk_Base(PC.CurrentPerk);
+    CurrentPerkInfo.PerkClass = ClassicPerk_Base(PC.CurrentPerk).BasePerk;
     
-    SetTimer(0.05f, true);
+    SetTimer(0.1f, true);
     Timer();
+    
+    SetTimer(1.f, true, 'UpdateTraderTime');
+    UpdateTraderTime();
     
     PC.TraderMenu = self;
     PC.bClientTraderMenuOpen = true;
@@ -157,10 +166,10 @@ function InventoryChanged(optional KFWeapon Wep, optional bool bRemove)
     // Only add the item to our owned list if we have the capacity to carry it
     if( KFAPH.TotalBlocks + Wep.GetModifiedWeightValue() > KFAPH.MaxBlocks )
     {
-        if( PC.Pawn != none )
+        if( KFHP != None )
         {
             // Throw it if we can't carry
-            PC.Pawn.TossInventory(Wep);
+            KFHP.TossInventory(Wep);
         }
     }
     else
@@ -184,18 +193,27 @@ function Refresh(optional bool bInitList)
     WeightB.CurBoxes = KFAPH.TotalBlocks;
 }
 
+function UpdateTraderTime()
+{
+    local int RemainingTime;
+    
+    RemainingTime = GRI.GetTraderTimeRemaining();
+    Time.SetText(TraderClose @ Owner.CurrentStyle.GetTimeString(RemainingTime));
+    
+    if ( RemainingTime < 10 )
+        Time.TextColor = MakeColor(255, 0, 0, 255);
+    else Time.TextColor = MakeColor(175, 176, 158, 255);
+}
+
 function Timer()
 {
-    local KFPawn_Human KFP;
-    
     SetInfoText();
     UpdateHeader();
     
-    KFP = KFPawn_Human(PC.Pawn);
-    if( KFP != none && PrevArmor != KFP.Armor )
+    if( KFHP != None && PrevArmor != KFHP.Armor )
     {
-        KFAPH.ArmorItem.SpareAmmoCount = KFP.Armor;
-        PrevArmor = KFP.Armor;
+        KFAPH.ArmorItem.SpareAmmoCount = KFHP.Armor;
+        PrevArmor = KFHP.Armor;
 
         Inv.RefreshItemComponents();
         Sale.RefreshItemComponents();
@@ -204,42 +222,38 @@ function Timer()
 
 function UpdateHeader()
 {
-    local int TimeLeftMin, TimeLeftSec;
-    local string TimeString;
-    
-    if ( PC == None || PC.PlayerReplicationInfo == None || PC.WorldInfo.GRI == None )
+    if ( PC == None || PC.PlayerReplicationInfo == None || GRI == None )
         return;
 
     // Current Perk
-    if ( PC.CurrentPerk != None )
-        Perk.SetText(CurrentPerk$":" @ ClassicPerk_Base(PC.CurrentPerk).static.GetPerkName() @ LvAbbrString$PC.CurrentPerk.GetLevel());
-    else Perk.SetText(CurrentPerk$":" @ NoActivePerk);
-
-    // Trader time left
-    TimeLeftMin = KFGameReplicationInfo(PC.WorldInfo.GRI).GetTraderTimeRemaining() / 60;
-    TimeLeftSec = KFGameReplicationInfo(PC.WorldInfo.GRI).GetTraderTimeRemaining() % 60;
-
-    if ( TimeLeftMin < 1 )
-        TimeString = "00:";
-    else TimeString = "0" $ TimeLeftMin $ ":";
-
-    if ( TimeLeftSec >= 10 )
-        TimeString = TimeString $ TimeLeftSec;
-    else TimeString = TimeString $ "0" $ TimeLeftSec;
-
-    Time.SetText(TraderClose @ TimeString);
-
-    if ( KFGameReplicationInfo(PC.WorldInfo.GRI).GetTraderTimeRemaining() < 10 )
-        Time.TextColor = MakeColor(255, 0, 0, 255);
-    else Time.TextColor = MakeColor(175, 176, 158, 255);
-
+    if( PC.CurrentPerk != OldCurrentPerk )
+    {
+        if ( PC.CurrentPerk != None )
+            Perk.SetText(CurrentPerk $ ":" @ ClassicPerk_Base(PC.CurrentPerk).static.GetPerkName() @ LvAbbrString $ PC.CurrentPerk.GetLevel());
+        else Perk.SetText(CurrentPerk $ ":" @ NoActivePerk);
+    }
+    
     // Wave Counter
-    if( KFGameReplicationInfo_Endless(PC.WorldInfo.GRI) != None )
-        Wave.SetText(WaveString$":" @ KFGameReplicationInfo(PC.WorldInfo.GRI).WaveNum);
-    else Wave.SetText(WaveString$":" @ KFGameReplicationInfo(PC.WorldInfo.GRI).WaveNum$"/"$(KFGameReplicationInfo(PC.WorldInfo.GRI).WaveMax-1));
+    if( GRI.WaveNum != OldWaveNum )
+    {
+        OldWaveNum = GRI.WaveNum;
+        
+        if( KFGameReplicationInfo_Endless(GRI) != None )
+            Wave.SetText(WaveString $ ":" @ GRI.WaveNum);
+        else Wave.SetText(WaveString $ ":" @ GRI.WaveNum $ "/" $ (GRI.WaveMax-1));
+    }
     
     // Player Cash
-    Money.SetText("£"$KFAPH.TotalDosh);
+    if( KFAPH.TotalDosh != OldTotalDosh )
+    {
+        OldTotalDosh = KFAPH.TotalDosh;
+        Money.SetText("£" $ KFAPH.TotalDosh);
+        
+        Inv.RefreshItemComponents();
+        Sale.RefreshItemComponents();
+        
+        BuyWeaponInfoPanel.RefreshUpgradeButton(CurrentItem);
+    }
 }
 
 function SetInfoText()
@@ -461,7 +475,7 @@ function DrawQuickPerk( Canvas C, int Index, float XOffset, float Height, float 
         
         Owner.CurrentStyle.DrawTileStretched(Owner.CurrentStyle.BorderTextures[`BOX_INNERBORDER],XOffset,0.f,Height,Height);
         
-        C.SetDrawColor(255, 0, 0, 255);
+        C.DrawColor = MyPerk.static.GetPerkColor(0);
         C.SetPos(XOffset + 4, 4);
         C.DrawTile(MyPerk.static.GetCurrentPerkIcon(0), Height - 8, Height - 8, 0, 0, 256, 256);
     }
@@ -715,9 +729,10 @@ defaultproperties
     Begin Object class=KFGUI_ListHorz Name=QuickPerkSelect
         ID="QuickPerkSelect"
         YPosition=0.032775
-        XPosition=0.075
+        XPosition=0.065
         XSize=0.25
-        YSize=0.05
+        YSize=0.052
+        ButtonScale=0.5
         bClickable=true
         bUseFocusSound=true
     End Object
@@ -833,7 +848,8 @@ defaultproperties
         YPosition=0.032775
         XPosition=0.7
         XSize=0.275
-        YSize=0.05
+        YSize=0.052
+        ButtonScale=0.5
         bClickable=true
         bUseFocusSound=true
         ListItemsPerPage=9

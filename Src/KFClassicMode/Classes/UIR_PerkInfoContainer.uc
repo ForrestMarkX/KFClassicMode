@@ -1,25 +1,25 @@
 Class UIR_PerkInfoContainer extends KFGUI_Frame;
 
-var KFGUI_List                     PerkList;
-var ClassicPerkManager             CurrentManager;
-var ClassicPerk_Base             PendingPerk,OldUsedPerk;
-var class<ClassicPerk_Base>     PrevPendingPerk;
+var KFGUI_List PerkList;
+var ClassicPerkManager CurrentManager;
+var ClassicPerk_Base PendingPerk,OldUsedPerk;
+var class<ClassicPerk_Base> PrevPendingPerk;
 
-var    float                        IconBorder;
-var    float                        ItemBorder;
-var    float                        TextTopOffset;
-var    float                        ItemSpacing;
-var    float                        IconToInfoSpacing;
-var    float                        ProgressBarHeight;
+var float IconBorder;
+var float ItemBorder;
+var float TextTopOffset;
+var float ItemSpacing;
+var float IconToInfoSpacing;
+var float ProgressBarHeight;
 
-var string                         LvAbbrString;
+var string LvAbbrString;
 
-var    Texture                        PerkBackground;
-var    Texture                        InfoBackground;
-var    Texture                        SelectedPerkBackground;
-var    Texture                        SelectedInfoBackground;
-var    Texture                        ProgressBarBackground;
-var    Texture                        ProgressBarForeground;
+var Texture PerkBackground;
+var Texture InfoBackground;
+var Texture SelectedPerkBackground;
+var Texture SelectedInfoBackground;
+var Texture ProgressBarBackground;
+var Texture ProgressBarForeground;
 
 function InitMenu()
 {
@@ -42,7 +42,7 @@ function DrawPerkInfo( Canvas C, int Index, float YOffset, float Height, float W
     local float IconSize, ProgressBarWidth;
     local float TempWidth, TempHeight;
     local float Sc;
-    local Texture PerkIcon, StarIcon;
+    local Texture2D PerkIcon, StarIcon;
     local ClassicPerk_Base P;
 
     P = CurrentManager.UserPerks[Index];

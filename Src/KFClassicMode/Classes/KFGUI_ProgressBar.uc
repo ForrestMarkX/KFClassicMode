@@ -1,25 +1,25 @@
 class KFGUI_ProgressBar extends KFGUI_Base;
 
-var Texture        BarBack;
-var Texture        BarTop;
-var Color        BarColor;
-var float        Low;
-var float        High;
-var float        Value;
+var Texture BarBack;
+var Texture BarTop;
+var Color BarColor;
+var float Low;
+var float High;
+var float Value;
 
-var float        CaptionWidth;
-var byte        CaptionAlign;
-var byte        ValueRightAlign;
-var string         Caption;
+var float CaptionWidth;
+var byte CaptionAlign;
+var byte ValueRightAlign;
+var string Caption;
 
-var float        GraphicMargin;
-var float        ValueRightWidth;
-var bool        bShowLow;
-var bool        bShowHigh;
-var bool        bShowValue;
-var int            NumDecimals;
+var float GraphicMargin;
+var float ValueRightWidth;
+var bool bShowLow;
+var bool bShowHigh;
+var bool bShowValue;
+var int NumDecimals;
 
-var byte        BorderSize;
+var byte BorderSize;
 
 function DrawMenu()
 {
@@ -37,7 +37,7 @@ function DrawMenu()
     // Select the right font in the Canvas
     Canvas.Font = Owner.CurrentStyle.PickFont(Sc); 
     
-    if (CaptionWidth > 0.0 && Width > 0)
+    if (CaptionWidth > 0.0 && Width > 0 && Len(Caption) > 0)
     {
         W = CaptionWidth;
 

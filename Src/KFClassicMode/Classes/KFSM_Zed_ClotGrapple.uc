@@ -2,6 +2,8 @@ class KFSM_Zed_ClotGrapple extends KFSM_GrappleCombined;
 
 function PlayGrabAnim()
 {
+    local float D;
+    
     GrabCheckTime = KFSkeletalMeshComponent(PawnOwner.Mesh).GetAnimInterruptTime(GrabStartAnimName);
 
     // On the server start a timer to check collision
@@ -17,7 +19,9 @@ function PlayGrabAnim()
         PawnOwner.SetTimer(GrabCheckTime, FALSE, nameof(CheckGrapple), Self);
     }
 
-    PlaySpecialMoveAnim(GrabStartAnimName, EAS_UpperBody, 0.33f, 0.33f, 1.f);
+    D = PlaySpecialMoveAnim(GrabStartAnimName, EAS_UpperBody, 0.33f, 0.33f, 1.f);
+    if( KFZEDAIInterface(KFPOwner.Controller)!=None )
+        KFZEDAIInterface(KFPOwner.Controller).SetGrabFinishTime(KFPOwner.WorldInfo.TimeSeconds+D);
 
     if ( bUseRootMotion )
     {

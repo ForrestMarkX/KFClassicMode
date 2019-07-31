@@ -274,6 +274,25 @@ simulated function UpdateCurrentDosh()
     }
 }
 
+function bool UpgradeWeapon(int OwnedItemIndex)
+{
+    if( bDisableUpgrades )
+        return false;
+    return Super.UpgradeWeapon(OwnedItemIndex);
+}
+
+function bool CanUpgrade(STraderItem SelectedItem, out int CanCarryIndex, out int bCanAffordIndex, optional bool bPlayDialog)
+{
+    if( bDisableUpgrades )
+    {
+        CanCarryIndex = 0;
+        bCanAffordIndex = 0;
+        return false;
+    }
+    
+    return Super.CanUpgrade(SelectedItem, CanCarryIndex, bCanAffordIndex, bPlayDialog);
+}
+
 defaultproperties
 {
 }

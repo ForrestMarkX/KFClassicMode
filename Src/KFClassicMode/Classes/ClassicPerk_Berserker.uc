@@ -2,11 +2,10 @@ class ClassicPerk_Berserker extends ClassicPerk_Base;
 
 var PassiveInfo ArmorInfo;
 
-var    const PerkSkill BerserkerDamage;
-var const PerkSkill    DamageResistance;
-var const PerkSkill    MeleeAttackSpeed;
-var const PerkSkill    MeleeMovementSpeed;
-var    const PerkSkill BloatBileResistance;
+var const PerkSkill DamageResistance;
+var const PerkSkill MeleeAttackSpeed;
+var const PerkSkill MeleeMovementSpeed;
+var const PerkSkill BloatBileResistance;
 
 function AddDefaultInventory( KFPawn P )
 {
@@ -16,33 +15,6 @@ function AddDefaultInventory( KFPawn P )
     {
         KFPawn_Human(P).GiveMaxArmor();
     }
-}
-
-simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCauser, optional KFPawn_Monster MyKFPM, optional KFPlayerController DamageInstigator, optional class<KFDamageType> DamageType, optional int HitZoneIdx )
-{
-    local KFWeapon MyKFWeapon;
-    local float TempDamage;
-
-    TempDamage = InDamage;
-
-    if( DamageCauser != none )
-    {
-        if( DamageCauser.IsA( 'Weapon' ) )
-        {
-            MyKFWeapon = KFWeapon(DamageCauser);
-        }
-        else if( DamageCauser.IsA( 'Projectile' ) )
-        {
-            MyKFWeapon = KFWeapon(DamageCauser.Owner);
-        }
-
-        if( (MyKFWeapon != none && IsWeaponOnPerk( MyKFWeapon,, self.class )) || IsDamageTypeOnPerk( DamageType ) )
-        {
-            TempDamage += InDamage * GetPassiveValue( BerserkerDamage, CurrentVetLevel);
-        }
-    }
-
-    InDamage = Round( TempDamage );
 }
 
 function ModifyDamageTaken( out int InDamage, optional class<DamageType> DamageType, optional Controller InstigatedBy )
@@ -139,13 +111,13 @@ simulated static function class<KFWeaponDefinition> GetWeaponDef(int Level)
 
 simulated static function GetPassiveStrings( out array<string> PassiveValues, out array<string> Increments, byte Level )
 {
-    PassiveValues[0] = Round(GetPassiveValue( default.BerserkerDamage, Level ) * 100) $ "%";
+    PassiveValues[0] = Round(GetPassiveValue( default.WeaponDamage, Level ) * 100) $ "%";
     PassiveValues[1] = Round(GetPassiveValue( default.DamageResistance, Level ) * 100) $ "%";
     PassiveValues[2] = Round(GetPassiveValue( default.MeleeAttackSpeed, Level ) * 100) $ "%";
     PassiveValues[3] = Round(GetPassiveValue( default.MeleeMovementSpeed, Level ) * 100) $ "%";
     PassiveValues[4] = "";
 
-    Increments[0] = "[" @ Left( string( default.BerserkerDamage.Increment * 100 ), InStr(string(default.BerserkerDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
+    Increments[0] = "[" @ Left( string( default.WeaponDamage.Increment * 100 ), InStr(string(default.WeaponDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[1] = "[" @ Left( string( default.DamageResistance.Increment * 100 ), InStr(string(default.DamageResistance.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[2] = "[" @ Left( string( default.MeleeAttackSpeed.Increment * 100 ), InStr(string(default.MeleeAttackSpeed.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[3] = "[" @ Left( string( default.MeleeMovementSpeed.Increment * 100 ), InStr(string(default.MeleeMovementSpeed.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
@@ -158,14 +130,14 @@ simulated static function GetPassiveStrings( out array<string> PassiveValues, ou
     }
 }
 
-simulated static function string GetCustomLevelInfo( byte Level )
+simulated function string GetCustomLevelInfo( byte Level )
 {
     local string S;
     local class<KFWeaponDefinition> SpawnDef;
 
     S = default.CustomLevelInfo;
 
-    ReplaceText(S,"%d",GetPercentStr(default.BerserkerDamage, Level));
+    ReplaceText(S,"%d",GetPercentStr(default.WeaponDamage, Level));
     ReplaceText(S,"%s",GetPercentStr(default.DamageResistance, Level));
     ReplaceText(S,"%a",GetPercentStr(default.MeleeAttackSpeed, Level));
     ReplaceText(S,"%m",GetPercentStr(default.MeleeMovementSpeed, Level));
@@ -194,6 +166,17 @@ simulated static function string GetCustomLevelInfo( byte Level )
     return S;
 }
 
+simulated function GetPerkIcons(ObjectReferencer RepInfo)
+{
+    local int i;
+    
+    for (i = 0; i < OnHUDIcons.Length; i++)
+    {
+        OnHUDIcons[i].PerkIcon = Texture2D(RepInfo.ReferencedObjects[59]);
+        OnHUDIcons[i].StarIcon = Texture2D(RepInfo.ReferencedObjects[28]);
+    }
+}
+
 DefaultProperties
 {
     BasePerk=class'KFPerk_Berserker'
@@ -209,7 +192,7 @@ DefaultProperties
     
     ArmorInfo=(Title="Spawn with a combat vest")
     
-    BerserkerDamage=(Name="Melee Weapon Damage",Increment=0.2f,Rank=0,StartingValue=0.f,MaxValue=2.0f)
+    WeaponDamage=(Name="Melee Weapon Damage",Increment=0.2f,Rank=0,StartingValue=0.f,MaxValue=2.0f)
     DamageResistance=(Name="Damage Resistance",Increment=0.05f,Rank=0,StartingValue=0.f,MaxValue=0.8f)
     MeleeAttackSpeed=(Name="Melee Attack Speed",Increment=0.05f,Rank=0,StartingValue=0.f,MaxValue=0.25f)
     MeleeMovementSpeed=(Name="Melee Movement Speed",Increment=0.05f,Rank=0,StartingValue=0.f,MaxValue=0.3f)

@@ -1,4 +1,5 @@
 Class ClassicMode extends KFMutator
+    DependsOn(ZEDReplacmentInfo)
     config(ClassicMode);
     
 `include(KFClassicMode\Globals.uci);
@@ -7,22 +8,23 @@ struct AIReplacementS
 {
     var class<KFPawn_Monster>   Original, Replacment;
     var bool                    bCheckChildren;
+    var float                   iReplacmentChance;
     
     structdefaultproperties
     {
+        iReplacmentChance=1.f
         bCheckChildren=false
     }
 };
 
-struct PickupReplacmentStruct
+struct TraderReplacements
 {
-    var class<KFWeapon>   OriginalClass, ReplacmentClass;
+    var string Original, Replacement;
 };
 
-struct ItemList
+struct PickupReplacmentStruct
 {
-    var DroppedPickup             Pickup;
-    var PlayerReplicationInfo     PRI;
+    var class<KFWeapon> OriginalClass, ReplacmentClass;
 };
 
 struct MapTypeInfo
@@ -37,42 +39,57 @@ struct MapTypeInfo
     }
 };
 
-var array<ItemList>                     DroppedItemsList;
+var array<AIReplacementS>                   AIClassList;
+var array<AIReplacementS>                   LoadedAIList;
+var array<string>                           ZedNames;
+var ZEDReplacmentInfo                       LoadedTable;
 
-var array<AIReplacementS>               AIClassList;
+var array< class<ClassicPerk_Base> >        LoadedPerks;
 
-var array< class<ClassicPerk_Base> >    LoadedPerks;
+var array<PickupReplacmentStruct>           LoadedWeaponReplacements;    
+var array<PickupReplacmentStruct>           DefaultWeaponReplacements;    
 
-var bool                                bGameHasEnded, bCheckedWave;
-var int                                 LastWaveNum, NumWaveSwitches;
+var bool                                    bGameHasEnded, bCheckedWave;
+var int                                     LastWaveNum, NumWaveSwitches;
 
-var ClassicPlayerStat                   ServerStatLoader;
+var ClassicPlayerStat                       ServerStatLoader;
     
-var array<Object>                       ExternalObjs;
+var array<Object>                           ExternalObjs;
 
-var transient KFMapInfo                 KFMI;
+var transient KFMapInfo                     KFMI;
 
-var array<FCustomTraderItem>            CustomItemList;
-var KFGFxObject_TraderItems             CustomTrader;
+var array<FCustomTraderItem>                CustomItemList;
+var KFGFxObject_TraderItems                 CustomTrader;
 
-var array<FCustomCharEntry>             CustomCharacterList;
+var array<FCustomCharEntry>                 CustomCharacterList;
 
-var KFEventHelper                       EventHelper;
+var KFEventHelper                           EventHelper;
 
-var array<FWebAdminConfigInfo>          WebConfigs;
+var array<FWebAdminConfigInfo>              WebConfigs;   
 
-var config float                        RequirementScaling;
-var config int                          ForcedMaxPlayers, StatAutoSaveWaves;
-var config byte                         MinPerkLevel, MaxPerkLevel;
-var config array<string>                Perks, CustomCharacters;
-var globalconfig byte                   GlobalMaxMonsters;
-var globalconfig bool                   bBroadcastPickups, bDisableMusic;
-var globalconfig array<MapTypeInfo>     MapTypes;
-var globalconfig name                   GlobalEventName;
-var globalconfig string                 ServerMOTD;
-var config array<string>                TraderInventory;
-var config array<PickupReplacmentStruct> PickupReplacments;
-var config int                          iVersionNumber;
+var class<MusicGRI>                         MusicReplicationInfoClass;
+var MusicGRI                                MusicReplicationInfo; 
+
+var KFPawn                                  LastHitZed;
+var int                                     LastHitHP;
+var ClassicPlayerController                 LastDamageDealer;
+var vector                                  LastDamagePosition;
+var class<KFDamageType>                     LastDamageDMGType;
+
+var config float                            RequirementScaling, SpectatorRefireRate, SpectatorZapDamage, SpectatorHealAmount;
+var config int                              ForcedMaxPlayers, StatAutoSaveWaves;
+var config byte                             MinPerkLevel, MaxPerkLevel;
+var config array<string>                    Perks, CustomCharacters;
+var globalconfig byte                       GlobalMaxMonsters;
+var globalconfig bool                       bBroadcastPickups, bDisableMusic, bDisableGameplayChanges, bDisableGunslinger, bDisableSWAT, bNoEDARs, bNoGasCrawler, bNoRioter, bNoGorefiends, bEnableTraderSpeed, bEnableCloseToTraderSpawns, bDisableUpgradeSystem, bEnabledVisibleSpectators;
+var globalconfig array<MapTypeInfo>         MapTypes;
+var globalconfig name                       GlobalEventName;
+var globalconfig string                     ServerMOTD;
+var config array<string>                    TraderInventory;
+var config array<TraderReplacements>        TraderWeaponReplacments;
+var config array<PickupReplacmentStruct>    PickupReplacments;
+var globalconfig string                     ZEDReplacmentTable;
+var config int                              iVersionNumber;
 
 function AddMutator(Mutator M)
 {
@@ -90,18 +107,30 @@ function PostBeginPlay()
     local class<ClassicPerk_Base>   LoadedPerk;
     local string                    S, MyPerk, Item, Character;
     local xVotingHandler            MV;
-    local AIReplacementS            AI;
     local KFGameInfo                KFGI;
     local KFCharacterInfo_Human     CH;
     local ObjectReferencer          OR;
     local Object                    O;
-    local int                       j;
+    local int                       i,j,Index;
     local bool                      bLock;
     
     Super.PostBeginPlay();
     
     if( bDeleteMe ) // This was a duplicate instance of the mutator.
         return;
+        
+    KFGI = KFGameInfo(WorldInfo.Game);
+    if( KFGI != None )
+    {
+        if( Class.Name == 'ClassicMode' && KFGI.IsA('CD_Survival') )
+        {
+            KFGI.AddMutator("KFClassicModeSrv_CDCompat.ClassicModeCD", true);
+            Destroy();
+            return;
+        }
+    }
+        
+    SetupDefaultConfig();
     
     // Do not brew your custom mod of this package doing so will cause all package names to be downloaded with all lowercase.
     // Instead call the function below with any asset from the package you wish to be downloaded.
@@ -116,40 +145,52 @@ function PostBeginPlay()
     WorldInfo.Game.PlayerControllerClass = class'ClassicPlayerController';
     WorldInfo.Game.PlayerReplicationInfoClass = class'ClassicPlayerReplicationInfo';
     
-    KFGI = KFGameInfo(WorldInfo.Game);
     if( KFGI != None )
     {
-        KFGI.GameConductorClass = class'ClassicGameConductor';
+        if( !bDisableGameplayChanges )
+        {
+            KFGI.GameConductorClass = class'ClassicGameConductor';
+            KFGI.bDisableTeamCollision = false;
+        }
+        
         KFGI.DialogManagerClass = class'ClassicDialogManager';
         KFGI.KFGFxManagerClass = class'ClassicMoviePlayer_Manager';
         KFGI.CustomizationPawnClass = class'ClassicPawn_Customization';
-        KFGI.bDisableTeamCollision = false;
     }
     
     WorldInfo.Spawn(class'ClientPerkRepLink', self);
+    
     EventHelper = WorldInfo.Spawn(class'KFEventHelper', self);
+    KFMI = KFMapInfo(WorldInfo.GetMapInfo());
     
     if( MinPerkLevel > MaxPerkLevel )
     {
         MinPerkLevel = MaxPerkLevel;
     }
     
-    SetTimer(1, false, 'SetupClassicSystems');
     SetTimer(1, true, 'CheckWave');
-    SetTimer(1, true, 'CheckC4');  
+    SetTimer(0.1, false, 'SetupClassicSystems');
+    if( !bDisableGameplayChanges )
+    {
+        SetTimer(1, true, 'CheckC4'); 
+    }
     
     if( ServerMOTD=="" )
     {
         ServerMOTD = "Message of the Day";
     }
     
-    foreach AIClassList(AI)
-    {
-        AI.Replacment.static.PreloadContent();
-    }
-    
     foreach TraderInventory(Item)
     {
+        if( bDisableGameplayChanges )
+        {
+            Item = Repl(Item, "KFClassicMode.Classic", "KFGame.KF");
+        }
+        
+        Index = TraderWeaponReplacments.Find('Original', Item);
+        if( Index != INDEX_NONE )
+            Item = TraderWeaponReplacments[Index].Replacement;
+        
         CI.WeaponDef = class<KFWeaponDefinition>(DynamicLoadObject(Item,class'Class'));
         if( CI.WeaponDef==None )
             continue;
@@ -169,6 +210,34 @@ function PostBeginPlay()
     
     foreach Perks(MyPerk)
     {
+        if( bDisableGameplayChanges )
+        {
+            switch(MyPerk)
+            {
+                case "KFClassicMode.ClassicPerk_Berserker":
+                    MyPerk = "KFClassicMode.ClassicPerk_Berserker_Default";
+                    break;
+                case "KFClassicMode.ClassicPerk_Commando":
+                    MyPerk = "KFClassicMode.ClassicPerk_Commando_Default";
+                    break;
+                case "KFClassicMode.ClassicPerk_Support":
+                    MyPerk = "KFClassicMode.ClassicPerk_Support_Default";
+                    break;            
+                case "KFClassicMode.ClassicPerk_Medic":
+                    MyPerk = "KFClassicMode.ClassicPerk_Medic_Default";
+                    break;            
+                case "KFClassicMode.ClassicPerk_Demolitionist":
+                    MyPerk = "KFClassicMode.ClassicPerk_Demolitionist_Default";
+                    break;
+                case "KFClassicMode.ClassicPerk_Firebug":
+                    MyPerk = "KFClassicMode.ClassicPerk_Firebug_Default";
+                    break;
+                case "KFClassicMode.ClassicPerk_Sharpshooter":
+                    MyPerk = "KFClassicMode.ClassicPerk_Sharpshooter_Default";
+                    break;
+            }
+        }
+    
         LoadedPerk = class<ClassicPerk_Base>(DynamicLoadObject(MyPerk,class'Class'));
         if( LoadedPerk != None )
         {
@@ -220,37 +289,73 @@ function PostBeginPlay()
         MV = Spawn(class'KFClassicModeSrv.xVotingHandler');
     MV.BaseMutator = Class;
     
-    KFMI = KFMapInfo(WorldInfo.GetMapInfo());
+    if( bDisableGameplayChanges )
+    {
+        AIClassList[0].Replacment = class'KFClassicMode.ClassicPawn_ZedClot_Cyst_Default';
+        AIClassList[1].Replacment = class'KFClassicMode.ClassicPawn_ZedClot_Alpha_Default';
+        AIClassList[2].Replacment = class'KFClassicMode.ClassicPawn_ZedClot_AlphaKing_Default';
+        AIClassList[3].Replacment = class'KFClassicMode.ClassicPawn_ZedClot_Slasher_Default';
+        AIClassList[4].Replacment = class'KFClassicMode.ClassicPawn_ZedCrawler_Default';
+        AIClassList[5].Replacment = class'KFClassicMode.ClassicPawn_ZedGorefast_Default';
+        AIClassList[6].Replacment = class'KFClassicMode.ClassicPawn_ZedStalker_Default';
+        AIClassList[7].Replacment = class'KFClassicMode.ClassicPawn_ZedScrake_Default';
+        AIClassList[8].Replacment = class'KFClassicMode.ClassicPawn_ZedFleshpound_Default';
+        AIClassList[9].Replacment = class'KFClassicMode.ClassicPawn_ZedFleshpoundMini_Default';
+        AIClassList[10].Replacment = class'KFClassicMode.ClassicPawn_ZedBloat_Default';
+        AIClassList[11].Replacment = class'KFClassicMode.ClassicPawn_ZedSiren_Default';
+        AIClassList[12].Replacment = class'KFClassicMode.ClassicPawn_ZedHusk_Default';
+        AIClassList[13].Replacment = class'KFClassicMode.ClassicPawn_ZedPatriarch_Default';
+        AIClassList[14].Replacment = class'KFClassicMode.ClassicPawn_ZedHans_Default';
+        AIClassList[15].Replacment = class'KFClassicMode.ClassicPawn_ZedBloatKing_Default';
+        AIClassList[16].Replacment = class'KFClassicMode.ClassicPawn_ZedFleshpoundKing_Default';
+    }
+    
+    for(i=0; i<PickupReplacments.Length; i++)
+    {
+        if( bDisableGameplayChanges )
+        {
+            Index = DefaultWeaponReplacements.Find('ReplacmentClass', PickupReplacments[i].ReplacmentClass);
+            if( Index == INDEX_NONE )
+                LoadedWeaponReplacements.AddItem(PickupReplacments[i]);
+        }
+        else LoadedWeaponReplacements.AddItem(PickupReplacments[i]);
+    }
 }
 
 function InitMutator(string Options, out string ErrorMessage)
 {
     local int i, j;
+    local KFDifficulty_Husk HuskDif;
+    local KFDifficulty_Stalker StalkerDif;
+    local KFDifficulty_Crawler CrawlerDif;
+    local KFDifficulty_ClotAlpha AlphaDif;
+    local KFDifficulty_Gorefast GorefastDif;
     
     Super.InitMutator( Options, ErrorMessage );
-    
-    SetupDefaultConfig();
-    
+
     SetTimer(0.1, false, nameOf(SetDifficultyInfo));
     
-    MyKFGI.MaxRespawnDosh[0] = 1000.f;
-    MyKFGI.MaxRespawnDosh[1] = 950.f;
-    MyKFGI.MaxRespawnDosh[2] = 1550.f;
-    MyKFGI.MaxRespawnDosh[3] = 1000.f;
-    
-    for( i=0; i<MyKFGI.LateArrivalStarts.Length; i++ )
+    if( !bDisableGameplayChanges )
     {
-        for( j=0; j<MyKFGI.LateArrivalStarts[i].StartingDosh.Length; j++ )
+        MyKFGI.MaxRespawnDosh[0] = 1000.f;
+        MyKFGI.MaxRespawnDosh[1] = 950.f;
+        MyKFGI.MaxRespawnDosh[2] = 1550.f;
+        MyKFGI.MaxRespawnDosh[3] = 1000.f;
+        
+        for( i=0; i<MyKFGI.LateArrivalStarts.Length; i++ )
         {
-            MyKFGI.LateArrivalStarts[i].StartingDosh[j] *= 0.75;
+            for( j=0; j<MyKFGI.LateArrivalStarts[i].StartingDosh.Length; j++ )
+            {
+                MyKFGI.LateArrivalStarts[i].StartingDosh[j] *= 0.75;
+            }
+        }
+        
+        if( MyKFGI.GameConductor != None )
+        {
+            MyKFGI.GameConductor.bBypassGameConductor = true;
         }
     }
-    
-    if( MyKFGI.GameConductor != None )
-    {
-        MyKFGI.GameConductor.bBypassGameConductor = true;
-    }
-    
+
     if( WorldInfo.NetMode != NM_StandAlone )
     {
         SetTimer(0.1,false,'SpawnTeamChatProxies');
@@ -259,7 +364,39 @@ function InitMutator(string Options, out string ErrorMessage)
     
     if( !bDisableMusic )
     {
-        WorldInfo.Game.Spawn(class'MusicGRI');
+        MusicReplicationInfo = WorldInfo.Game.Spawn(MusicReplicationInfoClass);
+    }
+    
+    if( Len(ZEDReplacmentTable) != 0 )
+    {
+        LoadInfoObject(ZEDReplacmentTable);
+    }
+    
+    if( bNoEDARs )
+    {
+        HuskDif = KFDifficulty_Husk(FindObject("KFGameContent.Default__KFDifficulty_Husk",class'KFDifficulty_Husk'));
+        HuskDif.ChanceToSpawnAsSpecial.Length = 0;        
+        
+        StalkerDif = KFDifficulty_Stalker(FindObject("KFGameContent.Default__KFDifficulty_Stalker",class'KFDifficulty_Stalker'));
+        StalkerDif.ChanceToSpawnAsSpecial.Length = 0;
+    }
+    
+    if( bNoGasCrawler )
+    {
+        CrawlerDif = KFDifficulty_Crawler(FindObject("KFGameContent.Default__KFDifficulty_Crawler",class'KFDifficulty_Crawler'));
+        CrawlerDif.ChanceToSpawnAsSpecial.Length = 0;
+    }
+    
+    if( bNoRioter )
+    {
+        AlphaDif = KFDifficulty_ClotAlpha(FindObject("KFGameContent.Default__KFDifficulty_ClotAlpha",class'KFDifficulty_ClotAlpha'));
+        AlphaDif.ChanceToSpawnAsSpecial.Length = 0;
+    }
+    
+    if( bNoGorefiends )
+    {
+        GorefastDif = KFDifficulty_Gorefast(FindObject("KFGameContent.Default__KFDifficulty_Gorefast",class'KFDifficulty_Gorefast'));
+        GorefastDif.ChanceToSpawnAsSpecial.Length = 0;
     }
 }
 
@@ -271,7 +408,8 @@ function SetupDefaultConfig()
     local STraderItem               TraderItem;
     local array<string>             DefaultInventory;
     local MapTypeInfo               MapInfo;
-    local PickupReplacmentStruct    PickupReplacement;
+    local ZEDReplacmentInfo         DefaultProfile;
+    local AIReplacement             ReplacementInfo;
     
     if( iVersionNumber <= 0 )
     {
@@ -490,182 +628,7 @@ function SetupDefaultConfig()
     
     if( iVersionNumber <= 1 )
     {
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_9mm';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_9mm';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_Dual9mm';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_Dual9mm';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Blunt_Crovel';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Blunt_Crovel';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_GrenadeLauncher_HX25';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_GrenadeLauncher_HX25';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_Colt1911';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_Colt1911';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_Medic';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_Medic';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Rifle_Winchester1894';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Rifle_Winchester1894';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_MB500';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_MB500';
-        PickupReplacments.AddItem(PickupReplacement);        
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_MP7';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_MP7';
-        PickupReplacments.AddItem(PickupReplacement);    
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_Flare';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_Flare';
-        PickupReplacments.AddItem(PickupReplacement);    
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Pistol_Deagle';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Pistol_Deagle';
-        PickupReplacments.AddItem(PickupReplacement);    
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_AssaultRifle_Bullpup';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_AssaultRifle_Bullpup';
-        PickupReplacments.AddItem(PickupReplacement);    
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Thrown_C4';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Thrown_C4';
-        PickupReplacments.AddItem(PickupReplacement);    
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_GrenadeLauncher_M79';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_GrenadeLauncher_M79';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_Medic';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_Medic';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_DragonsBreath';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_DragonsBreath';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Rifle_CenterfireMB464';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Rifle_CenterfireMB464';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Bow_Crossbow';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Bow_Crossbow';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_MP5RAS';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_MP5RAS';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Revolver_SW500';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Revolver_SW500';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_Nailgun';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_Nailgun';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_DoubleBarrel';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_DoubleBarrel';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_HZ12';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_HZ12';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Edged_Katana';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Edged_Katana';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_AssaultRifle_AK12';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_AssaultRifle_AK12';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_Medic';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_Medic';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_M4';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_M4';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Rifle_M14EBR';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Rifle_M14EBR';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_P90';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_P90';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_Mac10';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_Mac10';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Flame_Flamethrower';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Flame_Flamethrower';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_AssaultRifle_M16M203';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_AssaultRifle_M16M203';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_HK_UMP';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_HK_UMP';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Edged_Zweihander';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Edged_Zweihander';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_AA12';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_AA12';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Shotgun_ElephantGun';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Shotgun_ElephantGun';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_AssaultRifle_SCAR';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_AssaultRifle_SCAR';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_LMG_Stoner63A';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_LMG_Stoner63A';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_AssaultRifle_Medic';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_AssaultRifle_Medic';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_SMG_Kriss';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_SMG_Kriss';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_RocketLauncher_RPG7';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_RocketLauncher_RPG7';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_RocketLauncher_Seeker6';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_RocketLauncher_Seeker6';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_HuskCannon';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_HuskCannon';
-        PickupReplacments.AddItem(PickupReplacement);
-        
-        PickupReplacement.OriginalClass = class'KFGameContent.KFWeap_Rifle_M99';
-        PickupReplacement.ReplacmentClass = class'KFClassicMode.ClassicWeap_Rifle_M99';
-        PickupReplacments.AddItem(PickupReplacement);
-        
+        PickupReplacments = DefaultWeaponReplacements;
         iVersionNumber++;
     }
     
@@ -681,9 +644,12 @@ function SetupDefaultConfig()
         TraderInventory.RemoveItem("KFGame.KFWeapDef_FNFal");
         TraderInventory.RemoveItem("KFGame.KFWeapDef_MedicRifleGrenadeLauncher");
         
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_MKB42");
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_FNFal");
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_M7A3");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_MKB42") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_MKB42");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_FNFal") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_FNFal");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_MedicRifleGrenadeLauncher") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_MedicRifleGrenadeLauncher");
     
         iVersionNumber++;
     }
@@ -695,10 +661,68 @@ function SetupDefaultConfig()
         TraderInventory.RemoveItem("KFGame.KFWeapDef_FireAxe");
         TraderInventory.RemoveItem("KFGame.KFWeapDef_AbominationAxe");
         
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_Thompson");
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_M32");
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_FireAxe");
-        TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_AbominationAxe");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_Thompson") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_Thompson");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_M32") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_M32");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_FireAxe") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_FireAxe");
+        if( TraderInventory.Find("KFClassicMode.ClassicWeapDef_AbominationAxe") == INDEX_NONE )
+            TraderInventory.AddItem("KFClassicMode.ClassicWeapDef_AbominationAxe");
+    
+        iVersionNumber++;
+    }
+    
+    if( iVersionNumber <= 5 )
+    {
+        if( TraderInventory.Find("KFGame.KFWeapDef_LazerCutter") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_LazerCutter");
+        if( TraderInventory.Find("KFGame.KFWeapDef_MicrowaveRifle") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_MicrowaveRifle");
+        if( TraderInventory.Find("KFGame.KFWeapDef_MedicBat") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_MedicBat");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_SealSqueal") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_SealSqueal");
+            
+        MapInfo.Name = "KF-SantasWorkshop";
+        MapInfo.Type = "XMas";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        MapInfo.Name = "KF-SteamFortress";
+        MapInfo.Type = "Summer";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        MapInfo.Name = "KF-MonsterBall";
+        MapInfo.Type = "Halloween";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        DefaultProfile = New(None, "ExampleProfile") class'ZEDReplacmentInfo';
+            ReplacementInfo.Original = "Cyst";
+            ReplacementInfo.Replacment = "KFClassicMode.ClassicPawn_ZedCrawler";
+            ReplacementInfo.bCheckChildren = true;
+            ReplacementInfo.ReplacmentChance = 0.45f;
+        DefaultProfile.AIReplacments.AddItem(ReplacementInfo);
+        DefaultProfile.SaveConfig();
+        
+        ZEDReplacmentTable = "ExampleProfile";
+        bDisableGameplayChanges = false;
+        
+        bNoEDARs = false;
+        bNoGasCrawler = false;
+        bNoRioter = false;
+        bNoGorefiends = false;
+        
+        bEnableTraderSpeed = false;
+        bEnableCloseToTraderSpawns = false;
+        bDisableUpgradeSystem = false;
+        
+        bEnabledVisibleSpectators = true;
+        SpectatorRefireRate = 1.5f;
+        SpectatorZapDamage = 25.f;
+        SpectatorHealAmount = 3.f;
     
         iVersionNumber++;
     }
@@ -706,10 +730,57 @@ function SetupDefaultConfig()
     SaveConfig();
 }
 
+function LoadInfoObject(string ObjectName)
+{
+    local array<string> Names;
+    local int           i;
+
+    GetPerObjectConfigSections(class'ZEDReplacmentInfo', Names);
+    for (i = 0; i < Names.Length; i++)
+    {
+        if( InStr(Names[i], ObjectName) != INDEX_NONE )
+        {
+            LoadedTable = New(None, Left(Names[i], InStr(Names[i], " "))) class'ZEDReplacmentInfo';
+            break;
+        }
+    }
+    
+    LoadMonsterList();
+}
+
+function LoadMonsterList()
+{
+    local int                   i;
+    local class<KFPawn_Monster> KFM, KFMO;
+    
+    if( LoadedAIList.Length > 0 || LoadedTable == None )
+        LoadedAIList.Length = 0;
+        
+    LoadedAIList.Length = LoadedTable.AIReplacments.Length;
+    for( i=0; i<LoadedTable.AIReplacments.Length; i++ )
+    {
+        KFMO = class<KFPawn_Monster>(DynamicLoadObject(ZEDNameToClass(LoadedTable.AIReplacments[i].Original), class'Class', false));
+        KFM = class<KFPawn_Monster>(DynamicLoadObject(ZEDNameToClass(LoadedTable.AIReplacments[i].Replacment), class'Class', false));
+        
+        if( KFM != None && KFMO != None )
+        {
+            LoadedAIList[i].Original = KFMO;
+            LoadedAIList[i].Replacment = KFM;
+            LoadedAIList[i].bCheckChildren = LoadedTable.AIReplacments[i].bCheckChildren;
+            LoadedAIList[i].iReplacmentChance = LoadedTable.AIReplacments[i].ReplacmentChance;
+            
+            AddLoadPackage(KFMO);
+            AddLoadPackage(KFM);
+            
+            KFM.static.PreloadContent();
+        }
+    }
+}
+
 function SpawnTeamChatProxies()
 {
-    local ClassicTeamChatProxy Proxy;
-    local int i;
+    local ClassicTeamChatProxy  Proxy;
+    local int                   i;
     
     if( WorldInfo.Game.GameReplicationInfo == None )
     {
@@ -730,6 +801,9 @@ function SpawnTeamChatProxies()
 function SetDifficultyInfo()
 {
     local KFGameDifficultyInfo KFDI;
+    
+    if( bDisableGameplayChanges )
+        return;
     
     KFDI = MyKFGI.DifficultyInfo;
     if( KFDI != None )
@@ -752,10 +826,10 @@ function SetDifficultyInfo()
 
 function SetupWebAdmin()
 {
-    local WebServer W;
-    local WebAdmin A;
+    local WebServer     W;
+    local WebAdmin      A;
     local ClassicWebApp xW;
-    local byte i;
+    local byte          i;
 
     foreach AllActors(class'WebServer',W)
         break;
@@ -793,18 +867,35 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
 {
     local string                     S, WeaponName, PlayerName;
     local bool                       Ret;
-    local int                        SellPrice, Index;
+    local int                        SellPrice;
     local byte                       ItemIndex;
     local KFGameReplicationInfo      GRI;
     local class<KFWeapon>            Weapon;
     local class<KFWeaponDefinition>  WeaponDef;
     local KFInventoryManager         InvMan;
     local PlayerController           PC;
+    local ClassicPlayerController    CPC;
     local PlayerReplicationInfo      PRI;
     local STraderItem                Item;
     
     Ret = Super.OverridePickupQuery(Other, ItemClass, Pickup, bAllowPickup);
-    if( !bBroadcastPickups || Pickup.Instigator == None || Other == Pickup.Instigator || !Other.InvManager.HandlePickupQuery(ItemClass, Pickup) )
+    if( ClassicDroppedPickup(Pickup) == None || Pickup.Instigator == None || Pickup.Instigator == Other )
+        return Ret;
+    
+    CPC = ClassicPlayerController(ClassicDroppedPickup(Pickup).OwnerController);
+    if( CPC == None )
+        return Ret;
+        
+    if( Other.Controller == CPC )
+        return Ret;
+    
+    if( CPC != None && CPC.bPickupsDisabled && CPC != Other.Controller && class<KFCarryableObject>(ItemClass) == None )
+    {
+        bAllowPickup = 0;
+        return true;
+    }
+    
+    if( !bBroadcastPickups || bAllowPickup == 0 || !Other.InvManager.HandlePickupQuery(ItemClass, Pickup) )
         return Ret;
 
     Weapon = class<KFWeapon>(ItemClass);
@@ -820,10 +911,7 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
         WeaponDef = GRI.TraderItems.SaleItems[ItemIndex].WeaponDef;
         Item = GRI.TraderItems.SaleItems[ItemIndex];
     }
-    else 
-    {
-        return Ret;
-    }
+    else return Ret;
         
     if( WeaponDef == None )
         return Ret;
@@ -832,20 +920,14 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
     if( InvMan == None || !InvMan.CanCarryWeapon(Weapon) )
         return Ret;
         
-    Index = DroppedItemsList.Find('Pickup', DroppedPickup(Pickup));
-    if( Index != INDEX_NONE )
-    {
-        PRI = DroppedItemsList[Index].PRI;
-        if( PRI != None )
-        {
-            PlayerName = PRI.GetHumanReadableName();
-        }
-        
-        DroppedItemsList.Remove(Index, 1);
-    }
-        
     WeaponName = WeaponDef.static.GetItemName();
     SellPrice = InvMan.GetAdjustedSellPriceFor(Item);
+    
+    PRI = CPC.PlayerReplicationInfo;
+    if( PRI != None )
+    {
+        PlayerName = PRI.GetHumanReadableName();
+    }
     
     if( PlayerName == "" )
     {
@@ -972,8 +1054,6 @@ function SetupClassicSystems()
 {
     local int i;
 
-    //KFGameReplicationInfo(WorldInfo.GRI).TraderDialogManagerClass = class'ClassicTraderDialogManager';
-     
     if (KFMI != none )
     {
         KFMI.bUsePresetObjectives = false;
@@ -995,6 +1075,12 @@ function SetupClassicSystems()
         }
     }
     
+    ModifySpawnManager();
+    SetupMapInfo();
+}
+
+function ModifySpawnManager()
+{
     if( MyKFGI != None )
     {
         if( KFGameInfo_Endless(MyKFGI) != None )
@@ -1014,8 +1100,6 @@ function SetupClassicSystems()
         
         MyKFGI.SpawnManager.Initialize();
     }
-    
-    SetupMapInfo();
 }
 
 static final function string GetStatFile( const out UniqueNetId UID )
@@ -1067,7 +1151,10 @@ function PlayerChangeSpec( ClassicPlayerController PC, bool bSpectator )
 
 function ScoreKill(Controller Killer, Controller Killed)
 {
-    if( KFPawn_Monster(Killed.Pawn)!=None && Killed.GetTeamNum()!=0 && Killer.bIsPlayer && Killer.GetTeamNum()==0 )
+    local KFPawn_Monster KFM;
+    
+    KFM = KFPawn_Monster(Killed.Pawn);
+    if( KFM!=None && Killed.GetTeamNum()!=0 && Killer.bIsPlayer && Killer.GetTeamNum()==0 )
     {
         if( Killer.PlayerReplicationInfo!=None )
             BroadcastKillMessage(Killed.Pawn,Killer);
@@ -1083,7 +1170,7 @@ final function BroadcastKillMessage( Pawn Killed, Controller Killer )
     if( Killer==None || Killer.PlayerReplicationInfo==None )
         return;
 
-    if( KFPawn_Monster(Killed) != None && KFPawn_Monster(Killed).bLargeZed )
+    if( KFPawn_Monster(Killed) != None && (KFPawn_Monster(Killed).bLargeZed || KFInterface_MonsterBoss(Killed) != None) )
     {
         foreach WorldInfo.AllControllers(class'ClassicPlayerController',E)
         {
@@ -1092,6 +1179,51 @@ final function BroadcastKillMessage( Pawn Killed, Controller Killer )
     }
     else if( ClassicPlayerController(Killer)!=None )
         ClassicPlayerController(Killer).ReceiveKillMessage(Killed.Class);
+}
+
+function NetDamage(int OriginalDamage, out int Damage, Pawn Injured, Controller InstigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType, Actor DamageCauser)
+{
+	Super.NetDamage(OriginalDamage, Damage, Injured, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser);
+
+	if( LastDamageDealer!=None )
+	{
+		ClearTimer('CheckDamageDone');
+		CheckDamageDone();
+	}
+    
+	if( Damage>0 && InstigatedBy != None )
+	{
+		if( KFPawn_Monster(Injured) != None && ClassicPlayerController(InstigatedBy) != None )
+		{
+			LastDamageDealer = ClassicPlayerController(InstigatedBy);
+            if( LastDamageDealer.bNoDamageTracking )
+                return;
+                
+            LastHitZed = KFPawn(Injured);
+            LastHitHP = LastHitZed.Health;
+            LastDamagePosition = HitLocation;
+            LastDamageDMGType = class<KFDamageType>(DamageType);
+            SetTimer(0.1,false,'CheckDamageDone');
+		}
+	}
+}
+
+final function CheckDamageDone()
+{
+	local int Damage;
+
+	if( LastDamageDealer!=None && LastHitZed!=None && LastHitHP!=LastHitZed.Health )
+	{
+		Damage = LastHitHP-Max(LastHitZed.Health,0);
+		if( Damage>0 )
+        {
+			if( !LastDamageDealer.bClientHideDamageMsg && KFPawn_Monster(LastHitZed)!=None )
+				LastDamageDealer.ReceiveDamageMessage(LastHitZed.Class,Damage);
+            if( !LastDamageDealer.bClientHideNumbers )
+                LastDamageDealer.ClientNumberMsg(Damage,LastDamagePosition,LastDamageDMGType);
+        }
+	}
+	LastDamageDealer = None;
 }
 
 final function SavePlayerPerk( ClassicPlayerController PC )
@@ -1138,11 +1270,11 @@ function SaveAllPerks()
 
 function CheckC4()
 {
-    local KFProj_Thrown_C4 C4A;
-    local int CurCount;
-    local bool bZed;    
-    local KFPawn_MOnster KFM;
-    local KFWeap_Thrown_C4 C4WeaponOwner;
+    local KFProj_Thrown_C4  C4A;
+    local int               CurCount;
+    local bool              bZed;    
+    local KFPawn_MOnster    KFM;
+    local KFWeap_Thrown_C4  C4WeaponOwner;
     
     foreach WorldInfo.DynamicActors( class'KFProj_Thrown_C4', C4A)
     {
@@ -1227,7 +1359,7 @@ function ModifyPlayer(Pawn Other)
     local KFGameReplicationInfo KFGRI;
     
     KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
-    if( KFGRI != None )
+    if( KFGRI != None && !bDisableGameplayChanges )
     {
         if( KFPawn(Other) != None )
         {
@@ -1255,7 +1387,10 @@ function Tick(float DeltaTime)
                 
                 if( KFPawn(ClassicPC.Pawn) != None )
                 {
-                    KFPawn(ClassicPC.Pawn).bIgnoreTeamCollision = true;
+                    KFPawn(ClassicPC.Pawn).UpdateGroundSpeed();
+                    
+                    if( !bDisableGameplayChanges )
+                        KFPawn(ClassicPC.Pawn).bIgnoreTeamCollision = true;
                 }
             }
             
@@ -1278,7 +1413,10 @@ function Tick(float DeltaTime)
             {
                 if( KFPawn(ClassicPC.Pawn) != None )
                 {
-                    KFPawn(ClassicPC.Pawn).bIgnoreTeamCollision = false;
+                    KFPawn(ClassicPC.Pawn).UpdateGroundSpeed();
+                    
+                    if( !bDisableGameplayChanges )
+                        KFPawn(ClassicPC.Pawn).bIgnoreTeamCollision = false;
                 }
                 
                 if( ClassicPC.bSetPerk )
@@ -1309,22 +1447,40 @@ function CheckTraderTime()
 
 function AdjustSpawnList(out array<class<KFPawn_Monster> > SpawnList)
 {
-    local int     i, j;
-    local bool    bShouldReplace;
+    local int i;
     
     for( i=0; i<SpawnList.Length; i++ )
     {
-        for( j=0; j<AIClassList.Length; j++ )
+        if( LoadedAIList.Length != 0 )
         {
-            if( AIClassList[j].Replacment == None || AIClassList[j].Original == None )
-                continue;
-                
-            if( AIClassList[j].bCheckChildren )
-                bShouldReplace = ClassIsChildOf(SpawnList[i], AIClassList[j].Original);
-            else bShouldReplace = (String(SpawnList[i].Name) == String(AIClassList[j].Original.Name));
+            CheckForZEDReplacment(i, LoadedAIList, SpawnList);
+        }
+        
+        if( AIClassList.Length != 0 )
+        {
+            CheckForZEDReplacment(i, AIClassList, SpawnList);
+        }
+    }
+}
+
+function CheckForZEDReplacment(int Index, array<AIReplacementS> ReplacementList, out array<class<KFPawn_Monster> > SpawnList)
+{
+    local bool             bShouldReplace;
+    local AIReplacementS   AIReplacement;
+    
+    ForEach ReplacementList(AIReplacement)
+    {
+        if( AIReplacement.Replacment == None || AIReplacement.Original == None )
+            continue;
+            
+        if( FRand() <= FClamp(AIReplacement.iReplacmentChance, 0.f, 1.f) )
+        {
+            if( AIReplacement.bCheckChildren )
+                bShouldReplace = ClassIsChildOf(SpawnList[Index], AIReplacement.Original);
+            else bShouldReplace = (String(SpawnList[Index].Name) == String(AIReplacement.Original.Name));
                 
             if( bShouldReplace )
-                SpawnList[i] = AIClassList[j].Replacment;
+                SpawnList[Index] = AIReplacement.Replacment;
         }
     }
 }
@@ -1332,6 +1488,7 @@ function AdjustSpawnList(out array<class<KFPawn_Monster> > SpawnList)
 function NotifyLogin(Controller NewPlayer)
 {
     local ClassicPlayerReplicationInfo PRI;
+    local ClassicPlayerController PC;
     
     PRI = ClassicPlayerReplicationInfo(NewPlayer.PlayerReplicationInfo);
     if( KFPlayerController(NewPlayer) != None && PRI != None )
@@ -1349,12 +1506,20 @@ function NotifyLogin(Controller NewPlayer)
         }
     }
         
-    if( ClassicPlayerController(NewPlayer)!=None )
+    PC = ClassicPlayerController(NewPlayer);
+    if( PC!=None )
     {
-        SendMOTD(ClassicPlayerController(NewPlayer));
+        SendMOTD(PC);
+        PC.bDisableGameplayChanges = bDisableGameplayChanges;
+        PC.bEnableTraderSpeed = bEnableTraderSpeed;
+        PC.bDisableUpgrades = bDisableUpgradeSystem;
+        PC.bEnabledVisibleSpectators = bEnabledVisibleSpectators;
+        PC.RefireRate = SpectatorRefireRate;
+        PC.ZapDamage = SpectatorZapDamage;
+        PC.HealAmount = SpectatorHealAmount;
         
         if( !bGameHasEnded )
-            InitializePerks(ClassicPlayerController(NewPlayer));
+            InitializePerks(PC);
     }
     
     Super.NotifyLogin(NewPlayer);
@@ -1376,14 +1541,31 @@ function NotifyLogout(Controller Exiting)
 
 function InitializePerks( ClassicPlayerController Other )
 {
-    local ClassicPerkManager    PM;
-    local ClassicPerk_Base      P;
-    local int                   i;
+    local ClassicPerkManager              PM;
+    local ClassicPerk_Base                P;
+    local int                             i,Index;
     
     Other.OnSpectateChange = PlayerChangeSpec;
     
     PM = Other.PerkManager;
     PM.InitPerks();
+    
+    if( bDisableGameplayChanges )
+    {
+        if( !bDisableGunslinger )
+        {
+            Index = LoadedPerks.Find(class'KFClassicMode.ClassicPerk_Gunslinger_Default');
+            if( Index == INDEX_NONE )
+                LoadedPerks.AddItem(class'KFClassicMode.ClassicPerk_Gunslinger_Default');
+        }
+            
+        if( !bDisableSWAT )
+        {
+            Index = LoadedPerks.Find(class'KFClassicMode.ClassicPerk_SWAT_Default');
+            if( Index == INDEX_NONE )
+                LoadedPerks.AddItem(class'KFClassicMode.ClassicPerk_SWAT_Default');
+        }
+    }
      
     for( i=0; i<LoadedPerks.Length; ++i )
     {   
@@ -1391,7 +1573,7 @@ function InitializePerks( ClassicPlayerController Other )
         if( P != None )
         {
             P.MinimumLevel = MinPerkLevel;
-            P.MaximumLevel = MaxPerkLevel;
+            P.MaximumLevel = bDisableGameplayChanges ? byte(Max(25, MaxPerkLevel)) : MaxPerkLevel;
             
             P.FirstLevelExp *= RequirementScaling;
             P.LevelUpExpCost *= RequirementScaling;
@@ -1431,9 +1613,7 @@ final function AddLoadPackage( Object O )
 
 function bool CheckReplacement(Actor A)
 {
-    local DroppedPickup Pickup;
-    local KFPickupFactory_Item MapWeapon;
-    local ItemList Item;
+    local KFWeapon KFW;
     
     if( BasicWebAdminUser(A) != None )
     {
@@ -1446,37 +1626,132 @@ function bool CheckReplacement(Actor A)
         return false;
     }
     
-    Pickup = DroppedPickup(A);
-    if( Pickup != None && Pickup.Instigator != None )
+	KFW = KFWeapon(A);
+	if( KFW != None )
     {
-        Item.Pickup = Pickup;
-        Item.PRI = Pickup.Instigator.PlayerReplicationInfo;
-        DroppedItemsList.AddItem(Item);
-        
+		KFW.DroppedPickupClass = class'ClassicDroppedPickup';
         return true;
     }
-    
-    MapWeapon = KFPickupFactory_Item(A);
-    if( MapWeapon != None )
-    {
-        CheckPickupReplacment(MapWeapon);
-        return true;
-    }
-    
-    return KFMapObjective_RepairActors(A) == None || KFMapObjective_DoshHold(A) == None || KFMapObjective_AreaDefense(A) != None || KFMapObjective_ActivateTrigger(A) == None;
+  
+    return Super.CheckReplacement(A);
 }
 
-function CheckPickupReplacment(KFPickupFactory_Item Item)
+function ModifyPickupFactories()
 {
-    local int i, Index;
+	local PickupReplacmentStruct Replacment;
+	
+	foreach LoadedWeaponReplacements(Replacment)
+	{
+		ReplaceWeaponPickup(Replacment.OriginalClass, Replacment.ReplacmentClass);
+	}
+
+	Super.ModifyPickupFactories();
+}
+
+function ReplaceWeaponPickup(class<KFWeapon> OldWeaponClass, class<KFWeapon> NewWeaponClass)
+{
+	local KFPickupFactory       KFPF;
+	local KFPickupFactory_Item  KFPFI;
+	local int                   i;
+	
+	foreach MyKFGI.ItemPickups(KFPF)
+	{
+		KFPFI = KFPickupFactory_Item(KFPF);
+		if( KFPFI != None )
+		{
+			for( i = 0; i < KFPFI.ItemPickups.Length; i++ )
+			{
+				if( KFPFI.ItemPickups[i].ItemClass == OldWeaponClass )
+				{
+					KFPFI.ItemPickups[i].ItemClass = NewWeaponClass;
+					break;
+				}
+			}
+		}
+	}
+}
+
+// Copy of GameInfo::ChoosePlayerStart, modified to get the closest spawn to Trader.
+function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam, optional string incomingName)
+{
+	local PlayerStart P, BestStart;
+	local int BestRating, NewRating;
+    local KFTraderTrigger T;
+    local KFGameReplicationInfo GRI;
+    local NavigationPoint Ret;
     
-    for( i=0; i < PickupReplacments.Length; i++ )
+    Ret = Super.FindPlayerStart(Player, InTeam, incomingName);
+    if( !bEnableCloseToTraderSpawns )
+        return Ret;
+    
+    GRI = KFGameReplicationInfo(WorldInfo.GRI);
+    if( GRI == None )
+        return Ret;
+        
+    T = GRI.OpenedTrader != None ? GRI.OpenedTrader : GRI.NextTrader;
+    if( T == None )
+        return Ret;
+
+	foreach WorldInfo.AllNavigationPoints(class'PlayerStart', P)
+	{
+        if( !P.bEnabled )
+            continue;
+            
+		NewRating = VSizeSq(P.Location - T.Location);
+		if( NewRating < BestRating )
+		{
+			BestRating = NewRating;
+			BestStart = P;
+		}
+	}
+	return BestStart;
+}
+
+function string ZEDNameToClass(string ClassName)
+{
+    Switch(ClassName)
     {
-        Index = Item.ItemPickups.Find('ItemClass', PickupReplacments[i].OriginalClass);
-        if( Index != INDEX_NONE )
-        {
-            Item.ItemPickups[Index].ItemClass = PickupReplacments[i].ReplacmentClass;
-        }
+        Case "Random":
+            return ZEDNameToClass(ZedNames[Rand(ZedNames.Length)]);
+        Case "Cyst":
+            return "KFGameContent.KFPawn_ZedClot_Cyst";
+        Case "Alpha Clot":
+            return "KFGameContent.KFPawn_ZedClot_Alpha";
+        Case "Elite Alpha":
+            return "KFGameContent.KFPawn_ZedClot_AlphaKing";        
+        Case "Slasher":
+            return "KFGameContent.KFPawn_ZedClot_Slasher";        
+        Case "Crawler":
+            return "KFGameContent.KFPawn_ZedCrawler";
+        Case "Elite Crawler":
+            return "KFGameContent.KFPawn_ZedCrawlerKing";        
+        Case "Fleshpound":
+            return "KFGameContent.KFPawn_ZedFleshpound";        
+        Case "King Fleshpound":
+            return "KFGameContent.KFPawn_ZedFleshpoundKing";
+        Case "Quarter Pound":
+            return "KFGameContent.KFPawn_ZedFleshpoundMini";        
+        Case "Gorefast":
+            return "KFGameContent.KFPawn_ZedGorefast";        
+        Case "Hans":
+            return "KFGameContent.KFPawn_ZedHans";
+        Case "Husk":
+            return "KFGameContent.KFPawn_ZedHusk";        
+        Case "Patriarch":
+            return "KFGameContent.KFPawn_ZedPatriarch";        
+        Case "Scrake":
+            return "KFGameContent.KFPawn_ZedScrake";        
+        Case "Siren":
+            return "KFGameContent.KFPawn_ZedSiren";        
+        Case "Stalker":
+            return "KFGameContent.KFPawn_ZedStalker";
+        Case "Bloat":
+            return "KFGameContent.KFPawn_ZedBloat";
+        Case "Abomination":
+        Case "King Bloat":
+            return "KFGameContent.KFPawn_ZedBloat_King";
+        default:
+            return ClassName;
     }
 }
 
@@ -1490,10 +1765,32 @@ final function string ParseMapInfoStruct( MapTypeInfo Info )
     return Info.Name$","$Info.Type$","$Info.MaxMonsters;
 }
 
+final function string ParseReplacmentsStruct( TraderReplacements Info )
+{
+    return Info.Original$","$Info.Replacement;
+}
+
+final function TraderReplacements ParseReplacmentsString(string S)
+{
+    local TraderReplacements Res;
+    local int                i;
+
+    i = InStr(S,",");
+    if( i==-1 )
+        return Res;
+    Res.Original = Left(S,i);
+    S = Mid(S,i+1);
+    i = InStr(S,",");
+    if( i==-1 )
+        return Res;
+    Res.Replacement = Mid(S,i+1);
+    return Res;
+}
+
 final function MapTypeInfo ParseMapInfoString(string S)
 {
     local MapTypeInfo Res;
-    local int i;
+    local int         i;
 
     i = InStr(S,",");
     if( i==-1 )
@@ -1527,9 +1824,39 @@ function string WebAdminGetValue( name PropName, int ElementIndex )
     case 'MaxPerkLevel':
         return string(MaxPerkLevel);
     case 'GlobalMaxMonsters':
-        return string(GlobalMaxMonsters);    
+        return string(GlobalMaxMonsters);
     case 'bBroadcastPickups':
         return string(bBroadcastPickups);
+    case 'bDisableGameplayChanges':
+        return string(bDisableGameplayChanges);
+    case 'bDisableGunslinger':
+        return string(bDisableGunslinger);
+    case 'bDisableSWAT':
+        return string(bDisableSWAT);
+    case 'bNoEDARs':
+        return string(bNoEDARs);
+    case 'bNoGasCrawler':
+        return string(bNoGasCrawler);
+    case 'bNoRioter':
+        return string(bNoRioter);
+    case 'bNoGorefiends':
+        return string(bNoGorefiends);
+    case 'bEnableTraderSpeed':
+        return string(bEnableTraderSpeed);
+    case 'bEnableCloseToTraderSpawns':
+        return string(bEnableCloseToTraderSpawns);
+    case 'bDisableUpgradeSystem':
+        return string(bDisableUpgradeSystem);    
+    case 'bEnabledVisibleSpectators':
+        return string(bEnabledVisibleSpectators);
+    case 'SpectatorRefireRate':
+        return string(SpectatorRefireRate);
+    case 'SpectatorZapDamage':
+        return string(SpectatorZapDamage);
+    case 'SpectatorHealAmount':
+        return string(SpectatorHealAmount);
+    case 'ZEDReplacmentTable':
+        return ZEDReplacmentTable;
     case 'GlobalEventName':
         return string(GlobalEventName);
     case 'Perks':
@@ -1542,6 +1869,20 @@ function string WebAdminGetValue( name PropName, int ElementIndex )
         return Repl(ServerMOTD,"<LINEBREAK>",Chr(10));
     case 'MapTypes':
         return (ElementIndex==-1 ? string(MapTypes.Length) : ParseMapInfoStruct(MapTypes[ElementIndex]));
+    case 'TraderWeaponReplacments':
+        return (ElementIndex==-1 ? string(TraderWeaponReplacments.Length) : ParseReplacmentsStruct(TraderWeaponReplacments[ElementIndex]));
+    }
+}
+
+final function UpdateReplacmentsArray( out array<TraderReplacements> Ar, int Index, const out string Value )
+{
+    if( Value=="#DELETE" )
+        Ar.Remove(Index,1);
+    else
+    {
+        if( Index>=Ar.Length )
+            Ar.Length = Index+1;
+        Ar[Index] = ParseReplacmentsString(Value);
     }
 }
 
@@ -1589,13 +1930,60 @@ function WebAdminSetValue( name PropName, int ElementIndex, string Value )
         MaxPerkLevel = byte(Value);            
         break;
     case 'GlobalMaxMonsters':
-        GlobalMaxMonsters = byte(Value);    
+        GlobalMaxMonsters = byte(Value);   
+        SetupMapInfo();        
         break;    
     case 'bBroadcastPickups':
         bBroadcastPickups = bool(Value);    
+        break;    
+    case 'bDisableGameplayChanges':
+        bDisableGameplayChanges = bool(Value);    
+        break;
+    case 'bDisableGunslinger':
+        bDisableGunslinger = bool(Value);    
+        break;
+    case 'bDisableSWAT':
+        bDisableSWAT = bool(Value);    
+        break;
+    case 'bNoEDARs':
+        bNoEDARs = bool(Value);    
+        break;
+    case 'bNoGasCrawler':
+        bNoGasCrawler = bool(Value);    
+        break;
+    case 'bNoRioter':
+        bNoRioter = bool(Value);    
+        break;
+    case 'bNoGorefiends':
+        bNoGorefiends = bool(Value);    
+        break;
+    case 'bEnableTraderSpeed':
+        bEnableTraderSpeed = bool(Value);    
+        break;
+    case 'bEnableCloseToTraderSpawns':
+        bEnableCloseToTraderSpawns = bool(Value);    
+        break;
+    case 'bDisableUpgradeSystem':
+        bDisableUpgradeSystem = bool(Value);    
+        break;
+    case 'bEnabledVisibleSpectators':
+        bEnabledVisibleSpectators = bool(Value);    
+        break;
+    case 'SpectatorRefireRate':
+        SpectatorRefireRate = float(Value);    
+        break;
+    case 'SpectatorZapDamage':
+        SpectatorZapDamage = float(Value);    
+        break;
+    case 'SpectatorHealAmount':
+        SpectatorHealAmount = float(Value);    
+        break;
+    case 'ZEDReplacmentTable':
+        ZEDReplacmentTable = Value;    
         break;
     case 'GlobalEventName':
-        GlobalEventName = name(Value);        
+        GlobalEventName = name(Value);
+        SetupMapInfo();        
         break;
     case 'ServerMOTD':
         ServerMOTD = Repl(Value,Chr(13)$Chr(10),"<LINEBREAK>");     
@@ -1608,9 +1996,13 @@ function WebAdminSetValue( name PropName, int ElementIndex, string Value )
         break;
     case 'TraderInventory':
         UpdateArray(TraderInventory,ElementIndex,Value); 
+        break;    
+    case 'TraderWeaponReplacments':
+        UpdateReplacmentsArray(TraderWeaponReplacments, ElementIndex, Value); 
         break;
     case 'MapTypes':
         UpdateMapInfoArray(MapTypes, ElementIndex, Value);
+        SetupMapInfo();
         break;
     default:
         return;
@@ -1620,17 +2012,54 @@ function WebAdminSetValue( name PropName, int ElementIndex, string Value )
 
 defaultproperties
 {
+    MusicReplicationInfoClass=class'MusicGRI'
+    
+    ZedNames.Add("Cyst")
+    ZedNames.Add("Alpha Clot")
+    ZedNames.Add("Elite Alpha")
+    ZedNames.Add("Slasher")
+    ZedNames.Add("Bloat")
+    ZedNames.Add("Crawler")
+    ZedNames.Add("Elite Crawler")
+    ZedNames.Add("Fleshpound")
+    ZedNames.Add("King Fleshpound")
+    ZedNames.Add("Quarter Pound")
+    ZedNames.Add("Gorefast")
+    ZedNames.Add("Hans")
+    ZedNames.Add("Husk")
+    ZedNames.Add("Patriarch")
+    ZedNames.Add("Scrake")
+    ZedNames.Add("Siren")
+    ZedNames.Add("Stalker")
+    ZedNames.Add("Abomination")
+    ZedNames.Add("King Bloat")
+    
     WebConfigs.Add((PropType=0,PropName="RequirementScaling",UIName="Requirement Scaling",UIDesc="Scales the current perk requirments."))
     WebConfigs.Add((PropType=0,PropName="ForcedMaxPlayers",UIName="Server Max Players",UIDesc="A forced max players value of the server (0 = use standard KF2 setting)"))
     WebConfigs.Add((PropType=0,PropName="StatAutoSaveWaves",UIName="Stat Auto-Save Waves",UIDesc="How often should stats be auto-saved (1 = every wave, 2 = every second wave etc)"))
     WebConfigs.Add((PropType=0,PropName="MinPerkLevel",UIName="Min Perk Level",UIDesc="Minimum level for perks."))
     WebConfigs.Add((PropType=0,PropName="MaxPerkLevel",UIName="Max Perk Level",UIDesc="Maximum level for perks."))
     WebConfigs.Add((PropType=1,PropName="bBroadcastPickups",UIName="Broadcast Pickups",UIDesc="Broadcast a message when a player picks up another players weapons."))
+    WebConfigs.Add((PropType=1,PropName="bDisableGameplayChanges",UIName="Disable Gameplay Changes",UIDesc="Disable most of the gameplay changes and enable a more KF2 like experience."))
+    WebConfigs.Add((PropType=1,PropName="bDisableGunslinger",UIName="Disable Gunslinger Perk",UIDesc="Disables the Gunslinger perk from being added when bDisableGameplayChanges is true."))
+    WebConfigs.Add((PropType=1,PropName="bDisableSWAT",UIName="Disable SWAT Perk",UIDesc="Disables the SWAT perk from being added when bDisableGameplayChanges is true."))
+    WebConfigs.Add((PropType=1,PropName="bNoEDARs",UIName="Disable EDAR Spawns",UIDesc="Prevents EDARs from spawning in regular gameplay."))
+    WebConfigs.Add((PropType=1,PropName="bNoGasCrawler",UIName="Disable Gas Crawler Spawns",UIDesc="Prevents Gas Crawlers from spawning in regular gameplay."))
+    WebConfigs.Add((PropType=1,PropName="bNoRioter",UIName="Disable Rioter Spawns",UIDesc="Prevents Rioters from spawning in regular gameplay."))
+    WebConfigs.Add((PropType=1,PropName="bNoGorefiends",UIName="Disable Gorefiend Spawns",UIDesc="Prevents Gorefiends from spawning in regular gameplay."))
+    WebConfigs.Add((PropType=1,PropName="bEnableTraderSpeed",UIName="Enable Fast Movment During Trader Time",UIDesc="Enables moving much faster during trader time."))
+    WebConfigs.Add((PropType=1,PropName="bDisableUpgradeSystem",UIName="Disable Upgrade System",UIDesc="Disables the weapon upgrade system."))
+    WebConfigs.Add((PropType=1,PropName="bEnabledVisibleSpectators",UIName="Enable Visible Spectators",UIDesc="Enables the Visible Spectator system."))
+    WebConfigs.Add((PropType=0,PropName="SpectatorRefireRate",UIName="Spectator Fire Rate",UIDesc="Sets the time that a sepctator can fire his projectile."))
+    WebConfigs.Add((PropType=0,PropName="SpectatorZapDamage",UIName="Spectator Zap Damage",UIDesc="How much damage the Zap projectile from Spectators do."))
+    WebConfigs.Add((PropType=0,PropName="SpectatorHealAmount",UIName="Spectator Heal Amount",UIDesc="How much the Spectator heal projectile will heal the player."))
+    WebConfigs.Add((PropType=0,PropName="ZEDReplacmentTable",UIName="ZED Replacment Table",UIDesc="What table to use for replacing the ZED spawns."))
     WebConfigs.Add((PropType=0,PropName="GlobalMaxMonsters",UIName="Global Max Monsters",UIDesc="Make monsters for maps not present within the MapInfo array"))
     WebConfigs.Add((PropType=0,PropName="GlobalEventName",UIName="Global Event Name",UIDesc="Name of the event used for maps not present within the MapInfo array"))
     WebConfigs.Add((PropType=2,PropName="Perks",UIName="Perk Classes",UIDesc="List of perks players can play as (careful with removing them, because any perks removed will permanently delete the gained XP for every player for that perk)!",NumElements=-1))
     WebConfigs.Add((PropType=2,PropName="CustomCharacters",UIName="Custom Characters",UIDesc="List of custom characters for this server (prefix with * to mark as admin character).",NumElements=-1))
     WebConfigs.Add((PropType=2,PropName="TraderInventory",UIName="Custom Trader Inventory",UIDesc="List of custom inventory to add to trader (must be KFWeaponDefinition class).",NumElements=-1))
+    WebConfigs.Add((PropType=2,PropName="TraderWeaponReplacments",UIName="Trader Inventory Replacments",UIDesc="Allows replacing items inside of the current trader inventory.",NumElements=-1))
     WebConfigs.Add((PropType=2,PropName="MapTypes",UIName="Map Types",UIDesc="Define the event type and max monsters for certain maps.",NumElements=-1))
     WebConfigs.Add((PropType=3,PropName="ServerMOTD",UIName="MOTD",UIDesc="Message of the Day"))
    
@@ -1651,4 +2080,49 @@ defaultproperties
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedHans', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedBloatKing', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedFleshpoundKing', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
+    
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_9mm', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_9mm'))
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Dual9mm', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Dual9mm'))
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Blunt_Crovel', ReplacmentClass=class'KFClassicMode.ClassicWeap_Blunt_Crovel'))
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_GrenadeLauncher_HX25', ReplacmentClass=class'KFClassicMode.ClassicWeap_GrenadeLauncher_HX25'))     
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Colt1911', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Colt1911'))           
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Medic', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Medic'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Rifle_Winchester1894', ReplacmentClass=class'KFClassicMode.ClassicWeap_Rifle_Winchester1894'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_MB500', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_MB500'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_MP7', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_MP7'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Flare', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Flare'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Deagle', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Deagle'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_AssaultRifle_Bullpup', ReplacmentClass=class'KFClassicMode.ClassicWeap_AssaultRifle_Bullpup'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Thrown_C4', ReplacmentClass=class'KFClassicMode.ClassicWeap_Thrown_C4'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_GrenadeLauncher_M79', ReplacmentClass=class'KFClassicMode.ClassicWeap_GrenadeLauncher_M79'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_Medic', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_Medic'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_DragonsBreath', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_DragonsBreath'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Rifle_CenterfireMB464', ReplacmentClass=class'KFClassicMode.ClassicWeap_Rifle_CenterfireMB464'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Bow_Crossbow', ReplacmentClass=class'KFClassicMode.ClassicWeap_Bow_Crossbow'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_MP5RAS', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_MP5RAS'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Revolver_SW500', ReplacmentClass=class'KFClassicMode.ClassicWeap_Revolver_SW500'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_Nailgun', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_Nailgun'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_DoubleBarrel', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_DoubleBarrel'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_HZ12', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_HZ12'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Edged_Katana', ReplacmentClass=class'KFClassicMode.ClassicWeap_Edged_Katana'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_AssaultRifle_AK12', ReplacmentClass=class'KFClassicMode.ClassicWeap_AssaultRifle_AK12'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_Medic', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_Medic'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_M4', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_M4'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Rifle_M14EBR', ReplacmentClass=class'KFClassicMode.ClassicWeap_Rifle_M14EBR'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_P90', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_P90'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_Mac10', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_Mac10'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Flame_Flamethrower', ReplacmentClass=class'KFClassicMode.ClassicWeap_Flame_Flamethrower'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_AssaultRifle_M16M203', ReplacmentClass=class'KFClassicMode.ClassicWeap_AssaultRifle_M16M203'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_HK_UMP', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_HK_UMP'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Edged_Zweihander', ReplacmentClass=class'KFClassicMode.ClassicWeap_Edged_Zweihander'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_AA12', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_AA12'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Shotgun_ElephantGun', ReplacmentClass=class'KFClassicMode.ClassicWeap_Shotgun_ElephantGun'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_AssaultRifle_SCAR', ReplacmentClass=class'KFClassicMode.ClassicWeap_AssaultRifle_SCAR'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_LMG_Stoner63A', ReplacmentClass=class'KFClassicMode.ClassicWeap_LMG_Stoner63A'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_AssaultRifle_Medic', ReplacmentClass=class'KFClassicMode.ClassicWeap_AssaultRifle_Medic'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_SMG_Kriss', ReplacmentClass=class'KFClassicMode.ClassicWeap_SMG_Kriss'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_RocketLauncher_RPG7', ReplacmentClass=class'KFClassicMode.ClassicWeap_RocketLauncher_RPG7'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_RocketLauncher_Seeker6', ReplacmentClass=class'KFClassicMode.ClassicWeap_RocketLauncher_Seeker6'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_HuskCannon', ReplacmentClass=class'KFClassicMode.ClassicWeap_HuskCannon'))            
+    DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Rifle_M99', ReplacmentClass=class'KFClassicMode.ClassicWeap_Rifle_M99'))                      
 }

@@ -107,7 +107,7 @@ function DrawMenu()
         else
         {
             ListOwner.Columns[i].bHidden = false;
-            Canvas.SetClip(X+Wd,CompPos[1]+CompPos[3]);
+            //Canvas.SetClip(X+Wd,CompPos[1]+CompPos[3]);
             
             // Draw column.
             if( i==j )

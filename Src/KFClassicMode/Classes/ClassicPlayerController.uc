@@ -1,4 +1,5 @@
 Class ClassicPlayerController extends KFPlayerController
+    DependsOn(KFHUDInterface)
     config(ClassicPlayer);
 
 var transient float NextSpectateChange;
@@ -11,6 +12,8 @@ var UI_LobbyMenu LobbyMenu;
 var UI_TraderMenu TraderMenu;
 var UI_MainChatBox CurrentChatBox;
 var UIP_ColorSettings ColorSettingMenu;
+
+var array<delegate<OnPlayerChat> > OnPlayerChatDelegates;
 
 var ClassicPerk_Base PendingPerk;
 var int DropCount;
@@ -28,28 +31,34 @@ var globalconfig array<SChatColorInfo> ColorTags;
 var transient KF2GUIController GUIController;
 var transient UIP_PerkSelection PerkSelectionBox;
 var transient KFHUDInterface HUDInterface;
+var SpectatorObject VisSpectator;
+
+var transient float NextFireTimer;
+var float NeqFireTime,RefireRate,ZapDamage,HealAmount;
+var class<Projectile> ZapProjectile, HealProjectile;
+var AkEvent ZapFireSound, HealFireSound;
 
 var config int SelectedEmoteIndex, ConfigVer;
 var globalconfig string ControllerType;
 var globalconfig array<name> FavoriteWeaponClassNames;
 
 // UBOOL is packed together and you lose the packing if the bool vars are seperated.
-var bool bBehindView, OldDrawCrosshair, bSetPerk, bMOTDReceived, bPlayerNeedsPerkUpdate;
-var globalconfig bool bHideKillMsg, bSetupBindings;
+var bool bBehindView, bSetPerk, bMOTDReceived, bPlayerNeedsPerkUpdate, bPickupsDisabled, bClientHideKillMsg, bClientHideDamageMsg, bClientHideNumbers, bClientHidePlayerDeaths, bNoDamageTracking;
+var transient bool bDisableGameplayChanges, bDisableUpgrades, bEnableTraderSpeed, bEnabledVisibleSpectators, bIsSpectating;
+var globalconfig bool bHideKillMsg, bHideDamageMsg, bHidePlayerDeathMsg, bEnableBWZEDTime, bDisallowOthersToPickupWeapons, bDisableClassicTrader, bDisableClassicMusic;
 
 replication
 {
     if( bNetDirty )
-        MidGameMenuClass, LobbyMenuClass, FlashUIClass, TraderMenuClass, PendingPerk, bPlayerNeedsPerkUpdate, PerkManager, bSetPerk;
+       PendingPerk, bPlayerNeedsPerkUpdate, PerkManager, bSetPerk, bDisableGameplayChanges, bDisableUpgrades, bEnableTraderSpeed, bIsSpectating, bEnabledVisibleSpectators;
 }
 
 simulated function PostBeginPlay()
 {
     local SChatColorInfo TagInfo;
     local ClassicPlayerInput Input;
+    local KFPlayerInput TempInput;
     
-    EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
-
     Super.PostBeginPlay();
     
     if( WorldInfo.NetMode != NM_Client && PerkManager == None )
@@ -61,28 +70,26 @@ simulated function PostBeginPlay()
     
     if ( WorldInfo.NetMode != NM_DedicatedServer )
     {
-        if( !bSetupBindings )
+        TempInput = new(Self) class'KFGame.KFPlayerInput';
+        Input = ClassicPlayerInput(PlayerInput);
+        if( Input != None )
         {
-            Input = ClassicPlayerInput(PlayerInput);
-            if( Input != None )
-            {
-                Input.default.Bindings = class'KFPlayerInput'.default.Bindings;
-                Input.default.bRequiresPushToTalk = class'KFPlayerInput'.default.bRequiresPushToTalk;
-                Input.default.GamepadButtonHoldTime = class'KFPlayerInput'.default.GamepadButtonHoldTime;
-                Input.default.AutoUpgradeHoldTime = class'KFPlayerInput'.default.AutoUpgradeHoldTime;
-                Input.default.SprintAnalogThreshold = class'KFPlayerInput'.default.SprintAnalogThreshold;
-                Input.default.bUseGamepadLastWeapon = class'KFPlayerInput'.default.bUseGamepadLastWeapon;
-                Input.default.bAimAssistEnabled = class'KFPlayerInput'.default.bAimAssistEnabled;
-                Input.default.ZoomedSensitivityScale = class'KFPlayerInput'.default.ZoomedSensitivityScale;
-                Input.default.GamepadZoomedSensitivityScale = class'KFPlayerInput'.default.GamepadZoomedSensitivityScale;
-                Input.default.bViewAccelerationEnabled = class'KFPlayerInput'.default.bViewAccelerationEnabled;
-                Input.default.MouseSensitivity = class'KFPlayerInput'.default.MouseSensitivity; 
-                Input.default.bInvertMouse = class'KFPlayerInput'.default.bInvertMouse; 
-                Input.default.bEnableMouseSmoothing = class'KFPlayerInput'.default.bEnableMouseSmoothing; 
-                Input.static.StaticSaveConfig();
-            }
+            Input.Bindings = TempInput.Bindings;
+            Input.bRequiresPushToTalk = TempInput.bRequiresPushToTalk;
+            Input.GamepadButtonHoldTime = TempInput.GamepadButtonHoldTime;
+            Input.AutoUpgradeHoldTime = TempInput.AutoUpgradeHoldTime;
+            Input.SprintAnalogThreshold = TempInput.SprintAnalogThreshold;
+            Input.bUseGamepadLastWeapon = TempInput.bUseGamepadLastWeapon;
+            Input.bAimAssistEnabled = TempInput.bAimAssistEnabled;
+            Input.ZoomedSensitivityScale = TempInput.ZoomedSensitivityScale;
+            Input.GamepadZoomedSensitivityScale = TempInput.GamepadZoomedSensitivityScale;
+            Input.bViewAccelerationEnabled = TempInput.bViewAccelerationEnabled;
+            Input.MouseSensitivity = TempInput.MouseSensitivity; 
+            Input.bInvertMouse = TempInput.bInvertMouse; 
+            Input.bEnableMouseSmoothing = TempInput.bEnableMouseSmoothing; 
+            Input.SaveConfig();
             
-            bSetupBindings = true;
+            TempInput = None;
         }
         
         if( ConfigVer < 1 )
@@ -216,79 +223,76 @@ simulated function PostBeginPlay()
             ConfigVer = 2;
         }
         
+        if( ConfigVer < 3 )
+        {
+            bEnableBWZEDTime = false;
+            bDisallowOthersToPickupWeapons = false;
+            bDisableClassicTrader = false;
+            bDisableClassicMusic = false;
+            bHideDamageMsg = true;
+            if( SelectedEmoteIndex == 0 )
+                SelectedEmoteIndex = -1;
+            ConfigVer = 3;
+        }
+        
         SaveConfig();
     }
         
-    if( WorldInfo.NetMode==NM_Client )
-        OldDrawCrosshair = KFHudBase(myHUD).bDrawCrosshair;
+    SetServerIgnoreDrops(bDisallowOthersToPickupWeapons);
+    SetTimer(1.f, true, 'UpdatEventState');
+    bSkipNonCriticalForceLookAt = !bDisableGameplayChanges;
+}
+
+simulated function UpdatEventState()
+{
+    if( EventHelper == None )
+        EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
         
     UpdateSeasonalState();
-    bSkipNonCriticalForceLookAt = true;
+}
+
+reliable server function ServerSetSettings( bool bHideKill, bool bHideDmg, bool bHideNum, bool bHideDeaths )
+{
+	bClientHideKillMsg = bHideKill;
+	bClientHideDamageMsg = bHideDmg;
+	bClientHideNumbers = bHideNum;
+    bClientHidePlayerDeaths = bHideDeaths;
+	bNoDamageTracking = (bHideDmg && bHideNum);
+}
+
+reliable server function SetServerIgnoreDrops(bool bDisable)
+{
+    bPickupsDisabled = bDisable;
 }
 
 reliable client function ClientSetHUD(class<HUD> newHUDType)
 {
     Super.ClientSetHUD(newHUDType);
     HUDInterface = KFHUDInterface(myHUD);
-}
-
-simulated event name GetSeasonalStateName()
-{
-    if( EventHelper == None )
-    {
-        EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
-        if( EventHelper == None )
-            return 'No_Event';
-    }
-        
-    switch( EventHelper.GetEventType() )
-    {
-        case EV_SUMMER:
-            return 'Summer_Sideshow';
-        case EV_WINTER:
-            return 'Winter';
-        case EV_FALL:
-            return 'Fall';
-        case EV_SPRING:
-        case EV_NORMAL:
-        default:
-            return 'No_Event';
-    }
-
-    return 'No_Event';
-}
-
-function OpenLobbyMenu()
-{
-    if( HUDInterface == None || HUDInterface.GUIController == None )
-        return;
-        
-    if( !PlayerReplicationInfo.bOnlySpectator )
-    {
-        GUIController = HUDInterface.GUIController;
-        GUIController.OpenMenu(LobbyMenuClass);
-    }
+    ServerSetSettings(bHideKillMsg, bHideDamageMsg, !HUDInterface.bEnableDamagePopups, bHidePlayerDeathMsg);
 }
 
 reliable client function ClientSetCountdown(bool bFinalCountdown, byte CountdownTime, optional NavigationPoint PredictedSpawn)
 {
-    Super.ClientSetCountdown(bFinalCountdown, CountdownTime, PredictedSpawn);
+    if ( bFinalCountdown && PredictedSpawn != None )
+        ClientAddTextureStreamingLoc(PredictedSpawn.Location, 0.f, false);
     
     if( LobbyMenu != None )
-    {
         LobbyMenu.SetFinalCountdown(bFinalCountdown, CountdownTime);
-    }
+    
+    if( HUDInterface != None )
+        HUDInterface.SetFinalCountdown(bFinalCountdown, CountdownTime);
+    
+    KFGameReplicationInfo(WorldInfo.GRI).RemainingTime = CountdownTime;
 }
 
 function OpenChatBox()
 {
-    if( LobbyMenu != None && !LobbyMenu.bViewMapClicked )
+    if( class'WorldInfo'.static.IsMenuLevel() || (LobbyMenu != None && !LobbyMenu.bViewMapClicked) )
         return;
     
     if( HUDInterface != None && HUDInterface.ChatBox != None )
     {
-        IgnoreLookInput(true);
-        
         HUDInterface.ChatBox.SetVisible(true);
         HUDInterface.ChatBox.CurrentTextChatChannel = CurrentTextChatChannel;
         
@@ -307,10 +311,12 @@ function OpenChatBox()
 function CloseChatBox()
 {
     if( HUDInterface != None && HUDInterface.ChatBox != None )
-    {
-        IgnoreLookInput(false);
         HUDInterface.ChatBox.SetVisible(false);
-    }
+}
+
+function OpenLobbyMenu()
+{
+    GUIController.OpenMenu(LobbyMenuClass);
 }
 
 function OpenTraderMenu( optional bool bForce=false )
@@ -333,9 +339,7 @@ function OpenTraderMenu( optional bool bForce=false )
 reliable client function ClientOpenTraderMenu( optional bool bForce=false )
 {
     if( Role < ROLE_Authority && !KFGameReplicationInfo(WorldInfo.GRI).bTraderIsOpen && !bForce )
-    {
         return;
-    }
 
     SyncInventoryProperties();
     GUIController.OpenMenu(TraderMenuClass);
@@ -354,9 +358,7 @@ reliable client function ClientSetCameraMode( name NewCamMode )
     if( HUDInterface != None && HUDInterface.SpectatorInfo != None )
     {
         if( NewCamMode == 'FirstPerson' && ViewTarget == self )
-        {
             HUDInterface.SpectatorInfo.SetSpectatedPRI(None);
-        }
     }
 }
 
@@ -366,16 +368,12 @@ function NotifyChangeSpectateViewTarget()
     local KFPawn KFP;
 
     if( WorldInfo.GRI == none || WorldInfo.GRI.ElapsedTime < 2.f || ViewTarget == LocalCustomizationPawn )
-    {
         return;
-    }
     
     if( LocalCustomizationPawn != none && !LocalCustomizationPawn.bPendingDelete )
     {
         if( MyGFxManager != none && MyGFxManager.CurrentMenu != none && MyGFxManager.CurrentMenu == MyGFxManager.GearMenu )
-        {
             MyGFxManager.CloseMenus();
-        }
         LocalCustomizationPawn.Destroy();
     }
     
@@ -385,28 +383,17 @@ function NotifyChangeSpectateViewTarget()
         if( KFP != none )
         {
             if( KFP == Pawn && Pawn.IsAliveAndWell() )
-            {
                 return;
-            }
 
             if( KFP.PlayerReplicationInfo != None )
-            {
                 KFPRI = KFPlayerReplicationInfo(KFP.PlayerReplicationInfo);
-            }
-            else
-            {
-                KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
-            }
+            else KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
         }
         else if( ViewTarget == self )
-        {
             KFPRI = KFPlayerReplicationInfo(PlayerReplicationInfo);
-        }
 
         if( KFPRI != None)
-        {
             HUDInterface.SpectatorInfo.SetSpectatedPRI(KFPRI);
-        }
     }
 }
 
@@ -421,19 +408,13 @@ reliable client function ClientRestart(Pawn NewPawn)
     Super.ClientRestart(NewPawn);
     
     if(MyGFxHUD != None && MyGFxHUD.SpectatorInfoWidget != None)
-    {
         MyGFxHUD.SpectatorInfoWidget.SetVisible(false);
-    }
     
     if( KFPawn_Customization(NewPawn) == None && LobbyMenu != None )
-    {
         LobbyMenu.DoClose();
-    }
     
     if( HUDInterface != None && HUDInterface.SpectatorInfo != None )
-    {
         HUDInterface.SpectatorInfo.SetVisibility(PlayerReplicationInfo.bOnlySpectator);
-    }
 }
 
 exec function StartFire( optional byte FireModeNum )
@@ -441,9 +422,7 @@ exec function StartFire( optional byte FireModeNum )
     local KFInventoryManager KFIM;
 
     if( bCinematicMode )
-    {
         return;
-    }
 
     if (!KFPlayerInput(PlayerInput).bQuickWeaponSelect)
     {
@@ -456,14 +435,10 @@ exec function StartFire( optional byte FireModeNum )
     }
     
     if (KFPlayerInput(PlayerInput).bGamepadWeaponSelectOpen )
-    {
         KFPlayerInput(PlayerInput).bGamepadWeaponSelectOpen = false;
-    }
 
     if (MyGFxHUD != none && MyGFxHUD.VoiceCommsWidget != none && MyGFxHUD.VoiceCommsWidget.bActive)
-    {
         return;
-    }
 
     super.StartFire( FireModeNum );
 }
@@ -482,21 +457,8 @@ function StartSpectate( optional Name SpectateType )
 
 function ForceSpectatorInput()
 {
-    local KFGFxMoviePlayer_HUD GFXHUD;
-    
     IgnoreMoveInput(false);
     IgnoreLookInput(false);
-    
-    if( HUDInterface != None )
-    {
-        GFXHUD = HUDInterface.HudMovie;
-        if( GFXHUD != None )
-        {
-            GFXHUD.SetMovieCanReceiveFocus(false);
-            GFXHUD.SetMovieCanReceiveInput(false);
-            GFXHUD.bIgnoreMouseInput = true;
-        }
-    }
     
     ServerCamera('FreeCam');
     ServerViewNextPlayer();
@@ -505,17 +467,13 @@ function ForceSpectatorInput()
 simulated function NotifyTraderDoshChanged()
 {
     if( TraderMenu != None )
-    {
         GetPurchaseHelper().NotifyDoshChanged();
-    }
 }
 
 function SetHaveUpdatePerk( bool bUsedUpdate )
 {
     if( KFGameReplicationInfo(WorldInfo.GRI).bMatchHasBegun )
-    {
         bPlayerNeedsPerkUpdate = bUsedUpdate;
-    }
 }
 
 function bool GetHaveUpdatePerk()
@@ -523,15 +481,23 @@ function bool GetHaveUpdatePerk()
     return bPlayerNeedsPerkUpdate;
 }
 
-function AwardXP( int XP )
+unreliable client function NotifyXPEarned(int XP, Texture2D Icon, Color PerkColor)
 {
-    if( WorldInfo.NetMode!=NM_Client && PerkManager!=None )
-        PerkManager.EarnedEXP(XP);
+    HUDInterface.NotifyXPEarned(XP, Icon, PerkColor);
 }
 
 function OnPlayerXPAdded(INT XP, class<KFPerk> PerkClass)
 {
-    AwardXP(XP);
+    local ClassicPerk_Base Perk;
+    
+    if( WorldInfo.NetMode!=NM_Client && PerkManager!=None )
+        PerkManager.EarnedEXP(XP);
+        
+    Perk = PerkManager.FindPerkBase(PerkClass);
+    if( Perk != None && Perk.CurrentVetLevel != Perk.MaximumLevel )
+    {
+        NotifyXPEarned(XP, Perk.static.GetCurrentPerkIcon(Perk.CurrentVetLevel), Perk.static.GetPerkColor(Perk.CurrentVetLevel));
+    }
 }
 
 simulated function bool CanUpdatePerkInfoEx()
@@ -590,19 +556,12 @@ function ChangePerks( ClassicPerk_Base P, optional bool bForce=false )
         }
         
         if( Pawn != None )
-        {
             ClassicPerk_Base(CurrentPerk).PostPerkUpdate(Pawn);
-        }
         
         if( KFPlayerReplicationInfo(PlayerReplicationInfo).bHasSpawnedIn && !bForce )
-        {
             bSetPerk = true;
-        }
     }
-    else
-    {
-        PendingPerk = P;
-    }
+    else PendingPerk = P;
 }
 
 reliable server function ServerChangePerks( ClassicPerk_Base P )
@@ -610,38 +569,46 @@ reliable server function ServerChangePerks( ClassicPerk_Base P )
     ChangePerks(P);
 }
 
-reliable client function ClientKillMessage( class<DamageType> DamType, PlayerReplicationInfo Victim, PlayerReplicationInfo KillerPRI, optional class<Pawn> KillerPawn )
+unreliable client function ClientKillMessage( class<DamageType> DamType, class<Pawn> Killed, Controller Killer, PlayerReplicationInfo KilledPRI, PlayerReplicationInfo KillerPRI )
 {
-    if( Player==None || Victim==None )
+    if( Player==None || KilledPRI==None )
         return;
     
-    if( Victim==KillerPRI || (KillerPRI==None && KillerPawn==None) )
+    if( KilledPRI==KillerPRI || (KillerPRI==None && Killed==None) )
     {
-        if( Victim.GetTeamNum()==0 )
-        {
+        if( KilledPRI.GetTeamNum()==0 )
             class'KFMusicStingerHelper'.static.PlayPlayerDiedStinger(Self);
-        }
     }
     else
     {
-        if( KillerPRI!=None && Victim.Team!=None && Victim.Team==KillerPRI.Team )
-        {
+        if( KillerPRI!=None && KilledPRI.Team!=None && KilledPRI.Team==KillerPRI.Team )
             class'KFMusicStingerHelper'.static.PlayTeammateDeathStinger(Self);
-        }
-        else
-        {
-            class'KFMusicStingerHelper'.static.PlayZedKillHumanStinger(Self);
-        }
+        else class'KFMusicStingerHelper'.static.PlayZedKillHumanStinger(Self);
     }
+    
+    if( !bHidePlayerDeathMsg )
+        HUDInterface.AddPlayerDeathMessage(Killed,Killer.Pawn,KilledPRI,Killer.bIsPlayer);
 }
 
-reliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool bGlobal, optional PlayerReplicationInfo KillerPRI )
+unreliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool bGlobal, optional PlayerReplicationInfo KillerPRI )
 {
     if( bHideKillMsg || (bGlobal && KillerPRI==None) )
         return;
         
     if( HUDInterface!=None && Victim!=None )
         HUDInterface.AddKillMessage(Victim,1,KillerPRI,byte(bGlobal));
+}
+
+unreliable client function ReceiveDamageMessage( class<Pawn> Victim, int Damage )
+{
+	if( !bHideDamageMsg && HUDInterface!=None && Victim!=None )
+		HUDInterface.AddKillMessage(Victim,Damage,None,2);
+}
+
+unreliable client function ClientNumberMsg( int Count, vector Pos, class<KFDamageType> Type )
+{
+	if( HUDInterface!=None )
+		HUDInterface.AddNumberMsg(Count,Pos,Type);
 }
 
 function SetSavedPerkIndex( byte NewSavedPerkIndex )
@@ -658,9 +625,7 @@ reliable client function ClientSetSavedPerkIndex( byte NewSavedPerkIndex )
 reliable client function SetPerkStaticLevel( byte Index, byte Level )
 {
     if( PerkList.Length > 0 )
-    {
         PerkList[Index].PerkLevel = Level;
-    }
 }
 
 function float GetPerkLevelProgressPercentage(Class<KFPerk> PerkClass, optional out int CurrentVetLevelEXP, optional out int NextLevelEXP)
@@ -685,9 +650,7 @@ function int GetPerkXP(class<KFPerk> PerkClass)
     
     P = PerkManager.FindPerk(PerkClass);
     if( P != None )
-    {
         return P.CurrentEXP;
-    }
     
     return Super.GetPerkXP(PerkClass);
 }
@@ -696,14 +659,18 @@ function UpdateZEDTimeEffects(float DeltaTime)
 {
     local KFPawn KFP;
     local float ZedTimeAudioModifier;
+    
+    if( bEnableBWZEDTime )
+    {
+        Super.UpdateZEDTimeEffects(DeltaTime);
+        return;
+    }
 
     if ( TargetZEDTimeEffectIntensity == PartialZEDTimeEffectIntensity )
     {
         KFP = KFPawn(Pawn);
         if ( KFP != None && !KFP.bUnaffectedByZedTime )
-        {
             ClientEnterZedTime(false);
-        }
     }
 
     if( WorldInfo.TimeDilation != LastTimeDilation )
@@ -734,37 +701,78 @@ Delegate OnSpectateChange( ClassicPlayerController PC, bool bSpectator );
 
 reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, optional int Switch, optional PlayerReplicationInfo RelatedPRI_1, optional PlayerReplicationInfo RelatedPRI_2, optional Object OptionalObject )
 {
-    local string MessageStr, KeyName, FinalString;
+    local string MessageStr, KeyName, FinalString, KeyBind;
     local string LeftBracket, RightBracket;
     local array<String> StringArray;
+    local bool bUsesKey;
+	local KFGameReplicationInfo KFGRI;
+	local KFWeeklyOutbreakInformation WeeklyInfo;
+	local int ModifierIndex;
+    local FPriorityMessage PriorityMsg;
     
+    // Stops corrupted kill messages from spamming the console sometimes
+    if( class<KFLocalMessage_PlayerKills>(Message) != None )
+        return;
+
     if( class<KFLocalMessage_Priority>(Message) != None )
     {
+        KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
+        
         switch ( Switch )
         {
             case GMT_WaveSBoss:
                 if(!PlayerReplicationInfo.bOnlySpectator && PlayerReplicationInfo.bReadyToPlay)
                 {
                     if( LEDEffectsManager != none )
-                    {
                         LEDEffectsManager.PlayEffectWaveIncoming();
-                    }
                     
                     if( MyGfxManager != none )
                     {
                         if( MyGfxManager.bMenusOpen )
-                        {
                             MyGfxManager.CloseMenus(true);
-                        }
                     }
                 }
-            case GMT_WaveStart:
-            case GMT_WaveStartWeekly:
             case GMT_WaveStartSpecial:
+                if( HUDInterface != None && KFGRI.IsSpecialWave(ModifierIndex) )
+                {
+                    PriorityMsg.PrimaryText = Localize("Zeds", class'KFGFxMoviePlayer_HUD'.default.SpecialWaveLocKey[ModifierIndex], "KFGame");
+                    PriorityMsg.SecondaryText = class'KFLocalMessage_Priority'.default.WaveStartMessage;
+                    PriorityMsg.SecondaryAlign = PR_BOTTOM;
+                    PriorityMsg.Icon = Texture2D(DynamicLoadObject(class'KFGFxMoviePlayer_HUD'.default.SpecialWaveIconPath[ModifierIndex], class'Texture2D'));
+                    
+                    HUDInterface.ShowPriorityMessage(PriorityMsg);
+                }
+                class'KFMusicStingerHelper'.static.PlayWaveStartStinger( self, Switch );
+                return;
+            case GMT_WaveStartWeekly:
+                if( HUDInterface != None && KFGRI.IsWeeklyWave(ModifierIndex) )
+                {
+                    WeeklyInfo = class'KFMission_LocalizedStrings'.static.GetWeeklyOutbreakInfoByIndex(ModifierIndex);
+                    
+                    PriorityMsg.PrimaryText = WeeklyInfo.FriendlyName;
+                    PriorityMsg.SecondaryText = class'KFLocalMessage_Priority'.default.WaveStartMessage;
+                    PriorityMsg.SecondaryAlign = PR_BOTTOM;
+                    PriorityMsg.Icon = Texture2D(DynamicLoadObject(WeeklyInfo.IconPath, class'Texture2D'));
+                    
+                    HUDInterface.ShowPriorityMessage(PriorityMsg);
+                }
+                class'KFMusicStingerHelper'.static.PlayWaveStartStinger( self, Switch );
+                return;
+            case GMT_WaveStart:
                 class'KFMusicStingerHelper'.static.PlayWaveStartStinger( self, Switch );
                 return;
             case GMT_WaveEnd:
                 class'KFMusicStingerHelper'.static.PlayWaveCompletedStinger( self );
+                return;
+            case GMT_LastPlayerStanding:
+                if( HUDInterface != None )
+                {
+                    PriorityMsg.PrimaryText = class<KFLocalMessage_Priority>(Message).default.LastPlayerStandingString;
+                    PriorityMsg.Icon = Texture2D'DailyObjective_UI.KF2_Dailies_Icon_ZED';
+                    
+                    HUDInterface.ShowPriorityMessage(PriorityMsg);
+                }
+                class'KFMusicStingerHelper'.static.PlayZedPlayerSuicideStinger( self );
                 return;
         }
     }
@@ -784,41 +792,134 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
             if( Len(MessageStr) == 0 )
                 return;
                 
+            KeyBind = class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch);
             if( PlayerInput.bUsingGamepad )
-            {
-                KeyName = "<Icon>"$ControllerType$"."$class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch)$"_Asset</Icon>";
-            }
-            else
-            {
-                KeyName = class'KFLocalMessage_Interaction'.static.GetKeyBind(self, Switch);
-            }
+                KeyName = "<Icon>"$ControllerType$"."$KeyBind$"_Asset</Icon>";
+            else KeyName = KeyBind;
             
-            LeftBracket = "[[";
-            RightBracket = "]]";
+            bUsesKey = Len(KeyBind) > 0;
+            
+            LeftBracket = "(";
+            RightBracket = ")";
              
             StringArray = SplitString(MessageStr, class'KFGFxMoviePlayer_HUD'.default.HoldCommandDelimiter);
             if(StringArray.Length > 1)
             {
                 if( Len(StringArray[0]) != 0 )
                 {
-                    FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket @ StringArray[0] $ "\n" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket @ StringArray[1];
+                    if( bUsesKey )
+                        FinalString = "\\cV" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket @ "\\cC" $ StringArray[0] $ "\n\\cV" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket @ "\\cC" $ StringArray[1];
+                    else FinalString = StringArray[0] $ "\n" $ StringArray[1];
                 }
                 else
                 {
-                    FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket $ "\n" $ StringArray[1];
+                    if( bUsesKey )
+                        FinalString = "\\cV" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.HoldString @ KeyName @ RightBracket $ "\n\\cC" $ StringArray[1];
+                    else FinalString = StringArray[1];
                 }
             }
             else
             {
-                FinalString = LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket $ "\n" $ StringArray[0];
+                if( bUsesKey )
+                    FinalString = "\\cV" $ LeftBracket @ class'KFGFxControlsContainer_ControllerPresets'.default.TapString @ KeyName @ RightBracket $ "\n\\cC" $ StringArray[0];
+                else FinalString = StringArray[0];
             }
             
-            HUDInterface.ShowNonCriticalMessage(FinalString, "\n");
+            HUDInterface.ShowNonCriticalMessage(FinalString, "\n", true, true);
             return;
         }
     }
     
     Super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
+}
+
+state Dead
+{
+	function BeginState(Name PreviousStateName)
+	{
+        local Color SpectatorColor;
+
+        Super.BeginState(PreviousStateName);
+        
+        if( bEnabledVisibleSpectators && !KFGameReplicationInfo(WorldInfo.GRI).bMatchIsOver )
+        {
+            SpectatorColor.R = RandRange(55, 255);
+            SpectatorColor.G = RandRange(55, 255);
+            SpectatorColor.B = RandRange(55, 255);
+            SpectatorColor.A = 255;
+            
+            if( VisSpectator != None )
+                VisSpectator.Remove();
+            
+            bIsSpectating = true;
+            
+            VisSpectator = Spawn(Rand(2) == 0 ? class'SpectatorFlame' : class'SpectatorUFO', self,, Location,,, true);
+            VisSpectator.SetPlayerOwner(self);
+            VisSpectator.SetColor(SpectatorColor);
+        }
+    }
+}
+
+state Spectating
+{
+	function EndState(Name NextStateName)
+	{
+		Super.EndState(NextStateName);
+        
+        if( VisSpectator != None )
+        {
+            VisSpectator.Remove();
+            bIsSpectating = false;
+        }
+	}
+    
+    exec function Use()
+    {
+        if( bEnabledVisibleSpectators )
+            FireLaser();
+    }
+}
+
+unreliable client function ClientFirePause( float Time )
+{
+	NextFireTimer = WorldInfo.TimeSeconds+Time;
+	NeqFireTime = 200.f / Time;
+}
+
+unreliable server function FireLaser()
+{
+    local Vector CameraLoc,SpectatorLoc;
+    local Rotator CameraRot;
+    local Projectile SpectatorProj;
+    
+	if( VisSpectator != None && NextFireTimer<WorldInfo.TimeSeconds )
+	{
+        SpectatorLoc = VisSpectator.GetLocation();
+        GetPlayerViewPoint(CameraLoc, CameraRot);
+        
+		ClientFirePause(RefireRate);
+		NextFireTimer = WorldInfo.TimeSeconds+RefireRate;
+        
+        if( KFPawn_Human(GetViewTarget())!=None && KFPawn_Human(GetViewTarget()).Health > 0 )
+        {
+            SpectatorProj = Spawn(HealProjectile,Self,,SpectatorLoc);
+            SpectatorProj.Damage = HealAmount;
+            SpectatorProj.InstigatorController = Self;
+            
+            if( HealProj(SpectatorProj) != None )
+                HealProj(SpectatorProj).SeekTarget = GetViewTarget();
+            
+            PlayAkEvent(HealFireSound,,,,SpectatorLoc);
+        }
+        else
+        {
+            SpectatorProj = Spawn(ZapProjectile,Self,,SpectatorLoc,CameraRot);
+            SpectatorProj.Damage = ZapDamage;
+            SpectatorProj.Init(Vector(CameraRot));
+            SpectatorProj.InstigatorController = Self;
+            PlayAkEvent(ZapFireSound);
+        }
+	}
 }
 
 static function string StripColorMessage(string Str)
@@ -842,21 +943,12 @@ static function string StripColorTag(string S, int TextPos)
 {
     S = Mid(S,TextPos+2);
     if( Left(S,4)=="DEF}" || Left(S,4)=="HSV}" )
-    {
         S = Mid(S,4);
-    }
     else if( Left(S,6)=="FLASH}" )
-    {
         S = Mid(S,6);
-    }
     else if( Left(S,7)=="CFLASH=" )
-    {
         S = Mid(S,14);
-    }
-    else
-    {
-        S = Mid(S,7);
-    }
+    else S = Mid(S,7);
     
     return S;
 }
@@ -879,14 +971,6 @@ simulated reliable client event bool ShowConnectionProgressPopup( EProgressMessa
     return false;
 }
 
-unreliable client function ClientUpdateAttachmentSkin( int Index, KFPawn P, MaterialInstanceConstant Mat )
-{
-    if ( P.WeaponAttachment != None && P.WeaponAttachment.WeapMesh != None )
-    {
-        P.WeaponAttachment.WeapMesh.SetMaterial(Index, Mat);
-    }
-}
-
 function bool NotifyDisconnect(string Command)
 {
     ClientNotifyDisconnect();
@@ -897,6 +981,7 @@ reliable client function ClientNotifyDisconnect()
 {
     KFPerk_Survivalist(FindObject("KFGame.Default__KFPerk_Survivalist",class'KFPerk_Survivalist')).PerkIcon = Texture2D'UI_PerkIcons_TEX.UI_PerkIcon_Survivalist';
     KFEmit_TraderPath(FindObject("KFGame.Default__KFEmit_TraderPath",class'KFEmit_TraderPath')).EmitterTemplate = ParticleSystem'FX_Gameplay_EMIT.FX_Trader_Trail';
+    KFReplicatedShowPathActor(FindObject("KFGame.Default__KFReplicatedShowPathActor",class'KFReplicatedShowPathActor')).EmitterTemplate = ParticleSystem'FX_Gameplay_EMIT.FX_Trader_Trail';
     KFGFxObject_TraderItems(FindObject("KFGame.Default__KFGFxObject_TraderItems",class'KFGFxObject_TraderItems')).OffPerkIconPath = "UI_TraderMenu_TEX.UI_WeaponSelect_Trader_Perk";
 }
 
@@ -923,41 +1008,76 @@ function bool SetupMessage(out string S)
 exec function Say( string Msg )
 {
     if ( SetupMessage(Msg) )
-    {
         ServerSay(Msg);
-    }
 }
 
 exec function TeamSay( string Msg )
 {
     if ( SetupMessage(Msg) )
-    {
         ServerTeamSay(Msg);
+}
+
+delegate bool OnPlayerChat(string Msg, optional bool bTeam);
+
+unreliable server function ServerSay( string Msg )
+{
+    local delegate<OnPlayerChat> ChatHook;
+    
+    ForEach OnPlayerChatDelegates(ChatHook)
+    {
+        if( ChatHook(Msg) )
+            return;
     }
+    
+    Super.ServerSay(Msg);
+}
+
+unreliable server function ServerTeamSay( string Msg )
+{
+    local delegate<OnPlayerChat> ChatHook;
+    
+    ForEach OnPlayerChatDelegates(ChatHook)
+    {
+        if( ChatHook(Msg, true) )
+            return;
+    }
+    
+    Super.ServerTeamSay(Msg);
+}
+
+function AddOnPlayerChatDelegate(delegate<OnPlayerChat> PlayerChatDelegate)
+{
+    if (OnPlayerChatDelegates.Find(PlayerChatDelegate) == INDEX_NONE)
+        OnPlayerChatDelegates.AddItem(PlayerChatDelegate);
+}
+
+function ClearOnPlayerChatDelegate(delegate<OnPlayerChat> PlayerChatDelegate)
+{
+    local int RemoveIndex;
+
+    RemoveIndex = OnPlayerChatDelegates.Find(PlayerChatDelegate);
+    if (RemoveIndex != INDEX_NONE)
+        OnPlayerChatDelegates.Remove(RemoveIndex,1);
+}
+
+function ClearOnPlayerChatDelegates()
+{
+    OnPlayerChatDelegates.Remove(0,OnPlayerChatDelegates.Length);
 }
 
 reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, name Type, optional float MsgLifeTime  )
 {
-    local string Msg,PlayerName,NamePrefix,NamePostfix,ChatColor;
+    local string Msg,PlayerName,NamePrefix,NamePostfix,ChatColor,SayColor;
     local ClassicPlayerReplicationInfo CPRI;
 
-    if(PRI == None || Player==None || (Type != 'Event' && Type != 'Say' && Type != 'TeamSay'))
-    {
+    if( CurrentChatBox == None || PRI == None || Player == None  || (PRI.Team != None && Type == 'TeamSay' && PRI.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex) )
         return;
-    }
 
-    if( PRI.Team != None && Type == 'TeamSay' && PRI.Team.TeamIndex != PlayerReplicationInfo.Team.TeamIndex )
+    if( Type == 'Event' || Type == 'None' )
     {
-        return;
-    }
-    
-    if( Type == 'Event' )
-    {
-        Msg = "#{"$class 'KFLocalMessage'.default.EventColor$"}"$S$"<LINEBREAK>";
+        Msg = "#{"$class'KFLocalMessage'.default.EventColor$"}"$S$"<LINEBREAK>";
         if( LobbyMenu != None )
-        {
             LobbyMenu.ChatBox.AddText(Msg);
-        }
         
         CurrentChatBox.AddText(Msg);
         LocalPlayer( Player ).ViewportClient.ViewportConsole.OutputText( "("$Type$") "$StripColorMessage(S) );
@@ -975,28 +1095,21 @@ reliable client event TeamMessage( PlayerReplicationInfo PRI, coerce string S, n
             NamePostfix = CPRI.GetNamePostfix(Type);
             
             if( NamePrefix != "" )
-            {
                 NamePrefix $= " ";
-            }
             
             if( NamePostfix != "" )
-            {
                 NamePostfix $= " ";
-            }
             
             Msg = "#{"$CPRI.GetNameHexColor(Type)$"}"$NamePrefix$PlayerName$NamePostfix$"#{DEF}: #{"$ChatColor$"}"$S$"#{DEF}<LINEBREAK>";
-        } 
-        else
-        {    
-            Msg = "#{DEF}"$PlayerName$": "$S$"#{DEF}<LINEBREAK>";
         }
+        else Msg = "#{DEF}"$PlayerName$": "$S$"#{DEF}<LINEBREAK>";
         
         if( LobbyMenu != None )
-        {
             LobbyMenu.ChatBox.AddText(Msg);
-        }
         
-        CurrentChatBox.AddText("#{DEF}" $ GetChatChannel(Type, PRI) @ Msg);
+        SayColor = Type == 'TeamSay' ? class'KFLocalMessage'.default.TeamSayColor : class'KFLocalMessage'.default.SayColor;
+        
+        CurrentChatBox.AddText("#{"$SayColor$"}" $ GetChatChannel(Type, PRI) @ Msg);
         LocalPlayer( Player ).ViewportClient.ViewportConsole.OutputText( "("$Type$") "$PlayerName$": "$StripColorMessage(S) );
     }
 }
@@ -1010,35 +1123,35 @@ simulated function CancelConnection()
 
 exec function ViewPlayerID( int ID )
 {
-	ServerViewPlayerID(ID);
+    ServerViewPlayerID(ID);
 }
 
 reliable server function ServerViewPlayerID( int ID )
 {
-	local PlayerReplicationInfo PRI;
+    local PlayerReplicationInfo PRI;
     local ViewTargetTransitionParams TransitionParams;
 
-	if( !IsSpectating() )
-		return;
+    if( !IsSpectating() )
+        return;
 
-	// Find matching player by ID
-	foreach WorldInfo.GRI.PRIArray(PRI)
-	{
-		if ( PRI.PlayerID==ID )
-			break;
-	}
-	if( PRI==None || PRI.PlayerID!=ID || Controller(PRI.Owner)==None || Controller(PRI.Owner).Pawn==None || !WorldInfo.Game.CanSpectate(self, PRI) )
-		return;
-	
+    // Find matching player by ID
+    foreach WorldInfo.GRI.PRIArray(PRI)
+    {
+        if ( PRI.PlayerID==ID )
+            break;
+    }
+    if( PRI==None || PRI.PlayerID!=ID || Controller(PRI.Owner)==None || Controller(PRI.Owner).Pawn==None || !WorldInfo.Game.CanSpectate(self, PRI) )
+        return;
+    
     TransitionParams.BlendTime = 0.35;
     TransitionParams.BlendFunction = VTBlend_Cubic;
     TransitionParams.BlendExp = 2.f;
     TransitionParams.bLockOutgoing = false;
 
     SetViewTarget(PRI, TransitionParams);
-	ClientMessage("Now viewing from "$StripColorMessage(PRI.GetHumanReadableName()));
-	if( CurrentSpectateMode==SMODE_Roaming )
-		SpectatePlayer( SMODE_PawnFreeCam );
+    ClientMessage("Now viewing from "$StripColorMessage(PRI.GetHumanReadableName()));
+    if( CurrentSpectateMode==SMODE_Roaming )
+        SpectatePlayer( SMODE_PawnFreeCam );
 }
 
 reliable server function ForceLobbySpectate()
@@ -1052,19 +1165,57 @@ reliable server function ForceLobbySpectate()
     StartSpectate();
 }
 
+exec function DoEmote()
+{
+    local KFPawn MyPawn;
+    local byte SMFlags;
+
+    MyPawn = KFPawn(Pawn);
+    if( MyPawn != None && !bCinematicMode && SelectedEmoteIndex != -1 && !MyPawn.IsDoingSpecialMove() && MyPawn.CanDoSpecialMove(SM_Emote) )
+    {
+        SMFlags = MyPawn.SpecialMoveHandler.SpecialMoveClasses[SM_Emote].static.PackFlagsBase( MyPawn );
+        MyPawn.DoSpecialMove( SM_Emote, true,, SMFlags );
+        
+        if( Role < ROLE_Authority && MyPawn.IsDoingSpecialMove(SM_Emote) )
+            MyPawn.ServerDoSpecialMove( SM_Emote, true, , SMFlags );
+    }
+
+    if (IsLocalController() && LEDEffectsManager != none)
+        LEDEffectsManager.PlayEmoteEffect();
+}
+
+function SetGrabEffect(bool bValue, optional bool bPlayerZed, optional bool bSkipMessage)
+{
+    if( bDisableGameplayChanges )
+        Super.SetGrabEffect(bValue, bPlayerZed, bSkipMessage);
+}
+
+simulated event name GetSeasonalStateName()
+{
+    if( EventHelper == None )
+        return Super.GetSeasonalStateName();
+    
+    return EventHelper.GetSeasonalName(EventHelper.GetSeasonalID());
+}
+
 function NotifyLevelUp(class<KFPerk> PerkClass, byte PerkLevel, byte NewPrestigeLevel);
-function SetGrabEffect(bool bValue, optional bool bPlayerZed, optional bool bSkipMessage);
 
 defaultproperties
 {
     InputClass=class'KFClassicMode.ClassicPlayerInput'
-    PerkManagerClass=class'ClassicPerkManager'
-    PurchaseHelperClass=class'ClassicAutoPurchaseHelper'
+    PerkManagerClass=class'KFClassicMode.ClassicPerkManager'
+    PurchaseHelperClass=class'KFClassicMode.ClassicAutoPurchaseHelper'
+    CheatClass=class'KFClassicMode.ClassicCheatManager'
     
     MidGameMenuClass=class'UI_MidGameMenu'
     LobbyMenuClass=class'UI_LobbyMenu'
     FlashUIClass=class'UI_FlashLobby'
     TraderMenuClass=class'UI_TraderMenu'
+    
+    ZapProjectile=class'ShockProj'
+    HealProjectile=class'HealProj'
+    ZapFireSound=AkEvent'WW_WEP_Lazer_Cutter.Play_WEP_LazerCutter_Single_3P'
+    HealFireSound=AkEvent'WW_WEP_Helios.Play_WEP_Helios_Echo_Single_3P'
     
     PerkList.Empty
 }

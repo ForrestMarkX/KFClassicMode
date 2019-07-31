@@ -1,7 +1,6 @@
 Class UI_MainChatBox extends UIR_ChatBox;
 
 var ETextChatChannel CurrentTextChatChannel;
-var float ChatBoxFadeInTime, OpenTime;
 var ClassicPlayerController PC;
 
 function InitMenu()
@@ -37,16 +36,16 @@ function SetVisible(bool B)
     ChatBoxText.bUseOutlineText = !B;
     
     PC.PlayerInput.ResetInput();
+    PC.IgnoreLookInput(B);
     
     if( B )
     {
         SetTimer(0.01, false, nameOf(SetChatOpen));
-        ChatBoxText.MessageFadeInTime = ChatBoxFadeInTime;
-        OpenTime = PC.WorldInfo.TimeSeconds;
+        ChatBoxText.MessageFadeInTime = WindowFadeInTime;
     }
     else
     {
-        KFHUDInterface(PC.myHUD).bChatOpen = false;
+        HUDOwner.bChatOpen = false;
         ChatBoxText.MessageFadeInTime = 0.f;
     }
     
@@ -65,7 +64,7 @@ function SetVisible(bool B)
 
 function SetChatOpen()
 {
-    KFHUDInterface(PC.myHUD).bChatOpen = true;
+    HUDOwner.bChatOpen = true;
 }
 
 function AddText(string S)
@@ -91,19 +90,6 @@ function PlayerHitEnter(KFGUI_EditBox Sender, string S)
     PC.CloseChatBox();
 }
 
-function DrawMenu()
-{
-    local float TempSize;
-    
-    TempSize = PC.WorldInfo.TimeSeconds - OpenTime;
-    if ( ChatBoxFadeInTime - TempSize > 0 )
-    {
-        FrameOpacity = (1.f - ((ChatBoxFadeInTime - TempSize) / ChatBoxFadeInTime)) * default.FrameOpacity;
-    }
-    
-    Super.DrawMenu();
-}
-
 function bool NotifyInputChar(int Key, string Unicode)
 {
     if( !HUDOwner.bChatOpen )
@@ -116,35 +102,36 @@ function bool NotifyInputKey(int ControllerId, name Key, EInputEvent Event, floa
 {
     if( !HUDOwner.bChatOpen )
         return false;
-        
-    switch(Key)
-    {
-        case 'Escape':
-            if( Event==IE_Pressed )
-                PC.CloseChatBox();
-            return true;
-        case 'MouseScrollDown':
-        case 'MouseScrollUp':
-            if( Event==IE_Pressed )
-                ChatBoxText.ScrollMouseWheel(Key=='MouseScrollUp');
-            return true;
-    }
+    else if( Super.NotifyInputKey(ControllerId, Key, Event, AmountDepressed, bGamepad) )
+        return true;
     
     return ChatBoxEdit.NotifyInputKey(ControllerId, Key, Event, AmountDepressed, bGamepad);
 }
 
+function UserPressedEsc()
+{
+    PC.CloseChatBox();
+}
+
+function ScrollMouseWheel( bool bUp )
+{
+    ChatBoxText.ScrollMouseWheel(bUp);
+}
+
 defaultproperties
 {
+    bUseAnimation=true
+    bEnableInputs=true
+    
     XPosition=0.025
     YPosition=0.525
     XSize=0.275
     YSize=0.275
     
-    ChatBoxFadeInTime=0.2
     FrameOpacity=195
     
     Begin Object Name=ChatBoxTextBox
-        MessageDisplayTime=4.f
+        MessageDisplayTime=8.f
         MessageFadeOutTime=3.f
     End Object
     

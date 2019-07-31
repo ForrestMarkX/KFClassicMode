@@ -7,6 +7,20 @@ var    const PerkSkill MovementSpeed;
 var    const PerkSkill ArmorQuality;
 var    const PerkSkill BloatBileResistance;
 
+simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCauser, optional KFPawn_Monster MyKFPM, optional KFPlayerController DamageInstigator, optional class<KFDamageType> DamageType, optional int HitZoneIdx )
+{
+    local float TempDamage;
+
+    TempDamage = InDamage;
+    
+    if( GetIsHeadShotComboActive() && HeadShotComboCount > 0 )
+    {
+        TempDamage += Indamage * HeadShotDamageIncrements * HeadShotComboCount;
+    }
+
+    InDamage = FCeil(TempDamage);
+}
+
 function ModifyDamageTaken( out int InDamage, optional class<DamageType> DamageType, optional Controller InstigatedBy )
 {
     local float TempDamage;
@@ -67,6 +81,11 @@ simulated function int GetArmorDamageAmount( int AbsorbedAmt )
     return Max( Round(AbsorbedAmt * GetPassiveValue( ArmorQuality, GetLevel() )), 1 );
 }
 
+simulated function bool HasHeavyArmor()
+{ 
+    return true; 
+}
+
 simulated static function class<KFWeaponDefinition> GetWeaponDef(int Level)
 {
     if( Level >= 6 )
@@ -94,7 +113,7 @@ simulated static function GetPassiveStrings( out array<string> PassiveValues, ou
     Increments[5] = "[" @ Left( string( default.ArmorQuality.Increment * 100 ), InStr(string(default.ArmorQuality.Increment * 100), ".") + 2 )  $"% /" @ default.LevelString @"]";
 }
 
-simulated static function string GetCustomLevelInfo( byte Level )
+simulated function string GetCustomLevelInfo( byte Level )
 {
     local string S;
     local class<KFWeaponDefinition> SpawnDef;
@@ -116,6 +135,17 @@ simulated static function string GetCustomLevelInfo( byte Level )
     }
 
     return S;
+}
+
+simulated function GetPerkIcons(ObjectReferencer RepInfo)
+{
+    local int i;
+
+    for (i = 0; i < OnHUDIcons.Length; i++)
+    {
+        OnHUDIcons[i].PerkIcon = Texture2D(RepInfo.ReferencedObjects[65]);
+        OnHUDIcons[i].StarIcon = Texture2D(RepInfo.ReferencedObjects[28]);
+    }
 }
 
 DefaultProperties

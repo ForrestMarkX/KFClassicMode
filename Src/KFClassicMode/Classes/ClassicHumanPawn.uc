@@ -3,20 +3,24 @@ Class ClassicHumanPawn extends KFPawn_Human;
 var AudioComponent TraderDialogCueComp;
 var SoundCue TraderComBeep;
 var AkEvent CurrentTraderVoice;
-var float CurrentTraderVoiceDuration;
 var class<KFClassicTraderDialog> TraderDialogClass;
 var class<KFTraderVoiceGroupBase> CurrentVoiceClass;
 
+var byte RepRegenHP;
 var float BaseMeleeIncrease;
+
+replication
+{
+	if( true )
+		RepRegenHP;
+}
 
 simulated function PostBeginPlay()
 {
     Super.PostBeginPlay();
-
+    
     if( WorldInfo.NetMode==NM_Client )
-    {
         SetTimer(0.1,true,'GetTraderCom');
-    }
 }
 
 simulated function GetTraderCom()
@@ -26,18 +30,14 @@ simulated function GetTraderCom()
     
     TraderComBeep = default.TraderComBeep;
     if( TraderComBeep != None )
-    {
         ClearTimer('GetTraderCom');
-    }
     
     GRI = KFGameReplicationInfo(WorldInfo.GRI);
     if( GRI != None )
     {
         DialogManager = GRI.TraderDialogManager;
         if( DialogManager != None && DialogManager.TraderVoiceGroupClass == None )
-        {
             DialogManager.TraderVoiceGroupClass = class'KFGameContent.KFTraderVoiceGroup_Default';
-        }
     }
     
     CurrentVoiceClass = GetTraderVoiceGroupClass();
@@ -45,19 +45,25 @@ simulated function GetTraderCom()
 
 function UpdateGroundSpeed()
 {
+    local ClassicPlayerController CPC;
+    
     Super.UpdateGroundSpeed();
     
-    if( KFWeapon(Weapon) != None && KFWeapon(Weapon).IsMeleeWeapon() )
+    CPC = ClassicPlayerController(Controller);
+    if( CPC != None )
     {
-        GroundSpeed += (default.GroundSpeed * BaseMeleeIncrease);
+        if( CPC.bEnableTraderSpeed && KFGameReplicationInfo(WorldInfo.GRI).bTraderIsOpen )
+        {
+            GroundSpeed += (default.GroundSpeed * 0.5f);
+            SprintSpeed += (default.SprintSpeed * 0.5f);
+        }
+            
+        if( CPC.bDisableGameplayChanges )
+            return;
     }
-}
-
-simulated event Rotator GetBaseAimRotation()
-{
-    if( PlayerController(Controller).PlayerCamera.CameraStyle == 'ThirdPerson' )
-        return Rotation;
-    return Super.GetBaseAimRotation();
+    
+    if( KFWeapon(Weapon) != None && KFWeapon(Weapon).IsMeleeWeapon() )
+        GroundSpeed += (default.GroundSpeed * BaseMeleeIncrease);
 }
 
 simulated function class<KFTraderVoiceGroupBase> GetTraderVoiceGroupClass()
@@ -66,9 +72,7 @@ simulated function class<KFTraderVoiceGroupBase> GetTraderVoiceGroupClass()
     
     KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
     if( KFGRI != None && KFGRI.TraderDialogManager != None )
-    {
         return KFGRI.TraderDialogManager.TraderVoiceGroupClass;
-    }
     
     return class'KFTraderVoiceGroup_Default';
 }
@@ -78,52 +82,50 @@ function PlayTraderDialog( AkEvent DialogEvent )
     local AudioComponent WalkieBeep;
     local bool bRadio;
     local KFGameEngine Engine;
+    local KFHUDInterface HUDInterface;
     
     Engine = KFGameEngine(class'Engine'.static.GetEngine());
     if( bDisableTraderDialog || DialogEvent == None || Engine.DialogVolumeMultiplier <= 0.f || Engine.MasterVolumeMultiplier <= 0.f )
+        return;
+    
+    if( ClassicPlayerController(Controller).bDisableClassicTrader )
     {
+        Super.PlayTraderDialog(DialogEvent);
         return;
     }
     
     if( CurrentVoiceClass == None )
-    {
         CurrentVoiceClass = GetTraderVoiceGroupClass();
-    }
+    
+    HUDInterface = KFHUDInterface(PlayerController(Controller).myHUD);
     
     if( CurrentVoiceClass == None || class<KFTraderVoiceGroup_Default>(CurrentVoiceClass) == None )
     {
         CurrentTraderVoice = DialogEvent;
-        CurrentTraderVoiceDuration = DialogEvent.Duration;
         
         Super.PlayTraderDialog(DialogEvent);
         
         if( InStr(string(DialogEvent.Class.Name), "SHOP") == INDEX_NONE )
         {
-            KFHUDInterface(PlayerController(Controller).myHUD).bDrawingPortrait = true;
+            HUDInterface.PortraitTime = WorldInfo.TimeSeconds + DialogEvent.Duration;
+            HUDInterface.bDrawingPortrait = true;
         }
         
         return;
     }
     
     if( TraderDialogCueComp == None )
-    {
         return;
-    }
     
     if( TraderDialogCueComp.SoundCue != None )
-    {
         TraderDialogCueComp.SoundCue = None;
-    }
 
     bRadio = TraderDialogClass.static.GetReplacment(self, DialogEvent, TraderDialogCueComp.SoundCue);
     if( TraderDialogCueComp.SoundCue == None )
-    {
         return;
-    }
         
     TraderDialogCueComp.SoundCue.bPitchShiftWithTimeDilation = false;
     TraderDialogCueComp.VolumeMultiplier = (Engine.DialogVolumeMultiplier/100.f) * (Engine.MasterVolumeMultiplier/100.f);
-    CurrentTraderVoiceDuration = TraderDialogCueComp.SoundCue.Duration + (bRadio ? TraderComBeep.Duration : 0.f);
     
     if( bRadio )
     {
@@ -137,13 +139,11 @@ function PlayTraderDialog( AkEvent DialogEvent )
             WalkieBeep.bAutoDestroy = true;
             WalkieBeep.OnAudioFinished = PlayTraderVoice;
             
-            KFHUDInterface(PlayerController(Controller).myHUD).bDrawingPortrait = true;
+            HUDInterface.PortraitTime = WorldInfo.TimeSeconds + (TraderDialogCueComp.SoundCue.Duration + (bRadio ? TraderComBeep.Duration : 0.f));
+            HUDInterface.bDrawingPortrait = true;
         }
     }
-    else
-    {
-        PlayTraderVoice(TraderDialogCueComp);
-    }
+    else PlayTraderVoice(TraderDialogCueComp);
 }
 
 function PlayTraderVoice(AudioComponent AC)
@@ -160,9 +160,7 @@ function EndTraderDialog(AudioComponent AC)
     
     KFGRI = KFGameReplicationInfo(WorldInfo.GRI);
     if( KFGRI != None && KFGRI.TraderDialogManager != None )
-    {
         KFGRI.TraderDialogManager.EndOfDialogTimer();
-    }
 }
 
 function StopTraderDialog()
@@ -179,34 +177,32 @@ function StopTraderDialog()
     TraderDialogCueComp.Stop();
 }
 
-simulated function bool Died(Controller Killer, class<DamageType> damageType, vector HitLocation)
+simulated function bool Died(Controller Killer, class<DamageType> DmgType, vector HitLocation)
 {
     local ClassicPlayerController C;
-    local class<Pawn> KillerPawn;
     local PlayerReplicationInfo KillerPRI;
 
     if( WorldInfo.NetMode!=NM_Client && PlayerReplicationInfo!=None )
     {
         if( Killer==None || Killer==Controller )
-        {
             KillerPRI = PlayerReplicationInfo;
-            KillerPawn = None;
-        }
         else
         {
             KillerPRI = Killer.PlayerReplicationInfo;
             if( KillerPRI==None || KillerPRI.Team!=PlayerReplicationInfo.Team )
             {
-                KillerPawn = Killer.Pawn!=None ? Killer.Pawn.Class : None;
                 if( PlayerController(Killer)==None ) // If was killed by a monster, don't broadcast PRI along with it.
                     KillerPRI = None;
             }
-            else KillerPawn = None;
         }
         foreach WorldInfo.AllControllers(class'ClassicPlayerController',C)
-            C.ClientKillMessage(damageType,PlayerReplicationInfo,KillerPRI,KillerPawn);
+        {
+            if( C.bClientHidePlayerDeaths )
+                continue;
+            C.ClientKillMessage(DmgType, self.Class, Killer, PlayerReplicationInfo, KillerPRI);
+        }
     }
-    return Super.Died(Killer, DamageType, HitLocation);
+    return Super.Died(Killer, DmgType, HitLocation);
 }
 
 simulated function KFCharacterInfoBase GetCharacterInfo()
@@ -238,21 +234,16 @@ simulated function SetCharacterArch(KFCharacterInfoBase Info, optional bool bFor
         {
             // refresh weapon attachment (attachment bone may have changed)
             if (WeaponAttachmentTemplate != None)
-            {
                 WeaponAttachmentChanged(true);
-            }
-        }
-        if( WorldInfo.NetMode != NM_DedicatedServer )
-        {
+            
             // Attach/Reattach flashlight components when mesh is set
             if ( Flashlight == None && FlashLightTemplate != None )
             {
                 Flashlight = new(self) Class'KFFlashlightAttachment' (FlashLightTemplate);
-            }
-            if ( FlashLight != None )
-            {
                 Flashlight.AttachFlashlight(Mesh);
             }
+            else if ( FlashLight != None )
+                Flashlight.Reattach();
         }
         if( CharacterArch != none )
         {
@@ -262,29 +253,57 @@ simulated function SetCharacterArch(KFCharacterInfoBase Info, optional bool bFor
     }
 }
 
-function AddDefaultInventory()
+function SacrificeExplode()
 {
-    local KFPerk MyPerk;
+    local KFExplosionActorReplicated ExploActor;
+    local GameExplosion ExplosionTemplate;
+    local ClassicPerk_Demolitionist_Default DemoPerk;
 
-    MyPerk = GetPerk();
+    if ( Role < ROLE_Authority )
+        return;
 
-    if( MyPerk != none )
+    DemoPerk = ClassicPerk_Demolitionist_Default(GetPerk());
+
+    // explode using the given template
+    ExploActor = Spawn(class'KFExplosionActorReplicated', self,, Location,,, true);
+    if( ExploActor != None )
     {
-        MyPerk.AddDefaultInventory(self);
+        ExploActor.InstigatorController = Controller;
+        ExploActor.Instigator = self;
+
+        ExplosionTemplate = class'KFPerk_Demolitionist'.static.GetSacrificeExplosionTemplate();
+        ExplosionTemplate.bIgnoreInstigator = true;
+        ExploActor.Explode( ExplosionTemplate );
+
+        if( DemoPerk != none )
+            DemoPerk.NotifyPerkSacrificeExploded();
     }
-    
-    Super(KFPawn).AddDefaultInventory();
 }
 
-function SetSprinting(bool bNewSprintStatus);
+function GiveHealthOverTime()
+{
+    RepRegenHP = HealthToRegen;
+	Super.GiveHealthOverTime();
+}
+
+function SetSprinting(bool bNewSprintStatus)
+{
+    if( ClassicPlayerController(Controller) != None && ClassicPlayerController(Controller).bDisableGameplayChanges )
+        Super.SetSprinting(bNewSprintStatus);
+}
+
+simulated function Rotator GetAdjustedAimFor( Weapon W, vector StartFireLoc )
+{
+    if( PlayerController(Controller) != None && !PlayerController(Controller).UsingFirstPersonCamera() )
+    {
+        return GetBaseAimRotation();
+    }
+    
+    return Super.GetAdjustedAimFor(W, StartFireLoc);
+}
 
 defaultproperties
 {
-    Begin Object Class=KFFlashlightAttachment name=Flashlight_1
-        LightConeMesh=StaticMesh'wep_flashlights_mesh.WEP_3P_Lightcone'
-    End Object
-    FlashLightTemplate=Flashlight_1
-    
     Begin Object Name=SpecialMoveHandler_0
         SpecialMoveClasses(SM_Emote)=class'KFClassicMode.ClassicSM_Player_Emote'
     End Object
@@ -299,15 +318,8 @@ defaultproperties
     TraderDialogCueComp=TraderDialogCue1
     Components.Add(TraderDialogCue1)
     
-    DefaultInventory.Empty
-    DefaultInventory.Add(class'ClassicWeap_Pistol_9mm')
-    DefaultInventory.Add(class'ClassicWeap_Healer_Syringe')
-    DefaultInventory.Add(class'KFWeap_Welder')
-    DefaultInventory.Add(class'KFInventory_Money')
-    
     TraderDialogClass=class'KFClassicTraderDialog'
     InventoryManagerClass=class'ClassicInventoryManager'
     
-    bAllowSprinting=false
     BaseMeleeIncrease=0.2f
 }

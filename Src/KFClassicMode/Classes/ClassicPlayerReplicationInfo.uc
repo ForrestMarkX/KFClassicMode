@@ -144,12 +144,19 @@ simulated reliable client function ClientAddTraderItem( int Index, FCustomTrader
 simulated static final function SetWeaponInfo( bool bDedicated, int Index, FCustomTraderItem Item, KFGFxObject_TraderItems List )
 {
     local array<STraderItemWeaponStats> S;
+    local int i;
 
     if( List.SaleItems.Length<=Index )
         List.SaleItems.Length = Index+1;
 
     List.SaleItems[Index].WeaponDef = Item.WeaponDef;
     List.SaleItems[Index].ClassName = Item.WeaponClass.Name;
+    
+    for(i=0; i<Item.WeaponClass.default.WeaponUpgrades.Length; i++)
+    {
+        List.SaleItems[Index].WeaponUpgradeWeight[i] = Item.WeaponClass.static.GetUpgradeWeight(i);
+        List.SaleItems[Index].WeaponUpgradeDmgMultiplier[i] = Item.WeaponClass.static.GetUpgradeStatScale(EWeaponUpgradeStat(EWUS_Damage0 + Item.WeaponClass.default.UpgradeFireModes[class'KFWeapon'.const.DEFAULT_FIREMODE]), i);
+    }
     
     //Dual Weapon Check
     if(class<KFWeap_DualBase>(Item.WeaponClass)!=None && class<KFWeap_DualBase>(Item.WeaponClass).Default.SingleClass!=None)
@@ -227,6 +234,11 @@ simulated function VOIPStatusChanged( PlayerReplicationInfo Talker, bool bIsTalk
         {
             HUD.VOIPEventTriggered(Talker, bIsTalking);
         }
+        
+		if( ClassicPlayerController(KFPC).LobbyMenu != None )
+		{
+			ClassicPlayerController(KFPC).LobbyMenu.UpdateVOIP(Talker, bIsTalking);
+		}
     }
 }
 
@@ -277,7 +289,7 @@ Returns: String
 */
 simulated function string GetMessageHexColor(name Type)
 {
-    return Type == 'TeamSay' ? class'KFLocalMessage'.default.TeamSayColor : class'KFLocalMessage'.default.SayColor;
+    return class'KFLocalMessage'.default.SayColor;
 }
 
 simulated function byte GetActivePerkLevel()
@@ -681,6 +693,18 @@ reliable client function HideKickVote()
     {
         KFHUDInterface(KFPC.myHUD).HideVoteUI();
     }
+}
+
+simulated function Texture2D GetCurrentIconToDisplay()
+{
+	if( CurrentVoiceCommsRequest == VCT_NONE )
+	{
+        if( class<ClassicPerk_Base>(CurrentPerkClass) != None )
+            return class<ClassicPerk_Base>(CurrentPerkClass).static.GetCurrentPerkIcon(CurrentPerkLevel);
+        else return Super.GetCurrentIconToDisplay();
+	}
+
+	return class'KFLocalMessage_VoiceComms'.default.VoiceCommsIcons[CurrentVoiceCommsRequest];
 }
 
 defaultproperties

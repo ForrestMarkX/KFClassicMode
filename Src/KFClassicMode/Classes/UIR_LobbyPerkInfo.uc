@@ -20,7 +20,7 @@ function DrawMenu()
     local string PerkName, PerkLevelString;
     local KFPlayerController PC;
     local ClassicPerk_Base CurrentPerk;
-    local Texture PerkIcon, PerkStarIcon;
+    local Texture2D PerkIcon, PerkStarIcon;
     
     if( !bTextureInit )
     {

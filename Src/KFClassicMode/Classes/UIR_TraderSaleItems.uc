@@ -51,7 +51,7 @@ function DrawMenu()
     }
     
     Canvas.SetDrawColor(255, 255, 255, 255);
-    Owner.CurrentStyle.DrawTileStretched(BackgroundImage, TempX, TempY, CompPos[2] * BackgroundWidth, CompPos[3] * BackgroundHeight);
+    Owner.CurrentStyle.DrawTileStretched(BackgroundImage, TempX, TempY, (CompPos[2] - CompPos[3]) * BackgroundWidth, CompPos[3] * BackgroundHeight);
     
     Canvas.Font = Owner.CurrentStyle.PickFont(FontScalar);
     
@@ -82,5 +82,5 @@ function Refresh(optional bool bForce)
 
 defaultproperties
 {
-    BackgroundWidth=0.94f
+    BackgroundWidth=1.f
 }

@@ -27,6 +27,11 @@ function HandleMouseClick( bool bRight )
 Delegate OnClickLeft( KFGUI_Button Sender );
 Delegate OnClickRight( KFGUI_Button Sender );
 
+Delegate bool DrawOverride(Canvas C, KFGUI_Button B)
+{
+    return false;
+}
+
 defaultproperties
 {
     ButtonText="Button!"

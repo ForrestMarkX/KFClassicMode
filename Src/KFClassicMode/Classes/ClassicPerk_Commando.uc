@@ -1,11 +1,10 @@
 class ClassicPerk_Commando extends ClassicPerk_Base;
 
-var const PerkSkill    CloakedEnemyDetection;
-var    const PerkSkill CommandoDamage;
-var    const PerkSkill ReloadSpeed;
-var    const PerkSkill SpareAmmo;
-var    const PerkSkill Recoil;
-var    const PerkSkill MagCapacity;
+var const PerkSkill CloakedEnemyDetection;
+var const PerkSkill ReloadSpeed;
+var const PerkSkill SpareAmmo;
+var const PerkSkill Recoil;
+var const PerkSkill MagCapacity;
 
 var Texture2d WhiteMaterial;
 
@@ -76,26 +75,6 @@ simulated function DrawZedHealthbar(Canvas C, KFPawn_Monster KFPM, vector Camera
         C.DrawTile( WhiteMaterial, (HealthBarLength - 2.0) * HealthScale, HealthbarHeight - 2.0, 0, 0, 32, 32 );
         C.EnableStencilTest( false );
     }
-}
-
-simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCauser, optional KFPawn_Monster MyKFPM, optional KFPlayerController DamageInstigator, optional class<KFDamageType> DamageType, optional int HitZoneIdx )
-{
-    local KFWeapon KFW;
-    local float TempDamage;
-
-    TempDamage = InDamage;
-
-    if( DamageCauser != none )
-    {
-        KFW = GetWeaponFromDamageCauser( DamageCauser );
-    }
-
-    if( (KFW != none && IsWeaponOnPerk( KFW,, self.class )) || (DamageType != none && IsDamageTypeOnPerk( DamageType )) )
-    {
-        TempDamage += InDamage * GetPassiveValue( CommandoDamage, CurrentVetLevel );
-    }
-
-    InDamage = FCeil(TempDamage);
 }
 
 simulated function float GetReloadRateScale( KFWeapon KFW )
@@ -179,28 +158,28 @@ simulated function float GetCloakDetectionRange()
 simulated static function GetPassiveStrings( out array<string> PassiveValues, out array<string> Increments, byte Level )
 {
     PassiveValues[0] = Round(GetPassiveValue( default.CloakedEnemyDetection, Level ) / 100) $ "m";
-    PassiveValues[1] = Round(GetPassiveValue( default.CommandoDamage, Level ) * 100) $ "%";
+    PassiveValues[1] = Round(GetPassiveValue( default.WeaponDamage, Level ) * 100) $ "%";
     PassiveValues[2] = Round(GetPassiveValue( default.ReloadSpeed, Level ) * 100) $ "%";
     PassiveValues[3] = Round(GetPassiveValue( default.Recoil, Level ) * 100) $ "%";
     PassiveValues[4] = Round(GetPassiveValue( default.MagCapacity, Level ) * 100) $ "%";
     PassiveValues[5] = Round(GetPassiveValue( default.SpareAmmo, Level ) * 100) $ "%";
 
     Increments[0] = "[" @ Int(default.CloakedEnemyDetection.Increment / 100 )$"m /" @default.LevelString @"]";
-    Increments[1] = "[" @ Left( string( default.CommandoDamage.Increment * 100 ), InStr(string(default.CommandoDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
+    Increments[1] = "[" @ Left( string( default.WeaponDamage.Increment * 100 ), InStr(string(default.WeaponDamage.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[2] = "[" @ Left( string( default.ReloadSpeed.Increment * 100 ), InStr(string(default.ReloadSpeed.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[3] = "[" @ Left( string( default.Recoil.Increment * 100 ), InStr(string(default.Recoil.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[4] = "[" @ Left( string( default.MagCapacity.Increment * 100 ), InStr(string(default.MagCapacity.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
     Increments[5] = "[" @ Left( string( default.SpareAmmo.Increment * 100 ), InStr(string(default.SpareAmmo.Increment * 100), ".") + 2 )$"% /" @ default.LevelString @ "]";
 }
 
-simulated static function string GetCustomLevelInfo( byte Level )
+simulated function string GetCustomLevelInfo( byte Level )
 {
     local string S;
     local class<KFWeaponDefinition> SpawnDef;
 
     S = default.CustomLevelInfo;
 
-    ReplaceText(S,"%d",GetPercentStr(default.CommandoDamage, Level));
+    ReplaceText(S,"%d",GetPercentStr(default.WeaponDamage, Level));
     ReplaceText(S,"%s",GetPercentStr(default.ReloadSpeed, Level));
     ReplaceText(S,"%a",GetPercentStr(default.Recoil, Level));
     ReplaceText(S,"%m",GetPercentStr(default.MagCapacity, Level));
@@ -217,6 +196,17 @@ simulated static function string GetCustomLevelInfo( byte Level )
     S = S $ "|Up to " $ int(GetZedTimeExtension(Level)) $ " Zed-Time Extension(s)";
 
     return S;
+}
+
+simulated function GetPerkIcons(ObjectReferencer RepInfo)
+{
+    local int i;
+
+    for (i = 0; i < OnHUDIcons.Length; i++)
+    {
+        OnHUDIcons[i].PerkIcon = Texture2D(RepInfo.ReferencedObjects[62]);
+        OnHUDIcons[i].StarIcon = Texture2D(RepInfo.ReferencedObjects[28]);
+    }
 }
 
 DefaultProperties
@@ -238,7 +228,7 @@ DefaultProperties
     PassiveInfos(5)=(Title="Spare Ammo")
     
     CloakedEnemyDetection=(Name="Cloaked Enemy Detection Range",Increment=160.f,Rank=0,StartingValue=0.f,MaxValue=800.f)
-    CommandoDamage=(Name="Weapon Damage",Increment=0.1f,Rank=0,StartingValue=0.05f,MaxValue=0.5f)
+    WeaponDamage=(Name="Weapon Damage",Increment=0.1f,Rank=0,StartingValue=0.05f,MaxValue=0.5f)
     ReloadSpeed=(Name="Reload Speed",Increment=0.025f,Rank=0,StartingValue=0.05f,MaxValue=0.5f)
     Recoil=(Name="Weapon Recoil",Increment=0.05f,Rank=0,StartingValue=0.05f,MaxValue=0.75f)
     MagCapacity=(Name="Mag Capacity",Increment=0.1f,Rank=0,StartingValue=0.f,MaxValue=0.25f)

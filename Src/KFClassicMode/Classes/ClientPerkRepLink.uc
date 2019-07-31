@@ -4,6 +4,9 @@ Class ClientPerkRepLink extends ReplicationInfo
 var repnotify ObjectReferencer ObjRef;
 var ObjectReferencer BaseRef;
 
+var array<class<Mutator> > Mutators;
+var int RepIndex;
+
 replication
 {
     if ( True )
@@ -44,87 +47,9 @@ simulated function ReplicatedEvent( Name VarName )
 simulated final function InitRep()
 {
     local KFHUDInterface myHUD;
-    local int i;
-    //local KFClassicTraderDialog DialogManager;
-    local ClassicPerk_Berserker BerserkerPerk;
-    local ClassicPerk_Commando CommandoPerk;
-    local ClassicPerk_Demolitionist DemolitionistPerk;
-    local ClassicPerk_Firebug FirebugPerk;
-    local ClassicPerk_Medic MedicPerk;
-    local ClassicPerk_Sharpshooter SharpshooterPerk;
-    local ClassicPerk_Support SupportPerk;
     local KF2GUIController MyGUIController;
     local GUIStyleBase MyStyle;
-    
-    BerserkerPerk = ClassicPerk_Berserker(FindObject("KFClassicMode.Default__ClassicPerk_Berserker",class'ClassicPerk_Berserker'));
-    if( BerserkerPerk != None )
-    {
-        for (i = 0; i < BerserkerPerk.OnHUDIcons.Length; i++)
-        {
-            BerserkerPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[59]);
-            BerserkerPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    CommandoPerk = ClassicPerk_Commando(FindObject("KFClassicMode.Default__ClassicPerk_Commando",class'ClassicPerk_Commando'));
-    if( CommandoPerk != None )
-    {
-        for (i = 0; i < CommandoPerk.OnHUDIcons.Length; i++)
-        {
-            CommandoPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[62]);
-            CommandoPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    DemolitionistPerk = ClassicPerk_Demolitionist(FindObject("KFClassicMode.Default__ClassicPerk_Demolitionist",class'ClassicPerk_Demolitionist'));
-    if( DemolitionistPerk != None )
-    {
-        for (i = 0; i < DemolitionistPerk.OnHUDIcons.Length; i++)
-        {
-            DemolitionistPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[63]);
-            DemolitionistPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    FirebugPerk = ClassicPerk_Firebug(FindObject("KFClassicMode.Default__ClassicPerk_Firebug",class'ClassicPerk_Firebug'));
-    if( FirebugPerk != None )
-    {
-        for (i = 0; i < FirebugPerk.OnHUDIcons.Length; i++)
-        {
-            FirebugPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[64]);
-            FirebugPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    MedicPerk = ClassicPerk_Medic(FindObject("KFClassicMode.Default__ClassicPerk_Medic",class'ClassicPerk_Medic'));
-    if( MedicPerk != None )
-    {
-        for (i = 0; i < MedicPerk.OnHUDIcons.Length; i++)
-        {
-            MedicPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[65]);
-            MedicPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    SharpshooterPerk = ClassicPerk_Sharpshooter(FindObject("KFClassicMode.Default__ClassicPerk_Sharpshooter",class'ClassicPerk_Sharpshooter'));
-    if( SharpshooterPerk != None )
-    {
-        for (i = 0; i < SharpshooterPerk.OnHUDIcons.Length; i++)
-        {
-            SharpshooterPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[66]);
-            SharpshooterPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
-    
-    SupportPerk = ClassicPerk_Support(FindObject("KFClassicMode.Default__ClassicPerk_Support",class'ClassicPerk_Support'));
-    if( SupportPerk != None )
-    {
-        for (i = 0; i < SupportPerk.OnHUDIcons.Length; i++)
-        {
-            SupportPerk.OnHUDIcons[i].PerkIcon = Texture2D(ObjRef.ReferencedObjects[67]);
-            SupportPerk.OnHUDIcons[i].StarIcon = Texture2D(ObjRef.ReferencedObjects[28]);
-        }
-    }
+    local MusicGRI MusicGRI;
     
     myHUD = KFHUDInterface(FindObject("KFClassicMode.Default__KFHUDInterface",class'KFHUDInterface'));
     if( myHUD != None )
@@ -181,6 +106,7 @@ simulated final function InitRep()
     if( MyStyle != None )
     {
         MyStyle.MainFont = Font(ObjRef.ReferencedObjects[104]);
+        MyStyle.InfiniteFont = Font(ObjRef.ReferencedObjects[155]);
         
         MyStyle.BorderTextures[`BOX_INNERBORDER] = Texture2D(ObjRef.ReferencedObjects[35]);
         MyStyle.BorderTextures[`BOX_INNERBORDER_TRANSPARENT] = Texture2D(ObjRef.ReferencedObjects[36]);
@@ -193,6 +119,11 @@ simulated final function InitRep()
         MyStyle.BorderTextures[`BOX_SMALL] = Texture2D(ObjRef.ReferencedObjects[82]);
         MyStyle.BorderTextures[`BOX_SMALL_SLIGHTTRANSPARENT] = Texture2D(ObjRef.ReferencedObjects[83]);
         MyStyle.BorderTextures[`BOX_SMALL_TRANSPARENT] = Texture2D(ObjRef.ReferencedObjects[84]);
+        MyStyle.BorderTextures[`BOX_CORNER_8] = Texture2D(ObjRef.ReferencedObjects[160]);
+        MyStyle.BorderTextures[`BOX_CORNER_16] = Texture2D(ObjRef.ReferencedObjects[156]);
+        MyStyle.BorderTextures[`BOX_CORNER_32] = Texture2D(ObjRef.ReferencedObjects[157]);
+        MyStyle.BorderTextures[`BOX_CORNER_64] = Texture2D(ObjRef.ReferencedObjects[159]);
+        MyStyle.BorderTextures[`BOX_CORNER_512] = Texture2D(ObjRef.ReferencedObjects[158]);
         
         MyStyle.ArrowTextures[`ARROW_DOWN] = Texture2D(ObjRef.ReferencedObjects[10]);
         MyStyle.ArrowTextures[`ARROW_LEFT] = Texture2D(ObjRef.ReferencedObjects[45]);
@@ -261,12 +192,20 @@ simulated final function InitRep()
     }
     */
     
-    KFPerk_Survivalist(FindObject("KFGame.Default__KFPerk_Survivalist",class'KFPerk_Survivalist')).PerkIcon = Texture2D(ObjRef.ReferencedObjects[102]);
-    ClassicHumanPawn(FindObject("KFClassicMode.Default__ClassicHumanPawn",class'ClassicHumanPawn')).TraderComBeep = SoundCue(ObjRef.ReferencedObjects[100]);
-    KFEmit_TraderPath(FindObject("KFGame.Default__KFEmit_TraderPath",class'KFEmit_TraderPath')).EmitterTemplate = ParticleSystem(ObjRef.ReferencedObjects[89]);
+    if( !class'WorldInfo'.static.IsMenuLevel() )
+    {
+        KFPerk_Survivalist(FindObject("KFGame.Default__KFPerk_Survivalist",class'KFPerk_Survivalist')).PerkIcon = Texture2D(ObjRef.ReferencedObjects[102]);
+        KFEmit_TraderPath(FindObject("KFGame.Default__KFEmit_TraderPath",class'KFEmit_TraderPath')).EmitterTemplate = ParticleSystem(ObjRef.ReferencedObjects[89]);
+        KFReplicatedShowPathActor(FindObject("KFGame.Default__KFReplicatedShowPathActor",class'KFReplicatedShowPathActor')).EmitterTemplate = ParticleSystem(ObjRef.ReferencedObjects[89]);
+        KFGFxObject_TraderItems(FindObject("KFGame.Default__KFGFxObject_TraderItems",class'KFGFxObject_TraderItems')).OffPerkIconPath = PathName(ObjRef.ReferencedObjects[102]);
+    }
+    
     KFWaitingMessage(FindObject("KFClassicMode.Default__KFWaitingMessage",class'KFWaitingMessage')).CurrentFont = Font(ObjRef.ReferencedObjects[43]);
-    MusicGRI(FindObject("KFClassicMode.Default__MusicGRI",class'MusicGRI')).BossMusic = SoundCue(ObjRef.ReferencedObjects[101]);
-    KFGFxObject_TraderItems(FindObject("KFGame.Default__KFGFxObject_TraderItems",class'KFGFxObject_TraderItems')).OffPerkIconPath = PathName(ObjRef.ReferencedObjects[102]);
+    ClassicHumanPawn(FindObject("KFClassicMode.Default__ClassicHumanPawn",class'ClassicHumanPawn')).TraderComBeep = SoundCue(ObjRef.ReferencedObjects[100]);
+    
+    HealProj(FindObject("KFClassicMode.Default__HealProj",class'HealProj')).ProjectileTemplate = ParticleSystem(ObjRef.ReferencedObjects[165]);
+    SpectatorUFO(FindObject("KFClassicMode.Default__SpectatorUFO",class'SpectatorUFO')).StaticMeshComponent.SetStaticMesh(StaticMesh(ObjRef.ReferencedObjects[166]), true);
+    SpectatorFlame(FindObject("KFClassicMode.Default__SpectatorFlame",class'SpectatorFlame')).EmitterTemplate = ParticleSystem(ObjRef.ReferencedObjects[167]);
    
     ClassicPawn_ZedBloat(FindObject("KFClassicMode.Default__ClassicPawn_ZedBloat",class'ClassicPawn_ZedBloat')).PawnAnimInfo = KFPawnAnimInfo(ObjRef.ReferencedObjects[123]);
     ClassicPawn_ZedClot_Alpha(FindObject("KFClassicMode.Default__ClassicPawn_ZedClot_Alpha",class'ClassicPawn_ZedClot_Alpha')).PawnAnimInfo = KFPawnAnimInfo(ObjRef.ReferencedObjects[122]);
@@ -277,6 +216,85 @@ simulated final function InitRep()
     ClassicPawn_ZedScrake(FindObject("KFClassicMode.Default__ClassicPawn_ZedScrake",class'ClassicPawn_ZedScrake')).PawnAnimInfo = KFPawnAnimInfo(ObjRef.ReferencedObjects[128]);
     ClassicPawn_ZedStalker(FindObject("KFClassicMode.Default__ClassicPawn_ZedStalker",class'ClassicPawn_ZedStalker')).PawnAnimInfo = KFPawnAnimInfo(ObjRef.ReferencedObjects[129]);
     ClassicPawn_ZedHusk(FindObject("KFClassicMode.Default__ClassicPawn_ZedHusk",class'ClassicPawn_ZedHusk')).AnimTreeReplacment = AnimTree(ObjRef.ReferencedObjects[130]);
+    
+    MusicGRI = class'MusicGRI'.static.FindMusicGRI(WorldInfo);
+    if( MusicGRI != None )
+    {
+        SetupMusicGRI();
+    }
+    else
+    {
+        SetTimer(15.f, false, 'SetupMusicGRI');
+    }
+    
+    if( WorldInfo.NetMode != NM_Client )
+        SetTimer(1.f, false, 'SearchForMutators');
+}
+
+// Automatically generate a KFMutatorSummary entry inside of KFGame.ini
+final function SearchForMutators()
+{
+    local Mutator M;
+    
+    foreach DynamicActors(class'Mutator', M)
+        Mutators.AddItem(M.Class);
+        
+    if( Mutators.Length > 0 )
+        SetTimer(0.1f, true, 'ReplicateMutatorName');
+}
+
+final function ReplicateMutatorName()
+{
+    if( RepIndex >= Mutators.Length )
+    {
+        Mutators.Length = 0;
+        ClearTimer('ReplicateMutatorName');
+        return;
+    }
+    
+    GenerateMutatorEntry(Mutators[RepIndex].Name, PathName(Mutators[RepIndex]));
+    RepIndex++;
+}
+
+reliable client function GenerateMutatorEntry(name ClassName, string PathName)
+{
+    local KFMutatorSummary MutatorSummary;
+    local array<string> Names;
+    local int i;
+    local bool bFoundConfig;
+    
+    GetPerObjectConfigSections(class'KFMutatorSummary', Names);
+    for (i = 0; i < Names.Length; i++)
+    {
+        if( InStr(Names[i], string(ClassName)) != INDEX_NONE )
+        {
+            bFoundConfig = true;
+            break;
+        }
+    }
+    
+    if( !bFoundConfig )
+    {
+        MutatorSummary = New(None, string(ClassName)) class'KFMutatorSummary';
+        MutatorSummary.ClassName = PathName;
+        MutatorSummary.SaveConfig();
+    }
+}
+
+simulated final function SetupMusicGRI()
+{
+    local MusicGRI MusicGRI;
+    
+    MusicGRI = class'MusicGRI'.static.FindMusicGRI(WorldInfo);
+    if( MusicGRI == None )
+        return;
+        
+    MusicGRI.BossMusic = SoundCue(ObjRef.ReferencedObjects[101]);
+    
+    MusicGRI.BossTrack = New(None) class'KFMusicTrackInfo_Custom';
+    MusicGRI.BossTrack.StandardSong = MusicGRI.BossMusic;
+    MusicGRI.BossTrack.InstrumentalSong = MusicGRI.BossMusic;
+    MusicGRI.BossTrack.bLoop = true;
 }
 
 defaultproperties

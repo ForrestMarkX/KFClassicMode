@@ -1,10 +1,9 @@
 class ClassicPerk_Firebug extends ClassicPerk_Base;
 
-var const PerkSkill    WeaponDamage;
-var const PerkSkill    WeaponReload;
-var const PerkSkill    FireResistance;
-var const PerkSkill    SpareAmmo;
-var const PerkSkill    MagCapacity;
+var const PerkSkill WeaponReload;
+var const PerkSkill FireResistance;
+var const PerkSkill SpareAmmo;
+var const PerkSkill MagCapacity;
 
 var PassiveInfo ArmorInfo;
 
@@ -16,26 +15,6 @@ function AddDefaultInventory( KFPawn P )
     {
         KFPawn_Human(P).GiveMaxArmor();
     }
-}
-
-simulated function ModifyDamageGiven( out int InDamage, optional Actor DamageCauser, optional KFPawn_Monster MyKFPM, optional KFPlayerController DamageInstigator, optional class<KFDamageType> DamageType, optional int HitZoneIdx )
-{
-    local KFWeapon KFW;
-    local float TempDamage;
-
-    TempDamage = InDamage;
-
-    if( DamageCauser != none )
-    {
-        KFW = GetWeaponFromDamageCauser( DamageCauser );
-    }
-
-    if( (KFW != none && IsWeaponOnPerk( KFW,, self.class )) || (DamageType != none && IsDamageTypeOnPerk( DamageType )) )
-    {
-        TempDamage += InDamage * GetPassiveValue( WeaponDamage, CurrentVetLevel);
-    }
-
-    InDamage = Round( TempDamage );
 }
 
 simulated function float GetReloadRateScale(KFWeapon KFW)
@@ -147,7 +126,7 @@ simulated static function GetPassiveStrings( out array<string> PassiveValues, ou
     }
 }
 
-simulated static function string GetCustomLevelInfo( byte Level )
+simulated function string GetCustomLevelInfo( byte Level )
 {
     local string S;
     local class<KFWeaponDefinition> SpawnDef;
@@ -179,6 +158,17 @@ simulated static function string GetCustomLevelInfo( byte Level )
     }
 
     return S;
+}
+
+simulated function GetPerkIcons(ObjectReferencer RepInfo)
+{
+    local int i;
+    
+    for (i = 0; i < OnHUDIcons.Length; i++)
+    {
+        OnHUDIcons[i].PerkIcon = Texture2D(RepInfo.ReferencedObjects[64]);
+        OnHUDIcons[i].StarIcon = Texture2D(RepInfo.ReferencedObjects[28]);
+    }
 }
 
 DefaultProperties

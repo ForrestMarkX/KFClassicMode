@@ -90,7 +90,7 @@ function InternalOnClick( KFGUI_Button Sender )
             }
             break;
         case 'FillAmmoB':
-            if( KFAPH.GetCanAfford(KFAPH.GetFillAmmoCost(Sellable)) )
+            if( KFAPH.TotalDosh > 0 )
             {
                 KFAPH.FillAmmo(bIsGrenade ? KFAPH.GrenadeItem : Sellable, bIsGrenade);
                 
@@ -103,7 +103,7 @@ function InternalOnClick( KFGUI_Button Sender )
             }
             break;
         case 'PurchaseVest':
-            if( KFAPH.GetCanAfford(KFAPH.GetFillArmorCost()) )
+            if( KFAPH.TotalDosh > 0 )
             {
                 KFAPH.FillArmor();
                 Sellable = KFAPH.ArmorItem;
@@ -126,10 +126,15 @@ function Refresh(optional bool bForce)
 {
     local int ArmorPrice,FillPrice;
     local KFAutoPurchaseHelper KFAPH;
+	local float MissingAmmo, MagSize;
+	local float PricePerMag;
+    local float PricePerRound;
+    local float AmmoCostScale;
+    local KFGameReplicationInfo KFGRI;
     
     KFAPH = PC.GetPurchaseHelper();
     ArmorPrice = KFAPH.GetFillArmorCost();
-    FillPrice = bIsGrenade ? KFAPH.GetFillGrenadeCost() : KFAPH.GetFillAmmoCost(Sellable);
+    FillPrice = Max(bIsGrenade ? KFAPH.GetFillGrenadeCost() : KFAPH.GetFillAmmoCost(Sellable), 0);
     
     if( BuyMagB != None )
     {
@@ -142,11 +147,40 @@ function Refresh(optional bool bForce)
     
     if( FillAmmoB != None )
     {
-        FillAmmoB.ButtonText = "£" @ FillPrice;
+        KFGRI = KFGameReplicationInfo(PC.WorldInfo.GRI);
+        if( KFGRI != None )
+        {
+            AmmoCostScale = KFGRI.GameAmmoCostScale;
+        }
+        else
+        {
+            AmmoCostScale = 1.0;
+        }
         
-        if( !KFAPH.GetCanAfford(FillPrice) || (bIsSecondaryAmmo ? Sellable.SecondaryAmmoCount == Sellable.MaxSecondaryAmmo : Sellable.SpareAmmoCount == Sellable.MaxSpareAmmo) )
-            FillAmmoB.bDisabled = true;
-        else FillAmmoB.bDisabled = false;
+        if( Sellable.bIsSecondaryAmmo )
+        {
+            MagSize = Sellable.DefaultItem.WeaponDef.default.SecondaryAmmoMagSize;
+            PricePerMag = AmmoCostScale * Sellable.DefaultItem.WeaponDef.default.SecondaryAmmoMagPrice;
+            MissingAmmo = Sellable.MaxSecondaryAmmo - Sellable.SecondaryAmmoCount;
+        }
+        else
+        {
+            MagSize = Sellable.DefaultItem.MagazineCapacity;
+            PricePerMag = Sellable.AmmoPricePerMagazine;
+            MissingAmmo = Sellable.MaxSpareAmmo - Sellable.SpareAmmoCount;
+        }
+
+        if ( FillPrice > KFAPH.TotalDosh )
+        {
+            if( bIsGrenade )
+                PricePerRound = PricePerMag;
+            else PricePerRound = (MagSize > 0) ? PricePerMag / MagSize : 0.f;
+
+            MissingAmmo = FFloor(KFAPH.TotalDosh / PricePerRound);
+        }
+            
+        FillAmmoB.ButtonText = "£" @ FillPrice;
+        FillAmmoB.bDisabled = !GetButtonEnabled(PricePerRound, Sellable.SpareAmmoCount, Sellable.MaxSpareAmmo, MissingAmmo);
     }
     
     if( PurchaseVest != None )
@@ -164,10 +198,19 @@ function Refresh(optional bool bForce)
             PurchaseVest.ButtonText = "Repair: £" @ ArmorPrice;
         }
         
-        if( !KFAPH.GetCanAfford(ArmorPrice) || KFAPH.ArmorItem.SpareAmmoCount == KFAPH.ArmorItem.MaxSpareAmmo )
-            PurchaseVest.bDisabled = true;
-        else PurchaseVest.bDisabled = false;
+        PurchaseVest.bDisabled = !GetButtonEnabled(KFAPH.ArmorItem.AmmoPricePerMagazine, KFAPH.ArmorItem.SpareAmmoCount, KFAPH.ArmorItem.MaxSpareAmmo);
     }
+}
+
+function bool GetButtonEnabled( float Price, int SpareAmmoCount, int MaxSpareAmmoCount, optional int MissingAmmo=-1 )
+{
+    local int Dosh;
+    
+    Dosh = PC.GetPurchaseHelper().TotalDosh;
+    if( SpareAmmoCount >= MaxSpareAmmoCount || Dosh < Price || Dosh <= 0 || MissingAmmo == 0 )
+        return false;
+        
+    return true;
 }
 
 defaultproperties

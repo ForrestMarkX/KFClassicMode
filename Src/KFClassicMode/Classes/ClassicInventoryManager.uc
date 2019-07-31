@@ -1,7 +1,9 @@
 class ClassicInventoryManager extends KFInventoryManager;
 
+/*
 var KFAnimNotify_MeleeImpact_1P PendingMeleeNotify;
 var KFWeapon PendingMeleeWeapon;
+*/
 
 struct SavedWeaponPrices
 {
@@ -29,9 +31,7 @@ simulated function Inventory CreateInventory(class<Inventory> NewInventoryItemCl
             {
                 Index = TraderItems.SaleItems.Find('ClassName', KFWeapon(Inv).Class.Name);
                 if( Index != INDEX_NONE )
-                {
                     ServerAddSavedItem(TraderItems.SaleItems[Index]);
-                }
             }
         }
     
@@ -57,9 +57,7 @@ simulated function RemoveFromInventory(Inventory ItemToRemove)
             {
                 Index = TraderItems.SaleItems.Find('ClassName', KFWeapon(ItemToRemove).Class.Name);
                 if( Index != INDEX_NONE )
-                {
                     ServerRemoveSavedItem(TraderItems.SaleItems[Index]);
-                }
             }
         }
         
@@ -69,9 +67,7 @@ simulated function RemoveFromInventory(Inventory ItemToRemove)
     Super.RemoveFromInventory(ItemToRemove);
     
     if( Instigator != none && Instigator.IsLocallyControlled() )
-    {
         UpdateHUD();
-    }
 }
 
 reliable server function ServerAddSavedItem(STraderItem Item)
@@ -119,9 +115,7 @@ reliable client function ClientRemoveSavedItem(STraderItem Item)
     
     Index = SavedPrices.Find('Def', Item.WeaponDef);
     if( Index != INDEX_NONE )
-    {
         SavedPrices.Remove(Index, 1);
-    }
 }
 
 reliable client function NotifyInventoryChange(KFWeapon Wep, optional bool bRemove)
@@ -155,13 +149,8 @@ simulated function int GetWeaponBlocks(const out STraderItem ShopItem, optional 
         return 0;
     
     if (ShopItem.SingleClassName != '' && OverrideLevelValue == INDEX_NONE && ClassNameIsInInventory(ShopItem.SingleClassName, InventoryItem))
-    {
         ItemUpgradeLevel = KFWeapon(InventoryItem).CurrentWeaponUpgradeIndex;
-    }
-    else
-    {
-        ItemUpgradeLevel = OverrideLevelValue != INDEX_NONE ? OverrideLevelValue : KFPC.GetPurchaseHelper().GetItemUpgradeLevelByClassName(ShopItem.ClassName);
-    }
+    else ItemUpgradeLevel = OverrideLevelValue != INDEX_NONE ? OverrideLevelValue : KFPC.GetPurchaseHelper().GetItemUpgradeLevelByClassName(ShopItem.ClassName);
 
     return ShopItem.BlocksRequired + (ItemUpgradeLevel > INDEX_NONE ? ShopItem.WeaponUpgradeWeight[ItemUpgradeLevel] : 0);
 }
@@ -178,9 +167,7 @@ simulated function AttemptQuickHeal()
     if ( Instigator.Health >= Instigator.HealthMax )
     {
         if( KFHUDInterface(KFPC.myHUD) != None )
-        {
             KFHUDInterface(KFPC.myHUD).ShowNonCriticalMessage("Health Full");
-        }
         
          return;
     }
@@ -201,9 +188,7 @@ simulated function AttemptQuickHeal()
                 SetCurrentWeapon(W);
             }
             else if( KFHUDInterface(KFPC.myHUD) != None )
-            {
                 KFHUDInterface(KFPC.myHUD).ShowQuickSyringe();
-            }
         }
     }
 }
@@ -222,9 +207,7 @@ simulated function int GetAdjustedBuyPriceFor( const out STraderItem ShopItem, o
     if( KFPC != None )
     {
         if( ClassicPerk_Base(KFPC.CurrentPerk) != None )
-        {
             OriginalPrice *= ClassicPerk_Base(KFPC.CurrentPerk).GetCostScaling(KFPC.CurrentPerk.GetLevel(), ShopItem);
-        }
     }
     
     return OriginalPrice;
@@ -245,9 +228,7 @@ simulated function int GetAdjustedSellPriceFor(const out STraderItem OwnedItem, 
     {
         Index = SavedPrices.Find('Def', OwnedItem.WeaponDef);
         if( Index != INDEX_NONE )
-        {
             OriginalSellPrice *= SavedPrices[Index].Perk.GetCostScaling(SavedPrices[Index].PerkLevel, OwnedItem);
-        }
     }
     
     return OriginalSellPrice;
@@ -261,18 +242,11 @@ simulated function UpdateHUD()
 
     WeaponIndex = 0;
     if( PendingWeapon != none && !PendingWeapon.bDeleteMe && PendingWeapon.Instigator == Instigator )
-    {
         KFPendingWeapon = KFWeapon( PendingWeapon );
-    }
-    else
-    {
-        KFPendingWeapon = KFWeapon( Instigator.Weapon );
-    }
+    else KFPendingWeapon = KFWeapon( Instigator.Weapon );
 
     if ( KFPendingWeapon == none || KFPendingWeapon.InventoryGroup == IG_None )
-    {
         return;
-    }
 
     // Get the index of this weapon in its group
     ForEach InventoryActors( class'KFWeapon', KFW )
@@ -280,18 +254,15 @@ simulated function UpdateHUD()
         if ( KFW.InventoryGroup == KFPendingWeapon.InventoryGroup )
         {
             if ( KFW == KFPendingWeapon )
-            {
                 break;
-            }
 
             WeaponIndex++;
         }
     }
 
     if( KFPlayerController(Instigator.Controller) != none )
-    {
         HUD = KFHUDInterface(KFPlayerController(Instigator.Controller).myHUD);
-    }
+        
     if( HUD != None )
     {
         if(!bAutoswitchWeapon && !(KFPendingWeapon == HealerWeapon && HealerWeapon.bQuickHealMode))
@@ -303,16 +274,11 @@ simulated function UpdateHUD()
             }
             else
             {
-                if ( WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime > HUD.InventoryFadeInTime )
+                if ( `TimeSince(HUD.InventoryFadeStartTime) > HUD.InventoryFadeInTime )
                 {
-                    if ( WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime > HUD.InventoryFadeTime - HUD.InventoryFadeOutTime )
-                    {
-                        HUD.InventoryFadeStartTime = WorldInfo.TimeSeconds - HUD.InventoryFadeInTime + ((HUD.InventoryFadeTime - (WorldInfo.TimeSeconds - HUD.InventoryFadeStartTime)) * HUD.InventoryFadeInTime);
-                    }
-                    else
-                    {
-                        HUD.InventoryFadeStartTime = WorldInfo.TimeSeconds - HUD.InventoryFadeInTime;
-                    }
+                    if ( `TimeSince(HUD.InventoryFadeStartTime) > HUD.InventoryFadeTime - HUD.InventoryFadeOutTime )
+                        HUD.InventoryFadeStartTime = `TimeSince(HUD.InventoryFadeInTime + ((HUD.InventoryFadeTime - `TimeSince(HUD.InventoryFadeStartTime)) * HUD.InventoryFadeInTime));
+                    else HUD.InventoryFadeStartTime = `TimeSince(HUD.InventoryFadeInTime);
                 }
             }
             
@@ -364,12 +330,24 @@ simulated function SetPendingFire(Weapon InWeapon, int InFiringMode)
     Super.SetPendingFire(InWeapon, InFiringMode);
 }
 
-function CheckMeleeDamage()
+simulated function CheckMeleeDamage()
 {
+    local KFMeleeHelperAI AIHelper;
+    local KFAnimNotify_MeleeImpact Impact;
+    
     if( PendingMeleeNotify == None || PendingMeleeWeapon == None || PendingMeleeWeapon.MeleeAttackHelper == None )
         return;
-        
-    PendingMeleeWeapon.MeleeAttackHelper.MeleeImpactNotify(PendingMeleeNotify);
+    
+    Impact = New(Instigator) class'KFAnimNotify_MeleeImpact';
+    Impact.bDoSwipeDamage = true;
+    Impact.CustomDamageType = class<KFDamageType>(PendingMeleeWeapon.InstantHitDamageTypes[PendingMeleeWeapon.CurrentFireMode]);
+    Impact.SwipeDirection = PendingMeleeWeapon.ChooseAttackDir();
+    
+    AIHelper = New(Instigator) class'KFMeleeHelperAI';
+    AIHelper.SetMeleeRange(PendingMeleeWeapon.MeleeAttackHelper.MaxHitRange);
+    AIHelper.WorldImpactEffects = PendingMeleeWeapon.MeleeAttackHelper.WorldImpactEffects;
+    AIHelper.BaseDamage = PendingMeleeWeapon.InstantHitDamage[PendingMeleeWeapon.CurrentFireMode];
+    AIHelper.MeleeImpactNotify(Impact);
         
     PendingMeleeNotify = None;
     PendingMeleeWeapon = None;

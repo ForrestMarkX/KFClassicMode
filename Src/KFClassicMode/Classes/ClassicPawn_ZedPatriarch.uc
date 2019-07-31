@@ -1,6 +1,7 @@
 class ClassicPawn_ZedPatriarch extends KFPawn_ZedPatriarch implements(KFZEDInterface);
 
 `include(ClassicMonster.uci);
+`include(ClassicMonsterBoss.uci);
 
 simulated event UpdateSpottedStatus()
 {
@@ -84,8 +85,6 @@ defaultproperties
     End Object
     
     Health=4000
-    
-    GroundSpeed=229.8f
     SprintSpeed=574.5f
     
     DifficultySettings=class'ClassicDifficulty_Patriarch'

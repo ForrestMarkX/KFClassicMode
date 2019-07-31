@@ -262,17 +262,14 @@ function RenderComboList( KFGUI_ComboSelector C )
 
 function RenderRightClickMenu( KFGUI_RightClickMenu C )
 {
-    local float X,Y,YP,Edge,TextScale,TexDefHieght;
+    local float X,Y,XL,YL,YP,Edge,TextScale;
     local int i;
     local bool bCheckMouse;
+    local string S;
     
     // Draw background.
     Edge = C.EdgeSize;
-    Canvas.SetDrawColor(115,115,115,255);
-    DrawBoxHollow(0.f,0.f,C.CompPos[2],C.CompPos[3],Edge);
-    Canvas.SetPos(Edge,Edge);
-    Canvas.SetDrawColor(5,5,5,200);
-    DrawWhiteBox(C.CompPos[2]-(Edge*2.f),C.CompPos[3]-(Edge*2.f));
+    DrawOutlinedBox(0.f,0.f,C.CompPos[2],C.CompPos[3],Edge,C.BoxColor,C.OutlineColor);
 
     // While rendering, figure out mouse focus row.
     X = C.Owner.MousePosition.X - Canvas.OrgX;
@@ -282,38 +279,39 @@ function RenderRightClickMenu( KFGUI_RightClickMenu C )
     
     PickFont(TextScale);
 
-    YP = Edge;
+    YP = Edge*2;
     C.CurrentRow = -1;
     
-    TexDefHieght = DefaultHeight;
-
     Canvas.PushMaskRegion(Canvas.OrgX,Canvas.OrgY,Canvas.ClipX,Canvas.ClipY);
     for( i=0; i<C.ItemRows.Length; ++i )
     {
-        if( bCheckMouse && Y>=YP && Y<=(YP+TexDefHieght) )
+        if( C.ItemRows[i].bSplitter )
+            S = "-------";
+        else S = C.ItemRows[i].Text;
+        
+        Canvas.TextSize(S,XL,YL,TextScale,TextScale);
+        
+        if( bCheckMouse && Y>=YP && Y<=(YP+YL) )
         {
             bCheckMouse = false;
             C.CurrentRow = i;
             Canvas.SetPos(Edge,YP);
             Canvas.SetDrawColor(128,0,0,255);
-            DrawWhiteBox(C.CompPos[2]-(Edge*2.f),TexDefHieght);
+            DrawWhiteBox(C.CompPos[2]-(Edge*2.f),YL);
         }
 
-        Canvas.SetPos(Edge,YP);
+        Canvas.SetPos(Edge*6,YP);
         if( C.ItemRows[i].bSplitter )
-        {
-            Canvas.SetDrawColor(0,0,0,255);
-            Canvas.DrawText("-------",,TextScale,TextScale);
-        }
+            Canvas.SetDrawColor(255,255,255,255);
         else
         {
             if( C.ItemRows[i].bDisabled )
                 Canvas.SetDrawColor(148,148,148,255);
             else Canvas.SetDrawColor(248,248,248,255);
-            Canvas.DrawText(C.ItemRows[i].Text,,TextScale,TextScale);
         }
+        Canvas.DrawText(S,,TextScale,TextScale);
         
-        YP+=TexDefHieght;
+        YP+=YL;
     }
     Canvas.PopMaskRegion();
     if( C.OldRow!=C.CurrentRow )
@@ -327,23 +325,29 @@ function RenderButton( KFGUI_Button B )
 {
     local float XL,YL,TS,AX,AY,GamepadTexSize;
     local Texture2D Mat, ButtonTex;
+    local bool bDrawOverride;
 
-    if( B.bDisabled )
-        Mat = ButtonTextures[`BUTTON_DISABLED];
-    else if( B.bPressedDown )
-        Mat = ButtonTextures[`BUTTON_PRESSED];
-    else if( B.bFocused )
-        Mat = ButtonTextures[`BUTTON_HIGHLIGHTED];
-    else Mat = ButtonTextures[`BUTTON_NORMAL];
-    
-    Canvas.SetPos(0.f,0.f);
-    Canvas.DrawTileStretched(Mat,B.CompPos[2],B.CompPos[3],0,0,32,32);
-
-    if( B.OverlayTexture.Texture!=None )
+    bDrawOverride = B.DrawOverride(Canvas, B);
+    if( !bDrawOverride )
     {
+        if( B.bDisabled )
+            Mat = ButtonTextures[`BUTTON_DISABLED];
+        else if( B.bPressedDown )
+            Mat = ButtonTextures[`BUTTON_PRESSED];
+        else if( B.bFocused || B.bIsHighlighted )
+            Mat = ButtonTextures[`BUTTON_HIGHLIGHTED];
+        else Mat = ButtonTextures[`BUTTON_NORMAL];
+        
         Canvas.SetPos(0.f,0.f);
-        Canvas.DrawTile(B.OverlayTexture.Texture,B.CompPos[2],B.CompPos[3],B.OverlayTexture.U,B.OverlayTexture.V,B.OverlayTexture.UL,B.OverlayTexture.VL);
+        Canvas.DrawTileStretched(Mat,B.CompPos[2],B.CompPos[3],0,0,32,32);
+
+        if( B.OverlayTexture.Texture!=None )
+        {
+            Canvas.SetPos(0.f,0.f);
+            Canvas.DrawTile(B.OverlayTexture.Texture,B.CompPos[2],B.CompPos[3],B.OverlayTexture.U,B.OverlayTexture.V,B.OverlayTexture.UL,B.OverlayTexture.VL);
+        }
     }
+    
     if( B.ButtonText!="" )
     {
         Canvas.Font = MainFont;

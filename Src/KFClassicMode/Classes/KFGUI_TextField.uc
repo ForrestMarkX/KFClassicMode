@@ -48,7 +48,7 @@ function SetText( string S )
     OrgLines.Length = 0;
     bTextParsed = false;
 }
-function AddText( string S )
+function AddText( string S, optional bool bIgnoreSpam )
 {
     Text $= S;
     OldSize[0] = -1;
@@ -329,7 +329,7 @@ function byte GetCursorStyle()
 
 function DrawMenu()
 {
-    local int i,j;
+    local int i,j,Index;
     local float Y;
 
     if( Text=="" || !bVisible )
@@ -341,10 +341,12 @@ function DrawMenu()
         
     if( MaxHistory != 0 )
     {
-        if( Lines.Length > MaxHistory )
+        if( Lines.Length >= MaxHistory )
         {
-            SetText(Mid(Text, InStr(Text, LineSplitter)+Len(LineSplitter)));
-            return;
+            Index = InStr(Text, LineSplitter);
+            if( Index == INDEX_NONE )
+                Lines.Remove(0, 1);
+            else SetText(Mid(Text, Index+Len(LineSplitter)));
         }
     }
 
@@ -390,7 +392,7 @@ function DrawTextField(string S, int Index, float X, float Y, optional Color C, 
         
     if( bFadeInOut )
     {
-        TempSize = GetPlayer().WorldInfo.TimeSeconds - FadeStartTime;
+        TempSize = `TimeSinceEx(GetPlayer(), FadeStartTime);
         if ( TempSize > MessageDisplayTime )
         {
             return;
@@ -414,7 +416,7 @@ function DrawTextField(string S, int Index, float X, float Y, optional Color C, 
 
     if( bUseOutlineText )
     {
-        Owner.CurrentStyle.DrawTextOutline(S,X,Y,OutlineSize,MakeColor(0, 0, 0, Canvas.DrawColor.A),InitFontScale,TextFontInfo);
+        Owner.CurrentStyle.DrawTextShadow(S,X,Y,OutlineSize,InitFontScale);
     }
     else
     {

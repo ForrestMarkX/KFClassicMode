@@ -45,7 +45,7 @@ defaultproperties
 {
     Begin Object class=KFGUI_Image Name=PlayerPortrait
         ID="PlayerPortrait"
-          YPosition=0
+        YPosition=0
         XPosition=0
         XSize=1
         YSize=1

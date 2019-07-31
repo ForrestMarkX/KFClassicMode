@@ -96,7 +96,7 @@ function DrawMenu()
     Canvas.DrawColor = TextColor;
     if( bUseOutline )
     {
-        Owner.CurrentStyle.DrawTextOutline(Text,InitOffset[0],InitOffset[1],OutlineSize,MakeColor(0, 0, 0, Canvas.DrawColor.A),InitFontScale,TextFontInfo);
+        Owner.CurrentStyle.DrawTextShadow(Text,InitOffset[0],InitOffset[1],OutlineSize,InitFontScale);
     }
     else
     {

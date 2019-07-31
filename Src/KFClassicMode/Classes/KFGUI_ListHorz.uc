@@ -3,6 +3,7 @@ Class KFGUI_ListHorz extends KFGUI_MultiComponent;
 var() bool bDrawBackground, bHideScrollbar, bUseFocusSound;
 var() protected int ListCount;
 var() int ListItemsPerPage;
+var() float ButtonScale;
 var() color BackgroundColor;
 var KFGUI_ScrollBarH ScrollBar;
 
@@ -23,6 +24,7 @@ function InitMenu()
     Super.InitMenu();
     ScrollBar = KFGUI_ScrollBarH(FindComponentID('Scrollbar'));
     ScrollBar.bHideScrollbar = bHideScrollbar;
+    ScrollBar.ButtonScale = ButtonScale <= 0.f ? 1.f : ButtonScale;
     UpdateListVis();
 }
 
@@ -97,11 +99,11 @@ function PreDraw()
         ScrollBar.PreDraw();
         
         // Then downscale our selves to give room for scrollbar.
-        CompPos[3] -= ScrollBar.CompPos[3];
+        CompPos[3] -= ScrollBar.CompPos[3]*1.15f;
         Canvas.SetOrigin(CompPos[0],CompPos[1]);
         Canvas.SetClip(CompPos[0]+CompPos[2],CompPos[1]+CompPos[3]);
         DrawMenu();
-        CompPos[3] += ScrollBar.CompPos[3];
+        CompPos[3] += ScrollBar.CompPos[3]*1.15f;
     }
     else
     {
@@ -217,7 +219,6 @@ defaultproperties
         YPosition=0.96
         XSize=1
         YSize=0.04
-        ButtonScale=0.5
         ID="Scrollbar"
     End Object
     Components.Add(ListScroller)

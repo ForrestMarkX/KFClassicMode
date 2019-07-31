@@ -5,8 +5,6 @@ simulated function name GetWeaponFireAnim(byte FireModeNum)
     return Super(KFWeapon).GetWeaponFireAnim(FireModeNum);
 }
 
-function CheckTargetLock();
-
 defaultproperties
 {
     // Healing charge

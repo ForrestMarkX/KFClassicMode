@@ -8,7 +8,7 @@ var enum eImageStyle
 
 var Color ImageColor;
 var Texture Image;
-var bool bAlignCenter;
+var bool bAlignCenter, bForceUniformSize;
 var int X1,Y1,X2,Y2;
 var float ImageScale;
 
@@ -18,6 +18,8 @@ function DrawMenu()
     
     if( Image == None )
         return;
+        
+    DrawBackground(Canvas, CompPos[2], CompPos[3]);
     
     Canvas.DrawColor = ImageColor;
     
@@ -31,15 +33,23 @@ function DrawMenu()
             if( Y1 != -1 )
                 Y = Y1;
             else Y = 0;
+            
+            if( bForceUniformSize )
+            {
+                YL = CompPos[3];
+                XL = YL;
+            }
+            else
+            {
+                if( Y2 == -1 )
+                    YL = FMin(CompPos[3], Image.GetSurfaceHeight());
+                else YL = (Y2-Y1);
 
-            if( X2 == -1 )
-                XL = FMin(CompPos[2], Image.GetSurfaceWidth());
-            else XL = (X2-X1);
-
-            if( Y2 == -1 )
-                YL = FMin(CompPos[3], Image.GetSurfaceHeight());
-            else YL = (Y2-Y1);
-
+                if( X2 == -1 )
+                    XL = FMin(CompPos[2], Image.GetSurfaceWidth());
+                else XL = (X2-X1);
+            }
+            
             if( bAlignCenter )
             {
                 Canvas.SetPos((CompPos[2]/2) - (XL/2), (CompPos[3]/2) - (YL/2));
@@ -64,14 +74,22 @@ function DrawMenu()
                 if( Y1 != -1 )
                     Y = Y1;
                 else Y = 0;
+                
+                if( bForceUniformSize )
+                {
+                    YL = CompPos[3];
+                    XL = YL;
+                }
+                else
+                {
+                    if( Y2 == -1 )
+                        YL = FMin(CompPos[3], Image.GetSurfaceHeight());
+                    else YL = (Y2-Y1);
 
-                if( X2 == -1 )
-                    XL = FMin(CompPos[2], Image.GetSurfaceWidth());
-                else XL = (X2-X1);
-
-                if( Y2 == -1 )
-                    YL = FMin(CompPos[3], Image.GetSurfaceHeight());
-                else YL = (Y2-Y1);
+                    if( X2 == -1 )
+                        XL = FMin(CompPos[2], Image.GetSurfaceWidth());
+                    else XL = (X2-X1);
+                }
 
                 if( bAlignCenter )
                 {
@@ -89,6 +107,8 @@ function DrawMenu()
             break;
     }
 }
+
+delegate DrawBackground(Canvas C, float W, Float H);
 
 defaultproperties
 {

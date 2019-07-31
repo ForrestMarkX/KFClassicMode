@@ -28,6 +28,11 @@ function ShowNonCriticalMessage(string LocalizedMessage)
     KFHUDInterface(KFPC.myHUD).ShowNonCriticalMessage(LocalizedMessage);
 }
 
+function UpdateRhythmCounterWidget(int value, int max)
+{
+    KFHUDInterface(KFPC.myHUD).UpdateRhythmCounter(value, max);
+}
+
 DefaultProperties
 {
     MovieInfo=None

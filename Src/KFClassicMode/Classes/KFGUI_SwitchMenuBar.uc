@@ -4,6 +4,7 @@ Class KFGUI_SwitchMenuBar extends KFGUI_MultiComponent;
 var array<KFGUI_Base> SubPages;
 var() byte ButtonPosition; // 0 = top, 1 = bottom, 2 = left, 3 = right
 var() float BorderWidth,ButtonAxisSize; // Width for buttons.
+var() float PagePadding; // Padding for pages
 
 var int NumButtons,CurrentPageNum,PageComponentIndex;
 var array<KFGUI_Button> PageButtons;
@@ -123,14 +124,14 @@ function PreDraw()
             switch( ButtonPosition )
             {
             case 0:
-                Components[i].InputPos[1] += (InputPos[3]*BorderWidth);
+                Components[i].InputPos[1] += (InputPos[3]*BorderWidth*PagePadding);
             case 1:
-                Components[i].InputPos[3] -= (InputPos[3]*BorderWidth);
+                Components[i].InputPos[3] -= (InputPos[3]*BorderWidth*PagePadding);
                 break;
             case 2:
-                Components[i].InputPos[0] += (InputPos[2]*BorderWidth);
+                Components[i].InputPos[0] += (InputPos[2]*BorderWidth*PagePadding);
             default:
-                Components[i].InputPos[2] -= (InputPos[2]*BorderWidth);
+                Components[i].InputPos[2] -= (InputPos[2]*BorderWidth*PagePadding);
             }
         }
         Components[i].PreDraw();
@@ -156,6 +157,7 @@ function bool ReceievedControllerInput(int ControllerId, name Key, EInputEvent E
 
 defaultproperties
 {
+    PagePadding=1.0
     BorderWidth=0.05
     ButtonAxisSize=0.08
     CurrentPageNum=-1

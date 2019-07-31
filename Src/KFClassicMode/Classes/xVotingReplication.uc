@@ -158,24 +158,34 @@ reliable client simulated function ClientNotifyVoteWin( int GameIndex, int MapIn
 }
 reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
 {
-    if( bAllReceived )
-        SetTimer(0.1,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
+    local xUI_MapRank R;
+
     if( bShowRank )
     {
+        R = xUI_MapRank(Class'KF2GUIController'.Static.GetGUIController(GetPlayer()).OpenMenu(class'xUI_MapRank'));
+        R.RepInfo = Self;
+
         if( KFGFxHudWrapper(GetPlayer().myHUD)!=None )
             KFGFxHudWrapper(GetPlayer().myHUD).HudMovie.DisplayPriorityMessage("MAP VOTE TIME","Cast your votes!",2);
         
         if( KFGameReplicationInfo(WorldInfo.GRI)!=none )
             KFGameReplicationInfo(WorldInfo.GRI).ProcessChanceDrop();
     }
+    if( bAllReceived )
+        SetTimer(0.1,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
 }
 simulated function DelayedOpenMapvote()
 {
-    local xUI_MapVote U;
+    local xUI_PostGameReport U;
 
-    U = xUI_MapVote(Class'KF2GUIController'.Static.GetGUIController(GetPlayer()).OpenMenu(class'xUI_MapVote'));
+    U = xUI_PostGameReport(Class'KF2GUIController'.Static.GetGUIController(GetPlayer()).OpenMenu(class'xUI_PostGameReport'));
+
+    KFPlayerController(GetPlayer()).MyGFxManager.bPostGameState = false;
+    KFPlayerController(GetPlayer()).MyGFxManager.bCanCloseMenu = false;
+    KFGFxHudWrapper(GetPlayer().myHUD).bShowHUD = true;
+    
     if( U != None )
-        U.InitMapvote(Self);
+        U.VotePage.InitMapvote(Self);
 }
 
 reliable server simulated function ServerCastVote( int GameIndex, int MapIndex, bool bAdminForce )

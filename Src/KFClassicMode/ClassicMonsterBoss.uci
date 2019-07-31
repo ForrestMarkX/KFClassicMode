@@ -1,0 +1,14 @@
+`if(`notdefined(OVERRIDEMUSICFUNC))
+function PlayBossMusic()
+{
+    local MusicGRI MusicGRI;
+    
+	Super.PlayBossMusic();
+    
+    MusicGRI = class'MusicGRI'.static.FindMusicGRI(WorldInfo);
+    if( MusicGRI != None )
+    {
+        MusicGRI.ForceBossMusic();
+    }
+}
+`endif

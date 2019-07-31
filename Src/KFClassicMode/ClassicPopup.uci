@@ -1,0 +1,16 @@
+var ClassicPlayerController PC;
+
+function InitializePopup( KFGFxMoviePlayer_Manager InManager )
+{
+    PC = ClassicPlayerController(GetPC());
+    if( PC.GUIController != None )
+        PC.GUIController.CloseMenu(None, true);
+    
+    Super.InitializePopup(InManager);
+}
+
+function OnClosed()
+{
+    PC.OpenLobbyMenu();
+    Super.OnClosed();
+}

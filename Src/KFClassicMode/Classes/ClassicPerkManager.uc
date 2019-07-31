@@ -68,12 +68,23 @@ simulated final function ClassicPerk_Base FindPerk( class<KFPerk> P, optional bo
     ForEach UserPerks(Perk)
     {
         if( ( bAllowSubclass && ClassIsChildOf(Perk.Class, P) ) || Perk.Class == P )
-        {
             return Perk;
-        }
     }
     
     return None;
+}
+
+simulated final function ClassicPerk_Base FindPerkBase( class<KFPerk> P )
+{
+    local ClassicPerk_Base Perk;
+    
+    ForEach UserPerks(Perk)
+    {
+        if( ClassIsChildOf(Perk.BasePerk, P) )
+            return Perk;
+    }
+    
+    return FindPerk(P);
 }
 
 simulated function InitPerks()
@@ -137,9 +148,7 @@ simulated function UnregisterPerk( ClassicPerk_Base P )
     
     Index = PlayerOwner.PerkList.Find('PerkClass', P.Class);
     if( Index != INDEX_NONE )
-    {
         PlayerOwner.PerkList.Remove(Index, 1);
-    }
 }
 
 function Destroyed()
@@ -161,9 +170,7 @@ function EarnedEXP( int EXP )
     if( P!=None )
     {
         if( EXP>0 && P.EarnedEXP(EXP) )
-        {
             bStatsDirty = true;
-        }
     }
 }
 
@@ -189,9 +196,7 @@ function SaveData( KFSaveDataBase Data )
     for( i=0; i<UserPerks.Length; ++i )
     {
         if( UserPerks[i].HasAnyProgress() )
-        {
             ++o;
-        }
     }
     
     // Then write count we have.
@@ -226,9 +231,7 @@ function LoadData( KFSaveDataBase Data )
     
     // Read character.
     if( PRIOwner!=None )
-    {
         PRIOwner.LoadCustomCharacter(Data);
-    }
     else class'ClassicPlayerReplicationInfo'.Static.DummyLoadChar(Data);
 
     // Find selected perk.
