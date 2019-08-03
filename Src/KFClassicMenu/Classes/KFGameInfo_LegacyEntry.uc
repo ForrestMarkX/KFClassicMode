@@ -5,7 +5,7 @@ var MusicGRI MusicReplicationInfo;
 
 static event class<GameInfo> SetGameType(string MapName, string Options, string Portal)
 {
-	return Default.class;
+    return Default.class;
 }
 
 simulated function ForceMenuMusicTrack()

@@ -103,9 +103,9 @@ static final function string GetIPFromURL(string URL)
 
 reliable client event bool ShowConnectionProgressPopup( EProgressMessageType ProgressType, string ProgressTitle, string ProgressDescription, bool SuppressPasswordRetry = false)
 {
-	local KFGameEngine KFGEngine;
-	local KFGameViewportClient KFGVPC;
-	local string CachedTitle, CachedMessage;
+    local KFGameEngine KFGEngine;
+    local KFGameViewportClient KFGVPC;
+    local string CachedTitle, CachedMessage;
     
     if( !bPendingTravel )
     {
@@ -171,6 +171,26 @@ reliable client event bool ShowConnectionProgressPopup( EProgressMessageType Pro
 function OpenLobbyMenu()
 {
     GUIController.OpenMenu(MainMenuClass);
+}
+
+exec function DisplayDailyObjectives()
+{
+    local int i;
+    local DailyEventInformation Daily;
+    local bool bComp;
+    local string S;
+    
+    for (i = 0; i < class'KFGFxDailyObjectivesContainer'.default.NUM_OF_DAILIES; i++)
+    {
+        Daily = GetDailyObjective(i);
+        bComp = IsDailyObjectiveComplete(i);
+        if( bComp )
+            S = " - Completed!";
+        else if( class'KFGFxDailyObjectivesContainer'.static.IsProgressObjective(Daily) )
+            S = " - "$GetCurrentDailyValue(i)$"/"$GetMaxDailyValue(i);
+        
+        `Print(class'KFGFxDailyObjectivesContainer'.static.FormTitleForObjective(Daily)@class'KFGFxDailyObjectivesContainer'.static.FormDescriptionForObjective(Daily)$S);
+    }
 }
 
 simulated function CancelConnection();

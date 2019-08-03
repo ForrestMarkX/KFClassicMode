@@ -170,7 +170,7 @@ defaultproperties
     Begin Object Class=UIR_GameTypesList Name=GamesFrame
         XPosition=0.025
         YPosition=0.05
-		YSize=0.75
+        YSize=0.75
         XSize=0.25
         EdgeSize(2)=-20
         WindowTitle="Avaliable Game Types"
@@ -182,7 +182,7 @@ defaultproperties
     Begin Object Class=UIR_MapsList Name=MapsFrame
         XPosition=0.725
         YPosition=0.05
-		YSize=0.75
+        YSize=0.75
         XSize=0.25
         EdgeSize(2)=-20
         WindowTitle="Avaliable Maps"
@@ -194,7 +194,7 @@ defaultproperties
     Begin Object Class=UIR_DifficultyList Name=DifficultyFrame
         XPosition=0.375
         YPosition=0.4
-		YSize=0.4
+        YSize=0.4
         XSize=0.125
         EdgeSize(2)=-20
         WindowTitle="Avaliable Difficulties"
@@ -206,7 +206,7 @@ defaultproperties
     Begin Object Class=UIR_LengthList Name=LengthFrame
         XPosition=0.5
         YPosition=0.4
-		YSize=0.4
+        YSize=0.4
         XSize=0.125
         EdgeSize(2)=-20
         WindowTitle="Avaliable Game Lengths"

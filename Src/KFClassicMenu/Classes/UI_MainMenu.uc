@@ -3,7 +3,7 @@ Class UI_MainMenu extends KFGUI_Page
 
 var MenuPlayerController PC;
 var KFGUI_List MenuParty;
-var KFGUI_Button SoloGame, MultiplayerGame, Gear, Perks, Settings, InventoryB, Vault, Exit;
+var KFGUI_Button SoloGame, MultiplayerGame, Gear, Perks, Settings, InventoryB, Vault, Exit, DailyInfo;
 var Texture ItemBoxTexture, ItemBarTexture;
 var array<KFPlayerReplicationInfo> KFPRIArray;
 var KFGameReplicationInfo KFGRI;
@@ -36,6 +36,7 @@ function InitMenu()
     InventoryB = KFGUI_Button(FindComponentID('Inventory'));
     Vault = KFGUI_Button(FindComponentID('Vault'));
     Exit = KFGUI_Button(FindComponentID('Exit'));
+    DailyInfo = KFGUI_Button(FindComponentID('DailyInfo'));
     
     SoloGame.ButtonText = class'KFGFxWidget_MenuBar'.default.SoloString;
     MultiplayerGame.ButtonText = class'KFGFxWidget_MenuBar'.default.ServerBrowserString;
@@ -45,6 +46,7 @@ function InitMenu()
     InventoryB.ButtonText = class'KFGFxWidget_MenuBar'.default.MenuStrings[4];
     Vault.ButtonText = class'KFGFxWidget_MenuBar'.default.MenuStrings[3];
     Exit.ButtonText = class'KFGFxWidget_MenuBar'.default.MenuStrings[7];
+    DailyInfo.ButtonText = class'KFMission_LocalizedStrings'.default.DailyObjectiveString;
     
     ItemBoxTexture = Owner.CurrentStyle.ItemBoxTextures[`ITEMBOX_NORMAL];
     ItemBarTexture = Owner.CurrentStyle.ItemBoxTextures[`ITEMBOX_BAR_NORMAL];
@@ -300,6 +302,9 @@ function ButtonClicked( KFGUI_Button Sender )
     case 'Exit':
         Owner.OpenMenu(class'UI_NotifyQuit');
         return;
+    case 'DailyInfo':
+        Owner.OpenMenu(class'UIR_DailyInfo');
+        return;
     }
     
     if( UIIndex != UI_IIS )
@@ -316,6 +321,20 @@ function UserPressedEsc();
 defaultproperties
 {
     bNoBackground=true
+    
+    Begin Object class=KFGUI_Button Name=DailyInfo
+        ID="DailyInfo"
+        XSize=0.25
+        YSize=0.025
+        XPosition=0.375
+        YPosition=0.8225
+        FontScale=2
+        OnClickLeft=ButtonClicked
+        OnClickRight=ButtonClicked
+        DrawOverride=DrawMenuButtons
+        TextColor=(R=255,G=255,B=255,A=255)
+    End Object
+    Components.Add(DailyInfo)   
     
     Begin Object Class=UIR_WeeklyInfo Name=WeeklyFrame
         XSize=0.25

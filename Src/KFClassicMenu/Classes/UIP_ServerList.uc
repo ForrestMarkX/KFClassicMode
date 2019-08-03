@@ -31,11 +31,11 @@ var transient KFDataStore_OnlineGameSearch SearchDataStore;
 
 var transient enum EQueryCompletionAction
 {
-	QUERYACTION_None,
-	QUERYACTION_Default,
-	QUERYACTION_CloseScene,
-	QUERYACTION_JoinServer,
-	QUERYACTION_RefreshAll,
+    QUERYACTION_None,
+    QUERYACTION_Default,
+    QUERYACTION_CloseScene,
+    QUERYACTION_JoinServer,
+    QUERYACTION_RefreshAll,
 } QueryCompletionAction;
 
 var MenuPlayerController PC;
@@ -45,14 +45,14 @@ function InitMenu()
     local DataStoreClient DSClient;
     local int i;
     
-	Super.InitMenu();
+    Super.InitMenu();
     
     AnyString = class'KFCommon_LocalizedStrings'.default.NoPreferenceString;
     OfficialMaps = class'KFGFxMenu_StartGame'.default.StockMaps;
     
     PC = MenuPlayerController(GetPlayer());
-	CurrentServers = KFGUI_ColumnList(FindComponentID('CurrentServers'));
-	PlayerInfo = KFGUI_ColumnList(FindComponentID('PlayerInfo'));
+    CurrentServers = KFGUI_ColumnList(FindComponentID('CurrentServers'));
+    PlayerInfo = KFGUI_ColumnList(FindComponentID('PlayerInfo'));
     ServerBrowser = UI_ServerBrowser(ParentComponent.ParentComponent);
     
     CurrentServers.Columns[1].Text = class'KFGFxMenu_ServerBrowser'.default.NameString;
@@ -67,9 +67,9 @@ function InitMenu()
     FiltersFrame.FrameTex = Owner.CurrentStyle.BorderTextures[`BOX_MEDIUM_SLIGHTTRANSPARENT];
     FiltersFrame.WindowTitle = class'KFGFxMenu_ServerBrowser'.default.FiltersString;
     
-	DSClient = class'UIInteraction'.static.GetDataStoreClient();
-	if( DSClient != None )
-		SearchDataStore = KFDataStore_OnlineGameSearch(DSClient.FindDataStore('KFGameSearch'));
+    DSClient = class'UIInteraction'.static.GetDataStoreClient();
+    if( DSClient != None )
+        SearchDataStore = KFDataStore_OnlineGameSearch(DSClient.FindDataStore('KFGameSearch'));
     
     OnlineSub = class'GameEngine'.static.GetOnlineSubsystem();
     GameInterface = OnlineSub.GameInterface;
@@ -142,24 +142,24 @@ function ShowMenu()
     SavedPingIndex = Filters.default.SavedPingIndex;
     
     SavedDifficultyIndex = Filters.default.SavedDifficultyIndex;
-	if (SavedDifficultyIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].DifficultyLevels)
-		SavedDifficultyIndex = 255;
+    if (SavedDifficultyIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].DifficultyLevels)
+        SavedDifficultyIndex = 255;
     
     SavedLengthIndex = Filters.default.SavedLengthIndex;
-	if (SavedLengthIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].Lengths)
-		SavedLengthIndex = 255;
+    if (SavedLengthIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].Lengths)
+        SavedLengthIndex = 255;
     
     SavedGameModeIndex = Filters.default.SavedGameModeIndex;
-	if (SavedGameModeIndex >= class'KFGameInfo'.default.GameModes.Length)
-		SavedGameModeIndex = 255;
+    if (SavedGameModeIndex >= class'KFGameInfo'.default.GameModes.Length)
+        SavedGameModeIndex = 255;
     
     if( SavedGameModeIndex == 255 )
         GameModeBox.SetValue(AnyString);
     else GameModeBox.SetValue(GameModeStrings[Filters.default.SavedGameModeIndex]); 
     
     SavedMapIndex = Filters.default.SavedMapIndex;
-	if (SavedMapIndex >= class'KFGameInfo'.default.GameModes.Length)
-		SavedMapIndex = 255;
+    if (SavedMapIndex >= class'KFGameInfo'.default.GameModes.Length)
+        SavedMapIndex = 255;
     
     if( SavedDifficultyIndex == 255 )
         DifficultyBox.SetValue(AnyString);
@@ -180,14 +180,14 @@ function ShowMenu()
 
 function int GetUsableGameMode(int ModeIndex)
 {
-	if (ModeIndex >= class'KFGameInfo'.default.GameModes.Length || ModeIndex < 0)
-	{
-		return 0;
-	}
-	else
-	{
-		return ModeIndex;
-	}
+    if (ModeIndex >= class'KFGameInfo'.default.GameModes.Length || ModeIndex < 0)
+    {
+        return 0;
+    }
+    else
+    {
+        return ModeIndex;
+    }
 }
 
 function RefreshList()
@@ -199,96 +199,96 @@ function RefreshList()
 
 function OnCancelSearchComplete( bool bWasSuccessful )
 {
-	local EQueryCompletionAction CurrentAction;	
+    local EQueryCompletionAction CurrentAction;    
     
-	GameInterface.ClearCancelFindOnlineGamesCompleteDelegate(OnCancelSearchComplete);
+    GameInterface.ClearCancelFindOnlineGamesCompleteDelegate(OnCancelSearchComplete);
 
-	CurrentAction = QueryCompletionAction;
-	QueryCompletionAction = QUERYACTION_None;
+    CurrentAction = QueryCompletionAction;
+    QueryCompletionAction = QUERYACTION_None;
 
-	switch ( CurrentAction )
-	{
-	case QUERYACTION_CloseScene:
-		CurrentServers.EmptyList();
-		break;
-	case QUERYACTION_RefreshAll:
+    switch ( CurrentAction )
+    {
+    case QUERYACTION_CloseScene:
+        CurrentServers.EmptyList();
+        break;
+    case QUERYACTION_RefreshAll:
         CurrentServers.EmptyList();
         SubmitServerListQuery(FakePlayerIndex);
-		break;
-	}
+        break;
+    }
 }
 
 function CancelQuery( optional EQueryCompletionAction DesiredCancelAction=QUERYACTION_Default )
 {
-	if ( QueryCompletionAction == QUERYACTION_None )
-	{
-		QueryCompletionAction = DesiredCancelAction;
-		if ( SearchDataStore.GetActiveGameSearch() != None )
-		{
-			if( class'WorldInfo'.static.IsConsoleBuild() )
-			{
-				class'GameEngine'.static.GetPlayfabInterface().CancelGameSearch();
-				OnCancelSearchComplete(true);
-			}
-			else
-			{
-				GameInterface.AddCancelFindOnlineGamesCompleteDelegate(OnCancelSearchComplete);
-				GameInterface.CancelFindOnlineGames();
-			}
-		}
-		else if ( SearchDataStore.GetCurrentGameSearch().Results.Length > 0 || QueryCompletionAction == QUERYACTION_RefreshAll )
-		{
-			OnCancelSearchComplete(true);
-		}
-		else
-		{
-			QueryCompletionAction = QUERYACTION_None;
-		}
-	}
+    if ( QueryCompletionAction == QUERYACTION_None )
+    {
+        QueryCompletionAction = DesiredCancelAction;
+        if ( SearchDataStore.GetActiveGameSearch() != None )
+        {
+            if( class'WorldInfo'.static.IsConsoleBuild() )
+            {
+                class'GameEngine'.static.GetPlayfabInterface().CancelGameSearch();
+                OnCancelSearchComplete(true);
+            }
+            else
+            {
+                GameInterface.AddCancelFindOnlineGamesCompleteDelegate(OnCancelSearchComplete);
+                GameInterface.CancelFindOnlineGames();
+            }
+        }
+        else if ( SearchDataStore.GetCurrentGameSearch().Results.Length > 0 || QueryCompletionAction == QUERYACTION_RefreshAll )
+        {
+            OnCancelSearchComplete(true);
+        }
+        else
+        {
+            QueryCompletionAction = QUERYACTION_None;
+        }
+    }
 }
 
 function BuildServerFilters(OnlineGameSearch Search)
 {
-	local string GametagSearch, MapName;
-	local int Mode;
+    local string GametagSearch, MapName;
+    local int Mode;
 
-	Search.ClearServerFilters();
+    Search.ClearServerFilters();
 
-	Search.AddServerFilter("version_match", string(class'KFGameEngine'.static.GetKFGameVersion()));
-	
+    Search.AddServerFilter("version_match", string(class'KFGameEngine'.static.GetKFGameVersion()));
+    
     // Does nothing?
     Search.TestAddServerFilter( Filters.default.bNotFull, "notfull");
-	Search.TestAddServerFilter( Filters.default.bNotEmpty, "hasplayers");
+    Search.TestAddServerFilter( Filters.default.bNotEmpty, "hasplayers");
 
-	if (!class'WorldInfo'.static.IsConsoleBuild())
-	{
-		Search.TestAddServerFilter( Filters.default.bDedicated, "dedicated");
-		Search.TestAddServerFilter( Filters.default.bVAC_Secure, "secure");
-	}
+    if (!class'WorldInfo'.static.IsConsoleBuild())
+    {
+        Search.TestAddServerFilter( Filters.default.bDedicated, "dedicated");
+        Search.TestAddServerFilter( Filters.default.bVAC_Secure, "secure");
+    }
 
-	if (Filters.default.bInProgress && !Filters.default.bInLobby)
-		Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInProgress, 'bInProgress', 1);
-	else if (Filters.default.bInLobby)
-		Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInLobby, 'bInProgress', 0);
+    if (Filters.default.bInProgress && !Filters.default.bInLobby)
+        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInProgress, 'bInProgress', 1);
+    else if (Filters.default.bInLobby)
+        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInLobby, 'bInProgress', 0);
 
-	if (!class'WorldInfo'.static.IsConsoleBuild())
-		Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bNoPassword, 'bRequiresPassword', 0);
+    if (!class'WorldInfo'.static.IsConsoleBuild())
+        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bNoPassword, 'bRequiresPassword', 0);
 
-	Mode = Filters.default.SavedGameModeIndex;
-	if (Mode >= 0 && Mode < 255)
-		Search.AddGametagFilter(GametagSearch, 'Mode', string(Mode));
+    Mode = Filters.default.SavedGameModeIndex;
+    if (Mode >= 0 && Mode < 255)
+        Search.AddGametagFilter(GametagSearch, 'Mode', string(Mode));
         
-	MapName = GetSelectedMap();
-	if (MapName != "")
-		Search.AddServerFilter("map", MapName);
+    MapName = GetSelectedMap();
+    if (MapName != "")
+        Search.AddServerFilter("map", MapName);
     
-	if (Filters.default.bCustom && !class'WorldInfo'.static.IsConsoleBuild())
-		Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bCustom, 'bCustom', 0);
+    if (Filters.default.bCustom && !class'WorldInfo'.static.IsConsoleBuild())
+        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bCustom, 'bCustom', 0);
 
-	if (Len(GametagSearch) > 0)
-		Search.AddServerFilter("gametagsand", GametagSearch);
-	if (Search.MasterServerSearchKeys.Length > 1)
-		Search.AddServerFilter("and", string(Search.MasterServerSearchKeys.Length), 0);
+    if (Len(GametagSearch) > 0)
+        Search.AddServerFilter("gametagsand", GametagSearch);
+    if (Search.MasterServerSearchKeys.Length > 1)
+        Search.AddServerFilter("and", string(Search.MasterServerSearchKeys.Length), 0);
 }
 
 function string GetSelectedMap()
@@ -339,28 +339,28 @@ function SubmitServerListQuery(int PlayerIndex)
     BuildServerFilters(SearchDataStore.GetCurrentGameSearch());
     
     GameInterface.AddFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
-	if( !SearchDataStore.SubmitGameSearch(class'UIInteraction'.static.GetPlayerControllerId(PlayerIndex), false) )
-		GameInterface.ClearFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
+    if( !SearchDataStore.SubmitGameSearch(class'UIInteraction'.static.GetPlayerControllerId(PlayerIndex), false) )
+        GameInterface.ClearFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
 }
 
 function OnFindOnlineGamesCompleteDelegate(bool bWasSuccessful)
 {
-	local bool bSearchCompleted;
-	local OnlineGameSearch Search;
+    local bool bSearchCompleted;
+    local OnlineGameSearch Search;
 
-	Search = SearchDataStore.GetActiveGameSearch();
-	bSearchCompleted = Search == None || Search.Results.Length == LastServerCount;
-	if( !bSearchCompleted )
-	{
-		if( Search.Results.Length > 0 )
-			SetTimer(0.01f, false, nameof(UpdateListDataProvider));
-		LastServerCount = Search.Results.Length;
-	}
-	else
-	{
-		GameInterface.ClearFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
-		LastServerCount = -1;
-	}
+    Search = SearchDataStore.GetActiveGameSearch();
+    bSearchCompleted = Search == None || Search.Results.Length == LastServerCount;
+    if( !bSearchCompleted )
+    {
+        if( Search.Results.Length > 0 )
+            SetTimer(0.01f, false, nameof(UpdateListDataProvider));
+        LastServerCount = Search.Results.Length;
+    }
+    else
+    {
+        GameInterface.ClearFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
+        LastServerCount = -1;
+    }
 }
 
 function bool GetWaveFilter(int Index, int MaxWaves)
@@ -378,16 +378,16 @@ function bool GetWaveFilter(int Index, int MaxWaves)
 
 function UpdateListDataProvider()
 {
-	local KFOnlineGameSettings TempOnlineGamesSettings;
+    local KFOnlineGameSettings TempOnlineGamesSettings;
     local KFOnlineGameSearch LatestGameSearch;
     local int i, NumPlayers;
     local string CurrentWave, Ping, ServerFlags, GamemodeInfo;
     
-	LatestGameSearch = KFOnlineGameSearch(SearchDataStore.GetActiveGameSearch());
-	if( LatestGameSearch != None )
-	{
-		for (i = 0; i < LatestGameSearch.Results.Length; i++)
-		{
+    LatestGameSearch = KFOnlineGameSearch(SearchDataStore.GetActiveGameSearch());
+    if( LatestGameSearch != None )
+    {
+        for (i = 0; i < LatestGameSearch.Results.Length; i++)
+        {
             if( CurrentServers.ListCount >= 700 )
             {
                 CancelQuery(QUERYACTION_None);
@@ -435,27 +435,27 @@ function UpdateListDataProvider()
 
 function string GetDifficultyIcon(byte Diff)
 {
-	if( Diff < ServerDifficultyIcons.Length )
-		return ServerDifficultyIcons[Diff];
+    if( Diff < ServerDifficultyIcons.Length )
+        return ServerDifficultyIcons[Diff];
     
     return ServerDifficultyIcons[ServerDifficultyIcons.Length-1];
 }
 
 function bool IsEndlessModeIndex(int ModeIndex, optional byte NumWaves)
 {
-	return ModeIndex == 3 || NumWaves >= 254;
+    return ModeIndex == 3 || NumWaves >= 254;
 }
 
 function SelectedServer(KFGUI_ListItem Item, int Row, bool bRight, bool bDblClick)
 {
     SelectedServerIndex = Item.Value;
 
-	if( bRight )
+    if( bRight )
     {
         ServerRightClick.ItemRows[3].Text = IsSelectedServerFavorited(SelectedServerIndex) ? "Remove from favorites" : "Add to favorites";
-		ServerRightClick.OpenMenu(Self);
+        ServerRightClick.OpenMenu(Self);
     }
-	else if( bDblClick )
+    else if( bDblClick )
     {
         JoinServer(SelectedServerIndex,,false);
     }
@@ -479,8 +479,8 @@ function UpdatePlayerInfo()
     
     Settings = GetServerDetails(SelectedServerIndex);
     PlayerInfo.EmptyList();
-	for (i = 0; i < Settings.PlayersInGame.Length; ++i)
-	{
+    for (i = 0; i < Settings.PlayersInGame.Length; ++i)
+    {
         PlayerInfo.AddLine(Settings.PlayersInGame[i].PlayerName$"\n"$Owner.CurrentStyle.GetTimeString(Settings.PlayersInGame[i].TimePlayed)$"\n$"$class'KFScoreBoard'.static.GetNiceSize(Settings.PlayersInGame[i].Score),i,
         Settings.PlayersInGame[i].PlayerName$"\n"$MakeSortStr(Settings.PlayersInGame[i].TimePlayed)$"\n"$MakeSortStr(Settings.PlayersInGame[i].Score));
     }
@@ -489,21 +489,21 @@ function UpdatePlayerInfo()
 function JoinServer(optional int SearchResultIndex = -1, optional string WithPassword = "", optional bool JoinAsSpectator = false)
 {
     local KFOnlineGameSearch GameSearch;
-	local KFOnlineGameSettings ServerSettings;
-	local OnlineGameSearchResult SearchResult;
+    local KFOnlineGameSettings ServerSettings;
+    local OnlineGameSearchResult SearchResult;
     local string GamemodeInfo;
     local UIR_EnterPassword Password;
 
     GameSearch = KFOnlineGameSearch(SearchDataStore.GetCurrentGameSearch());
-	if( SearchResultIndex >= 0 && SearchResultIndex < GameSearch.Results.Length ) 
-		SearchResult = GameSearch.Results[SearchResultIndex];
+    if( SearchResultIndex >= 0 && SearchResultIndex < GameSearch.Results.Length ) 
+        SearchResult = GameSearch.Results[SearchResultIndex];
     else return;
     
-	SelectedServerIndex = SearchResultIndex;
+    SelectedServerIndex = SearchResultIndex;
 
-	ServerSettings = KFOnlineGameSettings(SearchResult.GameSettings);
-	if(ServerSettings == None) 
-		return;
+    ServerSettings = KFOnlineGameSettings(SearchResult.GameSettings);
+    if(ServerSettings == None) 
+        return;
         
     if( ServerSettings.bRequiresPassword && WithPassword == "" )
     {
@@ -521,9 +521,9 @@ function JoinServer(optional int SearchResultIndex = -1, optional string WithPas
     TransitionMap = ServerSettings.MapName;
     TransitionGame = GamemodeInfo;
 
-	ServerPassword = WithPassword;
-	bJoinAsSpectator = JoinAsSpectator;
-	ProcessJoin(SearchResult);
+    ServerPassword = WithPassword;
+    bJoinAsSpectator = JoinAsSpectator;
+    ProcessJoin(SearchResult);
 }
 
 function ServerConnect(string URL)
@@ -550,124 +550,124 @@ function ServerConnect(string URL)
 
 function JoinGameURL()
 {
-	local string URL;
+    local string URL;
 
-	URL = BuildJoinURL();
+    URL = BuildJoinURL();
 
-	KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = OnHandshakeComplete;
+    KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = OnHandshakeComplete;
 
-	ServerConnect(URL);
-	ServerPassword = "";
+    ServerConnect(URL);
+    ServerPassword = "";
 }
 
 function string BuildJoinURL()
 {
-	local string ConnectURL;
+    local string ConnectURL;
 
-	ConnectURL = KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress;
+    ConnectURL = KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress;
 
-	if ( ServerPassword != "" )
-	{
-		ConnectURL $= "?Password=" $ ServerPassword;
-		OnlineSub.GetLobbyInterface().SetServerPassword(ServerPassword);
-	}
-	else
-	{
-		OnlineSub.GetLobbyInterface().SetServerPassword("");
-	}
+    if ( ServerPassword != "" )
+    {
+        ConnectURL $= "?Password=" $ ServerPassword;
+        OnlineSub.GetLobbyInterface().SetServerPassword(ServerPassword);
+    }
+    else
+    {
+        OnlineSub.GetLobbyInterface().SetServerPassword("");
+    }
 
-	if(bJoinAsSpectator)
-	{
-		ConnectURL $= "?SpectatorOnly=1";
-	}
-	ConnectURL $= OnlineSub.GetLobbyInterface().GetLobbyURLString();
-	return ConnectURL;
+    if(bJoinAsSpectator)
+    {
+        ConnectURL $= "?SpectatorOnly=1";
+    }
+    ConnectURL $= OnlineSub.GetLobbyInterface().GetLobbyURLString();
+    return ConnectURL;
 }
 
 function bool OnHandshakeComplete(bool bSuccess, string Error, out int SuppressPasswordRetry)
 {
-	KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = None;
-	if (bSuccess)
-	{
-		OnlineSub.GetLobbyInterface().LobbyJoinServer(KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress);
-	}
-	SuppressPasswordRetry = 1;
+    KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = None;
+    if (bSuccess)
+    {
+        OnlineSub.GetLobbyInterface().LobbyJoinServer(KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress);
+    }
+    SuppressPasswordRetry = 1;
 
-	return false;
+    return false;
 }
 
 function ProcessJoin(OnlineGameSearchResult SearchResult)
 {
-	if ( GameInterface != None )
-	{
-		if (SearchResult.GameSettings != None)
-		{
+    if ( GameInterface != None )
+    {
+        if (SearchResult.GameSettings != None)
+        {
             GameInterface.AddJoinOnlineGameCompleteDelegate(OnJoinGameComplete);
 
             if (OnlineGameInterfaceImpl(GameInterface).GetGameSearch() != none)
                 GameInterface.DestroyOnlineGame('Game');
 
             GameInterface.JoinOnlineGame(0, 'Game', SearchResult);
-		}
-		else OnJoinGameComplete('Game', false);
-	}
-	else
-	{
-		ServerPassword = "";
-		bJoinAsSpectator = false;
-	}
+        }
+        else OnJoinGameComplete('Game', false);
+    }
+    else
+    {
+        ServerPassword = "";
+        bJoinAsSpectator = false;
+    }
 }
 
 function OnJoinGameComplete(name SessionName, bool bSuccessful)
 {
-	local string URL;
+    local string URL;
 
-	if (GameInterface != None)
-	{
-		if (bSuccessful)
-		{
-			if (GameInterface.GetResolvedConnectString(SessionName, URL))
-			{
-				KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress = URL;
-				JoinGameURL();
-			}
-		}
+    if (GameInterface != None)
+    {
+        if (bSuccessful)
+        {
+            if (GameInterface.GetResolvedConnectString(SessionName, URL))
+            {
+                KFGameViewportClient(LocalPlayer(PC.Player).ViewPortClient).LastConnectionAttemptAddress = URL;
+                JoinGameURL();
+            }
+        }
 
-		GameInterface.ClearJoinOnlineGameCompleteDelegate(OnJoinGameComplete);
-	}
+        GameInterface.ClearJoinOnlineGameCompleteDelegate(OnJoinGameComplete);
+    }
 
-	ServerPassword = "";
+    ServerPassword = "";
 }
 
 function KFOnlineGameSettings GetServerDetails(int ServerIndex)
 {
-	local KFOnlineGameSearch GameSearch;
-	local KFOnlineGameSettings KFOGS;
+    local KFOnlineGameSearch GameSearch;
+    local KFOnlineGameSettings KFOGS;
 
-	GameSearch = KFOnlineGameSearch(SearchDataStore.GetCurrentGameSearch());
+    GameSearch = KFOnlineGameSearch(SearchDataStore.GetCurrentGameSearch());
 
-	if(GameSearch != none)
-	{
-		KFOGS = KFOnlineGameSettings(GameSearch.Results[ServerIndex].GameSettings);
-	}
-	return KFOGS;
+    if(GameSearch != none)
+    {
+        KFOGS = KFOnlineGameSettings(GameSearch.Results[ServerIndex].GameSettings);
+    }
+    return KFOGS;
 }
 
 function bool IsSelectedServerFavorited(int ServerSearchIndex)
 {
-	return GameInterface.IsSearchResultInFavoritesList(ServerSearchIndex);
+    return GameInterface.IsSearchResultInFavoritesList(ServerSearchIndex);
 }
 
 function bool SetSelectedServerFavorited(bool bFavorited)
 {
-	if (!bFavorited)
-	{
-		return GameInterface.AddSearchResultToFavorites(SelectedServerIndex);
-	}
-	else
-	{
-		return GameInterface.RemoveSearchResultFromFavorites(SelectedServerIndex);
-	}
+    if (!bFavorited)
+    {
+        return GameInterface.AddSearchResultToFavorites(SelectedServerIndex);
+    }
+    else
+    {
+        return GameInterface.RemoveSearchResultFromFavorites(SelectedServerIndex);
+    }
 }
 
 function ClickedRow( int RowNum )
@@ -853,13 +853,13 @@ function CloseMenu()
 {
     Super.CloseMenu();
     
-	CancelQuery(QUERYACTION_CloseScene);
-	ClearDelegates();
+    CancelQuery(QUERYACTION_CloseScene);
+    ClearDelegates();
 }
 
 function ClearDelegates()
 {
-	KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = None;
+    KFGameEngine(Class'Engine'.static.GetEngine()).OnHandshakeComplete = None;
 
     GameInterface.ClearFindOnlineGamesCompleteDelegate(OnFindOnlineGamesCompleteDelegate);
     GameInterface.ClearJoinOnlineGameCompleteDelegate(OnJoinGameComplete);
@@ -889,48 +889,48 @@ defaultproperties
     VACIcon="KFClassicMenu_Assets.VAC_Servericon"
     StatsIcon="KFClassicMenu_Assets.Stats"
     
-	Begin Object Class=KFGUI_RightClickMenu Name=ServerRClicker
-		ItemRows.Add((Text="Join"))
-		ItemRows.Add((Text="Join as Spectator"))
+    Begin Object Class=KFGUI_RightClickMenu Name=ServerRClicker
+        ItemRows.Add((Text="Join"))
+        ItemRows.Add((Text="Join as Spectator"))
         ItemRows.Add((bSplitter=true))
         ItemRows.Add((Text="Add to favorites"))
         ItemRows.Add((Text="Copy IP"))
-	End Object
-	ServerRightClick=ServerRClicker
+    End Object
+    ServerRightClick=ServerRClicker
     
-	Begin Object Class=KFGUI_ColumnList Name=PlayerInfo
+    Begin Object Class=KFGUI_ColumnList Name=PlayerInfo
         bHideScrollbar=true
         XPosition=0.505
         YPosition=0.57
-		YSize=0.5
+        YSize=0.5
         XSize=0.5
-		ID="PlayerInfo"
-		Columns.Add((Text="NAME",Width=0.5))
-		Columns.Add((Text="TIME",Width=0.25))
-		Columns.Add((Text="SCORE",Width=0.25))
-	End Object
+        ID="PlayerInfo"
+        Columns.Add((Text="NAME",Width=0.5))
+        Columns.Add((Text="TIME",Width=0.25))
+        Columns.Add((Text="SCORE",Width=0.25))
+    End Object
     Components.Add(PlayerInfo)
     
-	Begin Object Class=KFGUI_ColumnList Name=CurrentServers
+    Begin Object Class=KFGUI_ColumnList Name=CurrentServers
         bHideScrollbar=true
-		YSize=0.56
+        YSize=0.56
         XPosition=0.005
-		ID="CurrentServers"
-		Columns.Add((Text="",Width=0.05,bOnlyTextures=true))
-		Columns.Add((Width=0.5))
-		Columns.Add((Width=0.075))
-		Columns.Add((Width=0.175))
-		Columns.Add((Width=0.075))
-		Columns.Add((Width=0.075))
-		Columns.Add((Width=0.075))
-		OnSelectedRow=SelectedServer
-	End Object
+        ID="CurrentServers"
+        Columns.Add((Text="",Width=0.05,bOnlyTextures=true))
+        Columns.Add((Width=0.5))
+        Columns.Add((Width=0.075))
+        Columns.Add((Width=0.175))
+        Columns.Add((Width=0.075))
+        Columns.Add((Width=0.075))
+        Columns.Add((Width=0.075))
+        OnSelectedRow=SelectedServer
+    End Object
     Components.Add(CurrentServers)
     
     Begin Object Class=KFGUI_Frame Name=FiltersFrame
         XPosition=0.005
         YPosition=0.57
-		YSize=0.5
+        YSize=0.5
         XSize=0.475
         EdgeSize(2)=-20
         ID="FiltersFrame"
@@ -940,7 +940,7 @@ defaultproperties
     Begin Object Class=KFGUI_ComponentList Name=FiltersBox
         XPosition=0
         YPosition=0
-		YSize=0.96
+        YSize=0.96
         XSize=1
         ID="FiltersBox"
         ListItemsPerPage=8

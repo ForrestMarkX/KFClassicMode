@@ -24,17 +24,17 @@ function InitMenu()
 
 function ButtonClicked( KFGUI_Button Sender )
 {
-	switch( Sender.ID )
-	{
-	case 'AddMut':
+    switch( Sender.ID )
+    {
+    case 'AddMut':
         if( MutatorFrame.SelectedIndex != -1 )
             MutatorFrame.DoubleClickedItem(MutatorFrame.SelectedIndex, false, 0, 0);
-		break;
-	case 'RemoveMut':
+        break;
+    case 'RemoveMut':
         if( EMutatorFrame.SelectedIndex != -1 )
             EMutatorFrame.DoubleClickedItem(EMutatorFrame.SelectedIndex, false, 0, 0);
-		break;
-	}
+        break;
+    }
 }
 
 defaultproperties
@@ -58,34 +58,34 @@ defaultproperties
     End Object
     Components.Add(DescriptionText)
     
-	Begin Object Class=KFGUI_Button Name=AddMutatorButton
-		ID="AddMut"
-		ButtonText=">>>"
-		XPosition=0.425
-		YPosition=0.375
-		XSize=0.15
-		YSize=0.05
-		OnClickLeft=ButtonClicked
-		OnClickRight=ButtonClicked
-	End Object
+    Begin Object Class=KFGUI_Button Name=AddMutatorButton
+        ID="AddMut"
+        ButtonText=">>>"
+        XPosition=0.425
+        YPosition=0.375
+        XSize=0.15
+        YSize=0.05
+        OnClickLeft=ButtonClicked
+        OnClickRight=ButtonClicked
+    End Object
     Components.Add(AddMutatorButton)
     
-	Begin Object Class=KFGUI_Button Name=RemoveMutatorButton
-		ID="RemoveMut"
-		ButtonText="<<<"
-		XPosition=0.425
-		YPosition=0.425
-		XSize=0.15
-		YSize=0.05
-		OnClickLeft=ButtonClicked
-		OnClickRight=ButtonClicked
-	End Object
+    Begin Object Class=KFGUI_Button Name=RemoveMutatorButton
+        ID="RemoveMut"
+        ButtonText="<<<"
+        XPosition=0.425
+        YPosition=0.425
+        XSize=0.15
+        YSize=0.05
+        OnClickLeft=ButtonClicked
+        OnClickRight=ButtonClicked
+    End Object
     Components.Add(RemoveMutatorButton)
     
     Begin Object Class=UIR_MutatorList Name=MutatorFrame
         XPosition=0.025
         YPosition=0.05
-		YSize=0.75
+        YSize=0.75
         XSize=0.25
         EdgeSize(2)=-20
         WindowTitle="Avaliable Mutators"
@@ -97,7 +97,7 @@ defaultproperties
     Begin Object Class=UIR_EnabledMutatorList Name=EMutatorFrame
         XPosition=0.725
         YPosition=0.05
-		YSize=0.75
+        YSize=0.75
         XSize=0.25
         EdgeSize(2)=-20
         WindowTitle="Enabled Mutators"

@@ -38,8 +38,8 @@ function FindMutators()
     local KFMutatorSummary Summary;
     
     GameResourceDS = KFUIDataStore_GameResource(class'UIRoot'.static.StaticResolveDataStore(class'KFUIDataStore_GameResource'.default.Tag));
-	if ( GameResourceDS != None && GameResourceDS.GetResourceProviders('Mutators', MutatorProviders) )
-	{
+    if ( GameResourceDS != None && GameResourceDS.GetResourceProviders('Mutators', MutatorProviders) )
+    {
         for (i = 0; i < MutatorProviders.Length; i++)
         {
             Summary = KFMutatorSummary(MutatorProviders[i]);
