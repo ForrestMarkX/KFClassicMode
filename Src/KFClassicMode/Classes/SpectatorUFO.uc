@@ -13,18 +13,18 @@ replication
 
 simulated function PostBeginPlay()
 {
-	local rotator R;
+    local rotator R;
     local ClientPerkRepLink RepLink;
     
     Super.PostBeginPlay();
     
-	R.Pitch = Rand(2672);
-	R.Yaw = Rand(65536);
-	SetRotation(R);
+    R.Pitch = Rand(2672);
+    R.Yaw = Rand(65536);
+    SetRotation(R);
     
-	RandOffset.X = FRand()*40.f-20.f;
-	RandOffset.Y = FRand()*40.f-20.f;
-	RandOffset.Z = FRand()*25.f+10.f;
+    RandOffset.X = FRand()*40.f-20.f;
+    RandOffset.Y = FRand()*40.f-20.f;
+    RandOffset.Z = FRand()*25.f+10.f;
     RotationRate.Yaw = 8192+Rand(32768);
     
     RepLink = class'ClientPerkRepLink'.static.FindContentRep(WorldInfo);
@@ -96,12 +96,12 @@ function SetPlayerOwner(PlayerController C)
 
 defaultproperties
 {
-	Begin Object Class=StaticMeshComponent Name=StaticMeshComponent0
+    Begin Object Class=StaticMeshComponent Name=StaticMeshComponent0
         StaticMesh=StaticMesh'KFClassicMode_Assets.UFO.UFO_SM'
-	End Object
-	CollisionComponent=StaticMeshComponent0
-	StaticMeshComponent=StaticMeshComponent0
-	Components.Add(StaticMeshComponent0)
+    End Object
+    CollisionComponent=StaticMeshComponent0
+    StaticMeshComponent=StaticMeshComponent0
+    Components.Add(StaticMeshComponent0)
     
     bUpdateSimulatedPosition=true
     RemoteRole=ROLE_SimulatedProxy

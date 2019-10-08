@@ -26,30 +26,29 @@ simulated function KFProjectile SpawnProjectile( class<KFProjectile> KFProjClass
     AimRot = rotator(AimDir);
     for (i = 0; i < GetNumProjectilesToFire(CurrentFireMode); i++)
     {
-        Super.SpawnProjectile(KFProjClass, RealStartLoc, vector(AddMultiShotSpread(AimRot, i)));
+        Super.SpawnProjectile(KFProjClass, RealStartLoc, vector(AddMultiShotSpread(AimRot, Spread[CurrentFireMode], i)));
     }
 
     return None;
 }
 
-simulated function rotator AddMultiShotSpread( rotator BaseAim, byte PelletNum )
+static function rotator AddMultiShotSpread( rotator BaseAim, float CurrentSpread, byte PelletNum )
 {
-    local vector X, Y, Z;
-    local float CurrentSpread, RandY, RandZ;
+	local vector X, Y, Z;
+	local float RandY, RandZ;
 
-    CurrentSpread = Spread[CurrentFireMode];
-    if (CurrentSpread == 0)
-    {
-        return BaseAim;
-    }
-    else
-    {
-        // Add in any spread.
-        GetAxes(BaseAim, X, Y, Z);
-        RandY = PelletSpread[PelletNum].Y * RandRange( 0.5f, 1.5f );
-        RandZ = PelletSpread[PelletNum].X * RandRange( 0.5f, 1.5f );
-        return rotator(X + RandY * CurrentSpread * Y + RandZ * CurrentSpread * Z);
-    }
+	if (CurrentSpread == 0)
+	{
+		return BaseAim;
+	}
+	else
+	{
+		// Add in any spread.
+		GetAxes(BaseAim, X, Y, Z);
+		RandY = default.PelletSpread[PelletNum].Y * RandRange( 0.5f, 1.5f );
+		RandZ = default.PelletSpread[PelletNum].X * RandRange( 0.5f, 1.5f );
+		return rotator(X + RandY * CurrentSpread * Y + RandZ * CurrentSpread * Z);
+	}
 }
 
 function HandleWeaponShotTaken( byte FireMode )

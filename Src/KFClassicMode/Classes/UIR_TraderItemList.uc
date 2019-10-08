@@ -304,7 +304,7 @@ defaultproperties
     EdgeSize(2)=-18
     EdgeSize(3)=-55
     
-    Begin Object class=KFGUI_CategoryList Name=SaleItemBox
+    Begin Object class=KFGUI_ComponentList Name=SaleItemBox
         ID="SaleItemBox"
         ListItemsPerPage=10
     End Object

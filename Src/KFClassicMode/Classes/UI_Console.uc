@@ -33,10 +33,10 @@ function OutputText(coerce string Text)
 
 function bool InputKey( int ControllerId, name Key, EInputEvent Event, float AmountDepressed = 1.f, bool bGamepad = FALSE )
 {
-	local PlayerController PC;
+    local PlayerController PC;
 
-	if ( Event == IE_Pressed )
-	{
+    if ( Event == IE_Pressed )
+    {
         if( bCaptureKeyInput )
         {
             if( Key == 'Up' )
@@ -73,23 +73,23 @@ function bool InputKey( int ControllerId, name Key, EInputEvent Event, float Amo
             }
         }
     
-		if(Key == 'F10')
-		{
-			foreach class'Engine'.static.GetCurrentWorldInfo().LocalPlayerControllers(class'PlayerController', PC)
-			{
-				PC.ForceDisconnect();
-			}
-		}
+        if(Key == 'F10')
+        {
+            foreach class'Engine'.static.GetCurrentWorldInfo().LocalPlayerControllers(class'PlayerController', PC)
+            {
+                PC.ForceDisconnect();
+            }
+        }
 
-		if ( Key == ConsoleKey )
-		{
+        if ( Key == ConsoleKey )
+        {
             bCaptureKeyInput = true;
             class'KF2GUIController'.static.GetGUIController(GamePlayers[0].Actor).OpenMenu(class'UI_ConsoleMenu');
-			return true;
-		}
-	}
+            return true;
+        }
+    }
 
-	return false;
+    return false;
 }
 
 function bool InputChar( int ControllerId, string Unicode )

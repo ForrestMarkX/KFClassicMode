@@ -149,8 +149,8 @@ function CheckLobbyRefresh()
         return;
     
     KFGRI.GetKFPRIArray(PRIList);
-	if ( PRIList.Length <= 0 )
-	 	return;
+    if ( PRIList.Length <= 0 )
+         return;
         
     if( KFPRIArray.Length != PRIList.Length )
     {

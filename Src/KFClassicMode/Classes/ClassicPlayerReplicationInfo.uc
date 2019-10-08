@@ -235,10 +235,10 @@ simulated function VOIPStatusChanged( PlayerReplicationInfo Talker, bool bIsTalk
             HUD.VOIPEventTriggered(Talker, bIsTalking);
         }
         
-		if( ClassicPlayerController(KFPC).LobbyMenu != None )
-		{
-			ClassicPlayerController(KFPC).LobbyMenu.UpdateVOIP(Talker, bIsTalking);
-		}
+        if( ClassicPlayerController(KFPC).LobbyMenu != None )
+        {
+            ClassicPlayerController(KFPC).LobbyMenu.UpdateVOIP(Talker, bIsTalking);
+        }
     }
 }
 
@@ -697,14 +697,14 @@ reliable client function HideKickVote()
 
 simulated function Texture2D GetCurrentIconToDisplay()
 {
-	if( CurrentVoiceCommsRequest == VCT_NONE )
-	{
+    if( CurrentVoiceCommsRequest == VCT_NONE )
+    {
         if( class<ClassicPerk_Base>(CurrentPerkClass) != None )
             return class<ClassicPerk_Base>(CurrentPerkClass).static.GetCurrentPerkIcon(CurrentPerkLevel);
         else return Super.GetCurrentIconToDisplay();
-	}
+    }
 
-	return class'KFLocalMessage_VoiceComms'.default.VoiceCommsIcons[CurrentVoiceCommsRequest];
+    return class'KFLocalMessage_VoiceComms'.default.VoiceCommsIcons[CurrentVoiceCommsRequest];
 }
 
 defaultproperties

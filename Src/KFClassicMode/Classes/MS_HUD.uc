@@ -11,21 +11,21 @@ var float ScaledBorderSize;
 
 final static function string GetGameInfoName()
 {
-	local array<string> GamemModeStringArray;
+    local array<string> GamemModeStringArray;
 
-	ParseStringIntoArray(KFGameEngine(Class'Engine'.static.GetEngine()).TransitionGameType, GamemModeStringArray, ".", true);
+    ParseStringIntoArray(KFGameEngine(Class'Engine'.static.GetEngine()).TransitionGameType, GamemModeStringArray, ".", true);
 
-	if( GamemModeStringArray.Length > 0 )
-	{
-		if(Caps(GamemModeStringArray[0]) == Caps("KFGameContent"))
-		{
-			return Localize(GamemModeStringArray[1], "GameName", "KFGameContent" );
-		}
-		else if( GamemModeStringArray.Length > 1 )
-		{
-			return GamemModeStringArray[1];
-		}
-	}
+    if( GamemModeStringArray.Length > 0 )
+    {
+        if(Caps(GamemModeStringArray[0]) == Caps("KFGameContent"))
+        {
+            return Localize(GamemModeStringArray[1], "GameName", "KFGameContent" );
+        }
+        else if( GamemModeStringArray.Length > 1 )
+        {
+            return GamemModeStringArray[1];
+        }
+    }
     
     return "Unknown Game";
 }
@@ -111,16 +111,16 @@ final function RenderProgress()
 
 static final function Texture2D GetMapImage(string MapName)
 {
-	local KFMapSummary MapData;
+    local KFMapSummary MapData;
 
-	MapData = class'KFUIDataStore_GameResource'.static.GetMapSummaryFromMapName(MapName);
-	if ( MapData != None )
-		return Texture2D(DynamicLoadObject(MapData.ScreenshotPathName, class'Texture2D'));
+    MapData = class'KFUIDataStore_GameResource'.static.GetMapSummaryFromMapName(MapName);
+    if ( MapData != None )
+        return Texture2D(DynamicLoadObject(MapData.ScreenshotPathName, class'Texture2D'));
     else
     {
-    	MapData = class'KFUIDataStore_GameResource'.static.GetMapSummaryFromMapName("KF-Default");
-    	if ( MapData != None )
-			return Texture2D(DynamicLoadObject(MapData.ScreenshotPathName, class'Texture2D'));	
+        MapData = class'KFUIDataStore_GameResource'.static.GetMapSummaryFromMapName("KF-Default");
+        if ( MapData != None )
+            return Texture2D(DynamicLoadObject(MapData.ScreenshotPathName, class'Texture2D'));    
     }
     
     return None;

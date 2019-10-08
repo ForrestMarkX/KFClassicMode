@@ -417,16 +417,16 @@ final function DrawPingBars( Canvas C, float YOffset, float XOffset, float W, fl
     local float PingMul, BarW, BarH, BaseH, XPos, YPos;
     local byte i;
     
-	PingMul = 1.f - FClamp(Max(Ping - IdealPing, 1) / MaxPing, 0.f, 1.f);
-	BarW = W / PingBars;
-	BaseH = H / PingBars;
+    PingMul = 1.f - FClamp(Max(Ping - IdealPing, 1) / MaxPing, 0.f, 1.f);
+    BarW = W / PingBars;
+    BaseH = H / PingBars;
 
-	PingColor.R = (1.f - PingMul) * 255;
-	PingColor.G = PingMul * 255;
+    PingColor.R = (1.f - PingMul) * 255;
+    PingColor.G = PingMul * 255;
 
     for(i=1; i<PingBars+1; i++)
     {
-		BarH = BaseH * i;
+        BarH = BaseH * i;
         XPos = XOffset + ((i - 1) * BarW);
         YPos = YOffset + (H - BarH);
 
@@ -434,16 +434,16 @@ final function DrawPingBars( Canvas C, float YOffset, float XOffset, float W, fl
         C.SetDrawColor(20, 20, 20, 255);
         Owner.CurrentStyle.DrawWhiteBox(BarW,BarH);
 
-		if( i == 1 || PingMul >= i / PingBars )
+        if( i == 1 || PingMul >= i / PingBars )
         {
             C.SetPos(XPos,YPos);
             C.DrawColor = PingColor;
             Owner.CurrentStyle.DrawWhiteBox(BarW,BarH);
-		}
+        }
 
         C.SetDrawColor(80, 80, 80, 255);
         Owner.CurrentStyle.DrawBoxHollow(XPos,YPos,BarW,BarH,1);
-	}
+    }
 }
 
 final function DrawPerkWithStars( Canvas C, float X, float Y, float Scale, int Stars, Texture PerkIcon, Texture StarIcon )

@@ -333,7 +333,6 @@ var float ScaledBorderSize;
 var transient KF2GUIController GUIController;
 var transient GUIStyleBase GUIStyle;
 
-
 var array<KFGUI_Base> HUDWidgets;
 
 var transient vector PLCameraLoc,PLCameraDir;
@@ -507,52 +506,52 @@ simulated function CheckForWeaponPickup()
 
 simulated function ClassicDroppedPickup GetWeaponPickup()
 {
-	local ClassicDroppedPickup KFDP, BestKFDP;
-	local int KFDPCount, ZedCount;
-	local vector EndTrace, HitLocation, HitNormal;
-	local Actor HitActor;
-	local float DistSq, BestDistSq;
-	local KFPawn_Monster KFPM;
+    local ClassicDroppedPickup KFDP, BestKFDP;
+    local int KFDPCount, ZedCount;
+    local vector EndTrace, HitLocation, HitNormal;
+    local Actor HitActor;
+    local float DistSq, BestDistSq;
+    local KFPawn_Monster KFPM;
 
-	if (KFPlayerOwner == None || !KFPlayerOwner.WorldInfo.GRI.bMatchHasBegun)
-		return None;
+    if (KFPlayerOwner == None || !KFPlayerOwner.WorldInfo.GRI.bMatchHasBegun)
+        return None;
 
-	EndTrace = PLCameraLoc + PLCameraDir * MaxWeaponPickupDist;
-	HitActor = KFPlayerOwner.Trace(HitLocation, HitNormal, EndTrace, PLCameraLoc);
-	
-	if (HitActor == None)
-		return None;
-		
-	foreach KFPlayerOwner.CollidingActors(class'KFPawn_Monster', KFPM, ZedScanRadius, HitLocation)
-	{
-		if (KFPM.IsAliveAndWell())
-			return None;
-		
-		ZedCount++;
-		if (ZedCount > 20)
-			return None;
-	}
-		
-	BestDistSq = WeaponPickupScanRadius * WeaponPickupScanRadius;
+    EndTrace = PLCameraLoc + PLCameraDir * MaxWeaponPickupDist;
+    HitActor = KFPlayerOwner.Trace(HitLocation, HitNormal, EndTrace, PLCameraLoc);
+    
+    if (HitActor == None)
+        return None;
+        
+    foreach KFPlayerOwner.CollidingActors(class'KFPawn_Monster', KFPM, ZedScanRadius, HitLocation)
+    {
+        if (KFPM.IsAliveAndWell())
+            return None;
+        
+        ZedCount++;
+        if (ZedCount > 20)
+            return None;
+    }
+        
+    BestDistSq = WeaponPickupScanRadius * WeaponPickupScanRadius;
 
-	foreach KFPlayerOwner.CollidingActors(class'ClassicDroppedPickup', KFDP, WeaponPickupScanRadius, HitLocation)
-	{
-		if (KFDP.Velocity.Z == 0 && ClassIsChildOf(KFDP.InventoryClass, class'KFWeapon'))
-		{
-			DistSq = VSizeSq(KFDP.Location - HitLocation);
-			if (DistSq < BestDistSq)
-			{
-				BestKFDP = KFDP;
-				BestDistSq = DistSq;
-			}
-		}
+    foreach KFPlayerOwner.CollidingActors(class'ClassicDroppedPickup', KFDP, WeaponPickupScanRadius, HitLocation)
+    {
+        if (KFDP.Velocity.Z == 0 && ClassIsChildOf(KFDP.InventoryClass, class'KFWeapon'))
+        {
+            DistSq = VSizeSq(KFDP.Location - HitLocation);
+            if (DistSq < BestDistSq)
+            {
+                BestKFDP = KFDP;
+                BestDistSq = DistSq;
+            }
+        }
 
-		KFDPCount++;
-		if (KFDPCount > 2)
-			break;
-	}
+        KFDPCount++;
+        if (KFDPCount > 2)
+            break;
+    }
 
-	return BestKFDP;
+    return BestKFDP;
 }
 
 function PostRender()
@@ -597,8 +596,8 @@ function PostRender()
     
     Super.PostRender();
     
-	PlayerOwner.GetPlayerViewPoint(PLCameraLoc,PLCameraRot);
-	PLCameraDir = vector(PLCameraRot);
+    PlayerOwner.GetPlayerViewPoint(PLCameraLoc,PLCameraRot);
+    PLCameraDir = vector(PLCameraRot);
     
     if( ClassicPlayerOwner.bIsSpectating )
     {
@@ -640,46 +639,46 @@ function RenderVisibleSpectatorInfo()
     TY = BoxY + (BoxH/2) - (YL/2) - 8;
     
     Canvas.SetPos(TX,TY);
-	Canvas.SetDrawColor(255,255,255,255);
+    Canvas.SetDrawColor(255,255,255,255);
     Canvas.DrawText(UseKeyName,, FontScalar, FontScalar);
     
-	if( ClassicPlayerOwner.NextFireTimer>WorldInfo.TimeSeconds )
-	{
+    if( ClassicPlayerOwner.NextFireTimer>WorldInfo.TimeSeconds )
+    {
         Canvas.SetDrawColor(255,0,0,255);
         GUIStyle.DrawWhiteBox((ClassicPlayerOwner.NextFireTimer-WorldInfo.TimeSeconds)*ClassicPlayerOwner.NeqFireTime, 8);
-	}
+    }
 }
 
 delegate int SortRenderDistance(KFPawn_Human PawnA, KFPawn_Human PawnB)
 {
-	return VSizeSq(PawnA.Location - PlayerOwner.Location) < VSizeSq(PawnB.Location - PlayerOwner.Location) ? -1 : 0;
+    return VSizeSq(PawnA.Location - PlayerOwner.Location) < VSizeSq(PawnB.Location - PlayerOwner.Location) ? -1 : 0;
 }
 
 function DrawHUD()
 {
-	local KFPawn_Human KFPH;
-	local KFPawn_Scripted KFPS;
-	local vector PlayerPartyInfoLocation;
+    local KFPawn_Human KFPH;
+    local KFPawn_Scripted KFPS;
+    local vector PlayerPartyInfoLocation;
     local array<PlayerReplicationInfo> VisibleHumanPlayers;
     local array<sHiddenHumanPawnInfo> HiddenHumanPlayers;
-	local float ThisDot;
-	local vector TargetLocation;
-	local Actor LocActor;
+    local float ThisDot;
+    local vector TargetLocation;
+    local Actor LocActor;
     local FScriptedPawnCache SPawnCache;
     local int i;
 
     if( KFPlayerOwner != none && KFPlayerOwner.Pawn != None && KFPlayerOwner.Pawn.Weapon != None )
     {
-    	KFPlayerOwner.Pawn.Weapon.DrawHUD( self, Canvas );
+        KFPlayerOwner.Pawn.Weapon.DrawHUD( self, Canvas );
     }
 
-	Super(HUD).DrawHUD();
+    Super(HUD).DrawHUD();
     
     Canvas.EnableStencilTest(true);
     
-	if( WeaponPickup != None )
+    if( WeaponPickup != None )
     {
-		DrawWeaponPickupInfo();
+        DrawWeaponPickupInfo();
     }
     
     if( bEnableDamagePopups )
@@ -727,10 +726,10 @@ function DrawHUD()
         KFGRI = KFGameReplicationInfo( WorldInfo.GRI );
     }
 
-	if( KFPlayerOwner == None )
-	{
-		return;
-	}
+    if( KFPlayerOwner == None )
+    {
+        return;
+    }
     
     if( !KFPlayerOwner.bCinematicMode )
     {
@@ -2574,7 +2573,7 @@ function DrawImportantHealthBar(float X, float Y, float W, float H, string S, fl
     IconBoxX = X;
     IconBoxY = Y;
     
-    BoxColor = MakeColor(60, 60, 60, 255);
+    BoxColor = MakeColor(30, 30, 30, 255);
     GUIStyle.DrawRoundedBoxEx(BorderScale, IconBoxX, IconBoxY, MainBoxH, MainBoxH, BoxColor, true, false, true, false);
     
     X += MainBoxH;
@@ -2713,7 +2712,7 @@ function DrawBossHealthBars()
         if( ShieldHealthPct > 0.f && ZEDInterface.GetShieldPSC() != None )
         {
             ShieldW = (BarW-(BarH * 2)) * ShieldHealthPct;
-            ShieldH = BarH * 0.4;
+            ShieldH = BarH * 0.25;
             ShieldX = MainBarX + (BarH * 2);
             ShieldY = MainBarY;
             
@@ -3218,50 +3217,50 @@ function Texture GetSecondaryAmmoIcon(KFWeapon Wep)
 
 function byte DrawToDistance(Actor A, optional float StartAlpha=255.f, optional float MinAlpha=90.f)
 {
-	local float Dist, fZoom;
+    local float Dist, fZoom;
 
-	Dist = VSize(A.Location - PLCameraLoc);
+    Dist = VSize(A.Location - PLCameraLoc);
     if ( Dist <= HealthBarFullVisDist || PlayerOwner.PlayerReplicationInfo.bOnlySpectator )
         fZoom = 1.0;
     else fZoom = FMax(1.0 - (Dist - HealthBarFullVisDist) / (HealthBarCutoffDist - HealthBarFullVisDist), 0.0);
-	
-	return Clamp(StartAlpha * fZoom, MinAlpha, StartAlpha);
+    
+    return Clamp(StartAlpha * fZoom, MinAlpha, StartAlpha);
 }
 
 simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
 {
-	local float Percentage;
-	local float BarHeight, BarLength;
-	local vector ScreenPos, TargetLocation;
-	local KFPlayerReplicationInfo KFPRI;
-	local float FontScale;
-	local float ResModifier;
-	local float PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, PerkIconXL, BarY;
-	local color CurrentArmorColor, CurrentHealthColor;
+    local float Percentage;
+    local float BarHeight, BarLength;
+    local vector ScreenPos, TargetLocation;
+    local KFPlayerReplicationInfo KFPRI;
+    local float FontScale;
+    local float ResModifier;
+    local float PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, PerkIconXL, BarY;
+    local color CurrentArmorColor, CurrentHealthColor;
     local byte FadeAlpha, PerkLevel;
     local class<ClassicPerk_Base> PerkClass;
 
-	ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
-	KFPRI = KFPlayerReplicationInfo(KFPH.PlayerReplicationInfo);
+    ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
+    KFPRI = KFPlayerReplicationInfo(KFPH.PlayerReplicationInfo);
 
-	if( KFPRI == None )
-		return false;
+    if( KFPRI == None )
+        return false;
 
-	BarLength = FMin(PlayerStatusBarLengthMax * (Canvas.ClipX / 1024.f), PlayerStatusBarLengthMax) * ResModifier;
-	BarHeight = FMin(8.f * (Canvas.ClipX / 1024.f), 8.f) * ResModifier;
+    BarLength = FMin(PlayerStatusBarLengthMax * (Canvas.ClipX / 1024.f), PlayerStatusBarLengthMax) * ResModifier;
+    BarHeight = FMin(8.f * (Canvas.ClipX / 1024.f), 8.f) * ResModifier;
 
-	TargetLocation = KFPH.Mesh.GetPosition() + ( KFPH.CylinderComponent.CollisionHeight * vect(0,0,2.5f) );
-	ScreenPos = Canvas.Project( TargetLocation );
-	if( ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY )
-		return false;
+    TargetLocation = KFPH.Mesh.GetPosition() + ( KFPH.CylinderComponent.CollisionHeight * vect(0,0,2.5f) );
+    ScreenPos = Canvas.Project( TargetLocation );
+    if( ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY )
+        return false;
         
     FadeAlpha = DrawToDistance(KFPH);
 
-	//Draw player name (Top)
+    //Draw player name (Top)
     Canvas.Font = GUIStyle.PickFont(FontScale);
     FontScale *= FriendlyHudScale;
 
-	//Player name text
+    //Player name text
     Canvas.DrawColor = WhiteColor;
     Canvas.DrawColor.A = FadeAlpha;
     GUIStyle.DrawTextShadow(KFPRI.PlayerName, ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y - 3.5f, 1, FontScale);
@@ -3288,120 +3287,120 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
     
     BarY = ScreenPos.Y + BarHeight + (36 * FontScale * ResModifier);
         
-	//Draw armor bar
-	Percentage = FMin(float(KFPH.Armor) / float(KFPH.MaxArmor), 100);
+    //Draw armor bar
+    Percentage = FMin(float(KFPH.Armor) / float(KFPH.MaxArmor), 100);
     DrawPlayerInfo(KFPH, Percentage, BarLength, BarHeight, ScreenPos.X - (BarLength * 0.5f), BarY, CurrentArmorColor, PlayerInfoType == INFO_CLASSIC);
 
     if( PlayerInfoType == INFO_CLASSIC )
         BarY += BarHeight + 5;
     else BarY += BarHeight;
     
-	//Draw health bar
-	Percentage = FMin(float(KFPH.Health) / float(KFPH.HealthMax), 100);
+    //Draw health bar
+    Percentage = FMin(float(KFPH.Health) / float(KFPH.HealthMax), 100);
     DrawPlayerInfo(KFPH, Percentage, BarLength, BarHeight, ScreenPos.X - (BarLength * 0.5f), BarY, CurrentHealthColor, PlayerInfoType == INFO_CLASSIC, true);
 
     BarY += BarHeight;
     
     PerkClass = class<ClassicPerk_Base>(KFPRI.CurrentPerkClass);
-	if( PerkClass == None )
-		return false;
+    if( PerkClass == None )
+        return false;
         
     PerkLevel = KFPRI.GetActivePerkLevel();
 
-	//Draw perk level and name text
+    //Draw perk level and name text
     Canvas.DrawColor = WhiteColor;
     Canvas.DrawColor.A = FadeAlpha;
     GUIStyle.DrawTextShadow(PerkLevel@PerkClass.static.GetPerkName(), ScreenPos.X - (BarLength * 0.5f), BarY, 1, FontScale);
 
-	// drop shadow for perk icon
+    // drop shadow for perk icon
     Canvas.DrawColor = PlayerBarShadowColor;
     Canvas.DrawColor.A = FadeAlpha;
-	PerkIconXL = PlayerStatusIconSize * ResModifier;
-	PerkIconPosX = ScreenPos.X - (BarLength * 0.5f) - PerkIconXL + 1;
-	PerkIconPosY = ScreenPos.Y + (PerkIconXL/2) - (BarHeight/2) + (PlayerInfoType == INFO_CLASSIC ? 6 : 1);
-	SupplyIconPosX = ScreenPos.X + (BarLength * 0.5f) + 1;
-	SupplyIconPosY = PerkIconPosY + 4 * ResModifier;
-	DrawPerkIcons(KFPH, PerkIconXL, PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, true);
+    PerkIconXL = PlayerStatusIconSize * ResModifier;
+    PerkIconPosX = ScreenPos.X - (BarLength * 0.5f) - PerkIconXL + 1;
+    PerkIconPosY = ScreenPos.Y + (PerkIconXL/2) - (BarHeight/2) + (PlayerInfoType == INFO_CLASSIC ? 6 : 1);
+    SupplyIconPosX = ScreenPos.X + (BarLength * 0.5f) + 1;
+    SupplyIconPosY = PerkIconPosY + 4 * ResModifier;
+    DrawPerkIcons(KFPH, PerkIconXL, PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, true);
 
-	//draw perk icon
+    //draw perk icon
     Canvas.DrawColor = PerkClass.static.GetPerkColor(PerkLevel);
     Canvas.DrawColor.A = FadeAlpha;
-	PerkIconPosX = ScreenPos.X - (BarLength * 0.5f) - PerkIconXL;
-	PerkIconPosY = ScreenPos.Y + (PerkIconXL/2) - (BarHeight/2) + (PlayerInfoType == INFO_CLASSIC ? 5 : 0);
-	SupplyIconPosX = ScreenPos.X + (BarLength * 0.5f);
-	SupplyIconPosY = PerkIconPosY + 4 * ResModifier;
-	DrawPerkIcons(KFPH, PerkIconXL, PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, false);
+    PerkIconPosX = ScreenPos.X - (BarLength * 0.5f) - PerkIconXL;
+    PerkIconPosY = ScreenPos.Y + (PerkIconXL/2) - (BarHeight/2) + (PlayerInfoType == INFO_CLASSIC ? 5 : 0);
+    SupplyIconPosX = ScreenPos.X + (BarLength * 0.5f);
+    SupplyIconPosY = PerkIconPosY + 4 * ResModifier;
+    DrawPerkIcons(KFPH, PerkIconXL, PerkIconPosX, PerkIconPosY, SupplyIconPosX, SupplyIconPosY, false);
 
-	return true;
+    return true;
 }
 
 simulated function DrawPerkIcons(KFPawn_Human KFPH, float PerkIconXL, float PerkIconPosX, float PerkIconPosY, float SupplyIconPosX, float SupplyIconPosY, bool bDropShadow)
 {
-	local byte PrestigeLevel;
-	local KFPlayerReplicationInfo KFPRI;
-	local color TempColor;
-	local float ResModifier;
+    local byte PrestigeLevel;
+    local KFPlayerReplicationInfo KFPRI;
+    local color TempColor;
+    local float ResModifier;
     local byte FadeAlpha;
 
-	KFPRI = KFPlayerReplicationInfo(KFPH.PlayerReplicationInfo);
-	if( KFPRI == None )
-		return;
+    KFPRI = KFPlayerReplicationInfo(KFPH.PlayerReplicationInfo);
+    if( KFPRI == None )
+        return;
 
     if( class<ClassicPerk_Base>(KFPRI.CurrentPerkClass) == None )
         return;
         
-	PrestigeLevel = KFPRI.GetActivePerkPrestigeLevel();
-	ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
+    PrestigeLevel = KFPRI.GetActivePerkPrestigeLevel();
+    ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
     FadeAlpha = Canvas.DrawColor.A;
 
-	if (KFPRI.CurrentVoiceCommsRequest == VCT_NONE && KFPRI.CurrentPerkClass != none && PrestigeLevel > 0)
-	{
-		Canvas.SetPos(PerkIconPosX, PerkIconPosY);
-		Canvas.DrawTile(KFPRI.CurrentPerkClass.default.PrestigeIcons[PrestigeLevel - 1], PerkIconXL, PerkIconXL, 0, 0, 256, 256);
-	}
+    if (KFPRI.CurrentVoiceCommsRequest == VCT_NONE && KFPRI.CurrentPerkClass != none && PrestigeLevel > 0)
+    {
+        Canvas.SetPos(PerkIconPosX, PerkIconPosY);
+        Canvas.DrawTile(KFPRI.CurrentPerkClass.default.PrestigeIcons[PrestigeLevel - 1], PerkIconXL, PerkIconXL, 0, 0, 256, 256);
+    }
 
-	if (PrestigeLevel > 0)
-	{
-		Canvas.SetPos(PerkIconPosX + (PerkIconXL * (1 - PrestigeIconScale)) / 2, PerkIconPosY + PerkIconXL * 0.05f);
-		Canvas.DrawTile(KFPRI.GetCurrentIconToDisplay(), PerkIconXL * PrestigeIconScale, PerkIconXL * PrestigeIconScale, 0, 0, 256, 256);
-	}
-	else
-	{
-		Canvas.SetPos(PerkIconPosX, PerkIconPosY);
-		Canvas.DrawTile(KFPRI.GetCurrentIconToDisplay(), PerkIconXL, PerkIconXL, 0, 0, 256, 256);
-	}
+    if (PrestigeLevel > 0)
+    {
+        Canvas.SetPos(PerkIconPosX + (PerkIconXL * (1 - PrestigeIconScale)) / 2, PerkIconPosY + PerkIconXL * 0.05f);
+        Canvas.DrawTile(KFPRI.GetCurrentIconToDisplay(), PerkIconXL * PrestigeIconScale, PerkIconXL * PrestigeIconScale, 0, 0, 256, 256);
+    }
+    else
+    {
+        Canvas.SetPos(PerkIconPosX, PerkIconPosY);
+        Canvas.DrawTile(KFPRI.GetCurrentIconToDisplay(), PerkIconXL, PerkIconXL, 0, 0, 256, 256);
+    }
 
-	if (KFPRI.PerkSupplyLevel > 0 && KFPRI.CurrentPerkClass.static.GetInteractIcon() != none)
-	{
-		if (!bDropShadow)
-		{
-			if (KFPRI.PerkSupplyLevel == 2)
-			{
-				if (KFPRI.bPerkPrimarySupplyUsed && KFPRI.bPerkSecondarySupplyUsed)
-				{
-					TempColor = SupplierActiveColor;
-				}
-				else if (KFPRI.bPerkPrimarySupplyUsed || KFPRI.bPerkSecondarySupplyUsed)
-				{
-					TempColor = SupplierHalfUsableColor;
-				}
-				else
-				{
-					TempColor = SupplierUsableColor;
-				}
-			}
-			else if (KFPRI.PerkSupplyLevel == 1)
-			{
-				TempColor = KFPRI.bPerkPrimarySupplyUsed ? SupplierActiveColor : SupplierUsableColor;
-			}
+    if (KFPRI.PerkSupplyLevel > 0 && KFPRI.CurrentPerkClass.static.GetInteractIcon() != none)
+    {
+        if (!bDropShadow)
+        {
+            if (KFPRI.PerkSupplyLevel == 2)
+            {
+                if (KFPRI.bPerkPrimarySupplyUsed && KFPRI.bPerkSecondarySupplyUsed)
+                {
+                    TempColor = SupplierActiveColor;
+                }
+                else if (KFPRI.bPerkPrimarySupplyUsed || KFPRI.bPerkSecondarySupplyUsed)
+                {
+                    TempColor = SupplierHalfUsableColor;
+                }
+                else
+                {
+                    TempColor = SupplierUsableColor;
+                }
+            }
+            else if (KFPRI.PerkSupplyLevel == 1)
+            {
+                TempColor = KFPRI.bPerkPrimarySupplyUsed ? SupplierActiveColor : SupplierUsableColor;
+            }
 
-			Canvas.DrawColor = TempColor;
+            Canvas.DrawColor = TempColor;
             Canvas.DrawColor.A = FadeAlpha;
-		}
+        }
 
-		Canvas.SetPos(SupplyIconPosX, SupplyIconPosY);
-		Canvas.DrawTile(KFPRI.CurrentPerkClass.static.GetInteractIcon(), (PlayerStatusIconSize * 0.75) * ResModifier, (PlayerStatusIconSize * 0.75) * ResModifier, 0, 0, 256, 256);
-	}
+        Canvas.SetPos(SupplyIconPosX, SupplyIconPosY);
+        Canvas.DrawTile(KFPRI.CurrentPerkClass.static.GetInteractIcon(), (PlayerStatusIconSize * 0.75) * ResModifier, (PlayerStatusIconSize * 0.75) * ResModifier, 0, 0, 256, 256);
+    }
 }
 
 simulated function DrawPlayerInfo( KFPawn_Human P, float BarPercentage, float BarLength, float BarHeight, float XPos, float YPos, Color BarColor, optional bool bDrawOutline, optional bool bDrawingHealth )
@@ -3421,8 +3420,8 @@ simulated function DrawPlayerInfo( KFPawn_Human P, float BarPercentage, float Ba
     }
     else DrawKFBar(BarPercentage, BarLength, BarHeight, XPos, YPos, BarColor);
     
-	if( bDrawRegenBar && bDrawingHealth && ClassicHumanPawn(P) != None && P.Health<P.HealthMax && ClassicHumanPawn(P).RepRegenHP>0 )
-	{
+    if( bDrawRegenBar && bDrawingHealth && ClassicHumanPawn(P) != None && P.Health<P.HealthMax && ClassicHumanPawn(P).RepRegenHP>0 )
+    {
         if( !bDrawOutline )
         {
             YPos += 1;
@@ -3430,14 +3429,14 @@ simulated function DrawPlayerInfo( KFPawn_Human P, float BarPercentage, float Ba
             BarHeight -= 2.0;
         }
         
-		// Draw to-regen bar.
-		XPos+=(BarLength * BarPercentage);
-		BarPercentage = FMin(float(ClassicHumanPawn(P).RepRegenHP) / float(P.HealthMax),1.f-BarPercentage);
+        // Draw to-regen bar.
+        XPos+=(BarLength * BarPercentage);
+        BarPercentage = FMin(float(ClassicHumanPawn(P).RepRegenHP) / float(P.HealthMax),1.f-BarPercentage);
 
-		Canvas.SetDrawColor(255,128,128,255);
-		Canvas.SetPos(XPos, YPos);
-		Canvas.DrawTileStretched(PlayerStatusBarBGTexture, BarLength * BarPercentage, BarHeight, 0, 0, 32, 32);
-	}
+        Canvas.SetDrawColor(255,128,128,255);
+        Canvas.SetPos(XPos, YPos);
+        Canvas.DrawTileStretched(PlayerStatusBarBGTexture, BarLength * BarPercentage, BarHeight, 0, 0, 32, 32);
+    }
 }
 
 function DrawHiddenHumanPlayerIcon( PlayerReplicationInfo PRI, vector IconWorldLocation, float NormalizedAngle)
@@ -3446,53 +3445,53 @@ function DrawHiddenHumanPlayerIcon( PlayerReplicationInfo PRI, vector IconWorldL
     local float IconSizeMult;
     local KFPlayerReplicationInfo KFPRI;
     local Texture2D PlayerIcon;
-	local float ResModifier;
+    local float ResModifier;
     local Color PerkColor, IconColor;
     local byte PerkLevel;
 
-	ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
+    ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
 
     KFPRI = KFPlayerReplicationInfo(PRI);
     if( KFPRI == None )
-    	return;
+        return;
 
-	ScreenPos = Canvas.Project(IconWorldLocation + class'KFPawn_Human'.default.CylinderComponent.CollisionHeight * vect(0, 0, 2));
+    ScreenPos = Canvas.Project(IconWorldLocation + class'KFPawn_Human'.default.CylinderComponent.CollisionHeight * vect(0, 0, 2));
 
-	IconSizeMult = (PlayerStatusIconSize * 0.8) * ResModifier;
-	ScreenPos.X -= IconSizeMult;
-	ScreenPos.Y -= IconSizeMult;
+    IconSizeMult = (PlayerStatusIconSize * 0.8) * ResModifier;
+    ScreenPos.X -= IconSizeMult;
+    ScreenPos.Y -= IconSizeMult;
 
-	if (NormalizedAngle > 0)
-	{
-		if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY )
-		{
-			if (KFPRI.CurrentVoiceCommsRequest != VCT_NONE)
+    if (NormalizedAngle > 0)
+    {
+        if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY )
+        {
+            if (KFPRI.CurrentVoiceCommsRequest != VCT_NONE)
             {
                 IconColor = WhiteColor;
                 IconColor.A = Clamp(Sin(WorldInfo.TimeSeconds * 8) * 200 + 255, 0, 255);
                 
-				ScreenPos.X = Canvas.ClipX - ScreenPos.x;
-				ScreenPos = GetClampedScreenPosition(ScreenPos);
+                ScreenPos.X = Canvas.ClipX - ScreenPos.x;
+                ScreenPos = GetClampedScreenPosition(ScreenPos);
                 
-				Canvas.DrawColor = IconColor;
-				Canvas.SetPos(ScreenPos.X - (IconSizeMult * VoiceCommsIconHighlightScale / 2), ScreenPos.Y - (IconSizeMult * VoiceCommsIconHighlightScale / 2));
-				Canvas.DrawTile(IconHighLightTexture, IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), 0, 0, 128, 128);
+                Canvas.DrawColor = IconColor;
+                Canvas.SetPos(ScreenPos.X - (IconSizeMult * VoiceCommsIconHighlightScale / 2), ScreenPos.Y - (IconSizeMult * VoiceCommsIconHighlightScale / 2));
+                Canvas.DrawTile(IconHighLightTexture, IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), 0, 0, 128, 128);
             }
-			else return;
-		}
-	}
-	else if (KFPRI.CurrentVoiceCommsRequest != VCT_NONE)
+            else return;
+        }
+    }
+    else if (KFPRI.CurrentVoiceCommsRequest != VCT_NONE)
     {
         IconColor = WhiteColor;
         IconColor.A = Clamp(Sin(WorldInfo.TimeSeconds * 8) * 200 + 255, 0, 255);
         
         ScreenPos = GetClampedScreenPosition(ScreenPos);
         
-		Canvas.DrawColor = IconColor;
-		Canvas.SetPos(ScreenPos.X - (IconSizeMult * VoiceCommsIconHighlightScale / 2), ScreenPos.Y - (IconSizeMult * VoiceCommsIconHighlightScale / 2));
-		Canvas.DrawTile(IconHighLightTexture, IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), 0, 0, 128, 128);
+        Canvas.DrawColor = IconColor;
+        Canvas.SetPos(ScreenPos.X - (IconSizeMult * VoiceCommsIconHighlightScale / 2), ScreenPos.Y - (IconSizeMult * VoiceCommsIconHighlightScale / 2));
+        Canvas.DrawTile(IconHighLightTexture, IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), IconSizeMult + (IconSizeMult * VoiceCommsIconHighlightScale), 0, 0, 128, 128);
     }
-	else return;
+    else return;
 
     PerkLevel = KFPRI.GetActivePerkLevel();
     PlayerIcon = PlayerOwner.GetTeamNum() == 0 ? KFPRI.GetCurrentIconToDisplay() : GenericHumanIconTexture;
@@ -3504,9 +3503,9 @@ function DrawHiddenHumanPlayerIcon( PlayerReplicationInfo PRI, vector IconWorldL
     }
     else PerkColor = MakeColor(255, 255, 255, 192);
 
-	Canvas.SetDrawColor(0, 0, 0, 255);
-	Canvas.SetPos(ScreenPos.X + 1, ScreenPos.Y + 1);
-	Canvas.DrawTile(PlayerIcon, IconSizeMult, IconSizeMult, 0, 0, 256, 256);
+    Canvas.SetDrawColor(0, 0, 0, 255);
+    Canvas.SetPos(ScreenPos.X + 1, ScreenPos.Y + 1);
+    Canvas.DrawTile(PlayerIcon, IconSizeMult, IconSizeMult, 0, 0, 256, 256);
 
     if( KFPRI.CurrentVoiceCommsRequest == VCT_NONE )
         Canvas.DrawColor = PerkColor;
@@ -3809,17 +3808,17 @@ function DrawDamage()
     local int i, Vel;
     local float TimeSinceHit, TextWidth, TextHeight, Sc, TextX, TextY;
     local vector HBScreenPos;
-	local string S;
+    local string S;
 
-	Canvas.Font = GUIStyle.PickFont(Sc);
-	
+    Canvas.Font = GUIStyle.PickFont(Sc);
+    
     for( i=0; i < DAMAGEPOPUP_COUNT ; i++ ) 
-	{
+    {
         TimeSinceHit = `TimeSince(DamagePopups[i].HitTime);
         if( TimeSinceHit > DamagePopupFadeOutTime || ( Normal(DamagePopups[i].HitLocation - PLCameraLoc) dot Normal(PLCameraDir) < 0.1 ) ) //don't draw if player faced back to the hit location
             continue;
             
-		S = string(DamagePopups[i].Damage);
+        S = string(DamagePopups[i].Damage);
             
         Canvas.TextSize(S,TextWidth,TextHeight,Sc,Sc);
         Vel = RenderDelta*900.f;
@@ -3850,17 +3849,17 @@ function DrawXPEarned(float X, float Y)
 {
     local int i;
     local float EndTime, TextWidth, TextHeight, Sc, FadeAlpha;
-	local string S;
+    local string S;
 
-	Canvas.Font = GUIStyle.PickFont(Sc);
-	
+    Canvas.Font = GUIStyle.PickFont(Sc);
+    
     for( i=0; i<XPEARNED_COUNT; i++ ) 
-	{
+    {
         EndTime = `RealTimeSince(XPPopups[i].StartTime);
         if( EndTime > XPFadeOutTime )
             continue;
             
-		S = "+"$string(XPPopups[i].XP)@"XP";
+        S = "+"$string(XPPopups[i].XP)@"XP";
         Canvas.TextSize(S,TextWidth,TextHeight,Sc,Sc);
 
         if( XPPopups[i].bInit )
@@ -3954,67 +3953,67 @@ function DrawSpeedMeter()
 
 function DrawMedicWeaponRecharge()
 {
-	local KFWeap_MedicBase KFWMB;
-	local float IconBaseX, IconBaseY, IconHeight, IconWidth;
-	local float IconRatioY, ChargePct, ChargeBaseY, WeaponBaseX;
-	local color ChargeColor;
-	
-	if (PlayerOwner.Pawn.InvManager == None)
-		return;
+    local KFWeap_MedicBase KFWMB;
+    local float IconBaseX, IconBaseY, IconHeight, IconWidth;
+    local float IconRatioY, ChargePct, ChargeBaseY, WeaponBaseX;
+    local color ChargeColor;
+    
+    if (PlayerOwner.Pawn.InvManager == None)
+        return;
 
-	IconRatioY = Canvas.ClipY / 1080.0;
-	IconHeight = MedicWeaponHeight * IconRatioY;
-	IconWidth = IconHeight / 2.0;
+    IconRatioY = Canvas.ClipY / 1080.0;
+    IconHeight = MedicWeaponHeight * IconRatioY;
+    IconWidth = IconHeight / 2.0;
 
-	IconBaseX = (Canvas.ClipX * 0.85) - IconWidth;
-	IconBaseY = Canvas.ClipY * 0.8125;
+    IconBaseX = (Canvas.ClipX * 0.85) - IconWidth;
+    IconBaseY = Canvas.ClipY * 0.8125;
     
     WeaponBaseX = IconBaseX;
 
     Canvas.EnableStencilTest(false);
-	foreach PlayerOwner.Pawn.InvManager.InventoryActors(class'KFWeap_MedicBase', KFWMB)
-	{
-		if (KFWMB == PlayerOwner.Pawn.Weapon || !KFWMB.bRechargeHealAmmo)
-			continue;
-			
+    foreach PlayerOwner.Pawn.InvManager.InventoryActors(class'KFWeap_MedicBase', KFWMB)
+    {
+        if (KFWMB == PlayerOwner.Pawn.Weapon || !KFWMB.bRechargeHealAmmo)
+            continue;
+            
         GUIStyle.DrawRoundedBox(ScaledBorderSize*2, WeaponBaseX, IconBaseY, IconWidth, IconHeight, MedicWeaponBGColor);
-		
-		ChargePct = float(KFWMB.AmmoCount[1]) / float(KFWMB.MagazineCapacity[1]);
-		ChargeBaseY = IconBaseY + IconHeight * (1.0 - ChargePct);
-		ChargeColor = (KFWMB.HasAmmo(1) ? MedicWeaponChargedColor : MedicWeaponNotChargedColor);
+        
+        ChargePct = float(KFWMB.AmmoCount[1]) / float(KFWMB.MagazineCapacity[1]);
+        ChargeBaseY = IconBaseY + IconHeight * (1.0 - ChargePct);
+        ChargeColor = (KFWMB.HasAmmo(1) ? MedicWeaponChargedColor : MedicWeaponNotChargedColor);
         GUIStyle.DrawRoundedBox(ScaledBorderSize*2, WeaponBaseX, ChargeBaseY, IconWidth, IconHeight * ChargePct, ChargeColor);
-		
+        
         Canvas.DrawColor = WeaponIconColor;
-		Canvas.SetPos(WeaponBaseX + IconWidth, IconBaseY);
+        Canvas.SetPos(WeaponBaseX + IconWidth, IconBaseY);
         Canvas.DrawRotatedTile(KFWMB.WeaponSelectTexture, MedicWeaponRot, IconHeight, IconWidth, 0, 0, KFWMB.WeaponSelectTexture.GetSurfaceWidth(), KFWMB.WeaponSelectTexture.GetSurfaceHeight(), 0, 0);
-		
-		WeaponBaseX -= IconWidth * 1.2;
-	}
+        
+        WeaponBaseX -= IconWidth * 1.2;
+    }
     Canvas.EnableStencilTest(true);
 }
 
 function DrawMedicWeaponLockOn(KFWeap_MedicBase KFW)
 {
-	local KFPawn CurrentActor;
-	local color IconColor;
-	local vector ScreenPos;
-	local float IconSize, RealIconSize;
+    local KFPawn CurrentActor;
+    local color IconColor;
+    local vector ScreenPos;
+    local float IconSize, RealIconSize;
 
-	if (KFW.LockedTarget != None)
-	{
-		CurrentActor = KFPawn(KFW.LockedTarget);
-		IconColor = MedicLockOnColor;
-	}
-	else if (KFW.PendingLockedTarget != None)
-	{
-		CurrentActor = KFPawn(KFW.PendingLockedTarget);
-		IconColor = MedicPendingLockOnColor;
-	}
+    if (KFW.LockedTarget != None)
+    {
+        CurrentActor = KFPawn(KFW.LockedTarget);
+        IconColor = MedicLockOnColor;
+    }
+    else if (KFW.PendingLockedTarget != None)
+    {
+        CurrentActor = KFPawn(KFW.PendingLockedTarget);
+        IconColor = MedicPendingLockOnColor;
+    }
 
-	if (CurrentActor == None)
+    if (CurrentActor == None)
     {
         OldTarget = None;
-		return;
+        return;
     }
         
     if (CurrentActor != OldTarget)
@@ -4024,139 +4023,139 @@ function DrawMedicWeaponLockOn(KFWeap_MedicBase KFW)
         OldTarget = CurrentActor;
     }
 
-	ScreenPos = Canvas.Project(CurrentActor.Mesh.GetPosition() + (CurrentActor.CylinderComponent.CollisionHeight * vect(0,0,1.25)));
-	if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY)
-		return;
+    ScreenPos = Canvas.Project(CurrentActor.Mesh.GetPosition() + (CurrentActor.CylinderComponent.CollisionHeight * vect(0,0,1.25)));
+    if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY)
+        return;
 
-	IconSize = WorldInfo.static.GetResolutionBasedHUDScale() * MedicLockOnIconSize;
+    IconSize = WorldInfo.static.GetResolutionBasedHUDScale() * MedicLockOnIconSize;
     RealIconSize = FInterpEaseInOut(IconSize*2, IconSize, GUIStyle.TimeFraction(LockOnStartTime, LockOnEndTime, WorldInfo.RealTimeSeconds), 2.5);
-	
+    
     Canvas.DrawColor = IconColor;
-	Canvas.SetPos(ScreenPos.X - (RealIconSize / 2.0), ScreenPos.Y - (RealIconSize / 2.0));
-	Canvas.DrawRect(RealIconSize, RealIconSize, MedicLockOnIcon);
+    Canvas.SetPos(ScreenPos.X - (RealIconSize / 2.0), ScreenPos.Y - (RealIconSize / 2.0));
+    Canvas.DrawRect(RealIconSize, RealIconSize, MedicLockOnIcon);
 }
 
 function DrawWeaponPickupInfo()
 {
-	local vector ScreenPos;
-	local bool bHasAmmo, bHasSingleForDual, bCanCarry;
-	local Inventory Inv;
-	local KFInventoryManager KFIM;
-	local string AmmoText, WeightText;
-	local class<KFWeapon> KFWC;
-	local int Weight;
-	local color CanCarryColor;
-	local FontRenderInfo FRI;
-	local float FontScale, ResModifier, IconSize;
-	local float AmmoTextWidth, WeightTextWidth, TextWidth, TextHeight, TextYOffset, SecondaryBGWidth, SecondaryBGHeight;
-	local float InfoBaseX, InfoBaseY;
-	local float BGX, BGY, BGWidth, BGHeight;
+    local vector ScreenPos;
+    local bool bHasAmmo, bHasSingleForDual, bCanCarry;
+    local Inventory Inv;
+    local KFInventoryManager KFIM;
+    local string AmmoText, WeightText;
+    local class<KFWeapon> KFWC;
+    local int Weight;
+    local color CanCarryColor;
+    local FontRenderInfo FRI;
+    local float FontScale, ResModifier, IconSize;
+    local float AmmoTextWidth, WeightTextWidth, TextWidth, TextHeight, TextYOffset, SecondaryBGWidth, SecondaryBGHeight;
+    local float InfoBaseX, InfoBaseY;
+    local float BGX, BGY, BGWidth, BGHeight;
     local string S;
 
-	ScreenPos = Canvas.Project(WeaponPickup.Location + vect(0,0,25));
-	if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY)
-		return;
-		
-	bHasAmmo = WeaponPickup.MagazineAmmo[0] >= 0;
+    ScreenPos = Canvas.Project(WeaponPickup.Location + vect(0,0,25));
+    if (ScreenPos.X < 0 || ScreenPos.X > Canvas.ClipX || ScreenPos.Y < 0 || ScreenPos.Y > Canvas.ClipY)
+        return;
+        
+    bHasAmmo = WeaponPickup.MagazineAmmo[0] >= 0;
 
-	if (bHasAmmo)
-	{
-		AmmoText = WeaponPickup.MagazineAmmo[0] $ "/" $ WeaponPickup.SpareAmmo[0];
+    if (bHasAmmo)
+    {
+        AmmoText = WeaponPickup.MagazineAmmo[0] $ "/" $ WeaponPickup.SpareAmmo[0];
 
-		if (WeaponPickup.MagazineAmmo[1] >= 0 && WeaponPickup.SpareAmmo[1] >= 0)
-			AmmoText @= "(" $ WeaponPickup.MagazineAmmo[1] $ "/" $ WeaponPickup.SpareAmmo[1] $ ")";
-		else if (WeaponPickup.MagazineAmmo[1] >= 0)
-			AmmoText @= "(" $ WeaponPickup.MagazineAmmo[1] $ ")";
-		else if (WeaponPickup.SpareAmmo[1] >= 0)
-			AmmoText @= "(" $ WeaponPickup.SpareAmmo[1] $ ")";
-	}
-	else AmmoText = "---";
+        if (WeaponPickup.MagazineAmmo[1] >= 0 && WeaponPickup.SpareAmmo[1] >= 0)
+            AmmoText @= "(" $ WeaponPickup.MagazineAmmo[1] $ "/" $ WeaponPickup.SpareAmmo[1] $ ")";
+        else if (WeaponPickup.MagazineAmmo[1] >= 0)
+            AmmoText @= "(" $ WeaponPickup.MagazineAmmo[1] $ ")";
+        else if (WeaponPickup.SpareAmmo[1] >= 0)
+            AmmoText @= "(" $ WeaponPickup.SpareAmmo[1] $ ")";
+    }
+    else AmmoText = "---";
 
-	KFWC = class<KFWeapon>(WeaponPickup.InventoryClass);
-	if (KFWC.default.DualClass != None && PlayerOwner.Pawn != None && PlayerOwner.Pawn.InvManager != None)
-	{
-		Inv = PlayerOwner.Pawn.InvManager.FindInventoryType(KFWC);
-		if (KFWeapon(Inv) != None)
-			bHasSingleForDual = true;
-	}
+    KFWC = class<KFWeapon>(WeaponPickup.InventoryClass);
+    if (KFWC.default.DualClass != None && PlayerOwner.Pawn != None && PlayerOwner.Pawn.InvManager != None)
+    {
+        Inv = PlayerOwner.Pawn.InvManager.FindInventoryType(KFWC);
+        if (KFWeapon(Inv) != None)
+            bHasSingleForDual = true;
+    }
 
-	if (bHasSingleForDual)
-	{
-		Weight = KFWC.default.DualClass.default.InventorySize +
-			KFWC.default.DualClass.static.GetUpgradeWeight(Max(WeaponPickup.UpgradeLevel, KFWeapon(Inv).CurrentWeaponUpgradeIndex)) -
-			KFWeapon(Inv).GetModifiedWeightValue();
-	}
-	else Weight = KFWC.default.InventorySize + KFWC.static.GetUpgradeWeight(WeaponPickup.UpgradeLevel);
+    if (bHasSingleForDual)
+    {
+        Weight = KFWC.default.DualClass.default.InventorySize +
+            KFWC.default.DualClass.static.GetUpgradeWeight(Max(WeaponPickup.UpgradeLevel, KFWeapon(Inv).CurrentWeaponUpgradeIndex)) -
+            KFWeapon(Inv).GetModifiedWeightValue();
+    }
+    else Weight = KFWC.default.InventorySize + KFWC.static.GetUpgradeWeight(WeaponPickup.UpgradeLevel);
 
-	WeightText = string(Weight);
-	if (WeaponPickup.UpgradeLevel > 0)
-		WeightText @= "(+" $ WeaponPickup.UpgradeLevel $ ")";
+    WeightText = string(Weight);
+    if (WeaponPickup.UpgradeLevel > 0)
+        WeightText @= "(+" $ WeaponPickup.UpgradeLevel $ ")";
 
-	if (PlayerOwner.Pawn != None && KFInventoryManager(PlayerOwner.Pawn.InvManager) != None)
-	{
-		KFIM = KFInventoryManager(PlayerOwner.Pawn.InvManager);
-		if (KFIM.CanCarryWeapon(KFWC, WeaponPickup.UpgradeLevel))
-		{
-			if (KFWC.default.DualClass != None)
-				bCanCarry = !KFIM.ClassIsInInventory(KFWC.default.DualClass, Inv);
-			else bCanCarry = !KFIM.ClassIsInInventory(KFWC, Inv);
-		}
-	}
-	else bCanCarry = true;
+    if (PlayerOwner.Pawn != None && KFInventoryManager(PlayerOwner.Pawn.InvManager) != None)
+    {
+        KFIM = KFInventoryManager(PlayerOwner.Pawn.InvManager);
+        if (KFIM.CanCarryWeapon(KFWC, WeaponPickup.UpgradeLevel))
+        {
+            if (KFWC.default.DualClass != None)
+                bCanCarry = !KFIM.ClassIsInInventory(KFWC.default.DualClass, Inv);
+            else bCanCarry = !KFIM.ClassIsInInventory(KFWC, Inv);
+        }
+    }
+    else bCanCarry = true;
 
-	CanCarryColor = (bCanCarry ? WeaponIconColor : WeaponOverweightIconColor);
+    CanCarryColor = (bCanCarry ? WeaponIconColor : WeaponOverweightIconColor);
 
-	FRI = Canvas.CreateFontRenderInfo(true);
+    FRI = Canvas.CreateFontRenderInfo(true);
 
-	ResModifier = WorldInfo.static.GetResolutionBasedHUDScale();
-	Canvas.Font = GUIStyle.PickFont(FontScale);
+    ResModifier = WorldInfo.static.GetResolutionBasedHUDScale();
+    Canvas.Font = GUIStyle.PickFont(FontScale);
 
-	if (bHasAmmo)
-	{
-		Canvas.TextSize(AmmoText, AmmoTextWidth, TextHeight, FontScale, FontScale);
-		Canvas.TextSize(WeightText, WeightTextWidth, TextHeight, FontScale, FontScale);
-		TextWidth = FMax(AmmoTextWidth, WeightTextWidth);
-	}
-	else Canvas.TextSize(WeightText, TextWidth, TextHeight, FontScale, FontScale);
+    if (bHasAmmo)
+    {
+        Canvas.TextSize(AmmoText, AmmoTextWidth, TextHeight, FontScale, FontScale);
+        Canvas.TextSize(WeightText, WeightTextWidth, TextHeight, FontScale, FontScale);
+        TextWidth = FMax(AmmoTextWidth, WeightTextWidth);
+    }
+    else Canvas.TextSize(WeightText, TextWidth, TextHeight, FontScale, FontScale);
 
-	IconSize = WeaponIconSize * ResModifier;
-	InfoBaseX = ScreenPos.X - ((IconSize * 1.5 + TextWidth) * 0.5);
-	InfoBaseY = ScreenPos.Y;
-	TextYOffset = (IconSize - TextHeight) * 0.5;
+    IconSize = WeaponIconSize * ResModifier;
+    InfoBaseX = ScreenPos.X - ((IconSize * 1.5 + TextWidth) * 0.5);
+    InfoBaseY = ScreenPos.Y;
+    TextYOffset = (IconSize - TextHeight) * 0.5;
 
-	BGWidth = IconSize * 2.0 + TextWidth;
-	BGX = InfoBaseX - (IconSize * 0.25);
-	if (bHasAmmo)
-	{
-		BGHeight = (IconSize * 2.5) * 1.25;
-		BGY = InfoBaseY - (BGHeight * 0.125);
-	}
-	else
-	{
-		BGHeight = IconSize * 1.5;
-		BGY = InfoBaseY + IconSize * 1.5 - (BGHeight * 0.125);
-	}
+    BGWidth = IconSize * 2.0 + TextWidth;
+    BGX = InfoBaseX - (IconSize * 0.25);
+    if (bHasAmmo)
+    {
+        BGHeight = (IconSize * 2.5) * 1.25;
+        BGY = InfoBaseY - (BGHeight * 0.125);
+    }
+    else
+    {
+        BGHeight = IconSize * 1.5;
+        BGY = InfoBaseY + IconSize * 1.5 - (BGHeight * 0.125);
+    }
 
     GUIStyle.DrawRoundedBox(ScaledBorderSize*2, BGX, BGY, BGWidth, BGHeight, HudMainColor);
 
-	if (bHasAmmo)
-	{
+    if (bHasAmmo)
+    {
         Canvas.DrawColor = WeaponIconColor;
-		Canvas.SetPos(InfoBaseX, InfoBaseY);
-		Canvas.DrawTile(WeaponAmmoIcon, IconSize, IconSize, 0, 0, 256, 256);
-	
+        Canvas.SetPos(InfoBaseX, InfoBaseY);
+        Canvas.DrawTile(WeaponAmmoIcon, IconSize, IconSize, 0, 0, 256, 256);
+    
         Canvas.DrawColor = WhiteColor;
-		Canvas.SetPos(InfoBaseX + IconSize * 1.5, InfoBaseY + TextYOffset);
-		Canvas.DrawText(AmmoText, , FontScale, FontScale, FRI);
-	}
+        Canvas.SetPos(InfoBaseX + IconSize * 1.5, InfoBaseY + TextYOffset);
+        Canvas.DrawText(AmmoText, , FontScale, FontScale, FRI);
+    }
 
     Canvas.DrawColor = CanCarryColor;
-	Canvas.SetPos(InfoBaseX, InfoBaseY + IconSize * 1.5);
-	Canvas.DrawTile(WeaponWeightIcon, IconSize, IconSize, 0, 0, 256, 256);
+    Canvas.SetPos(InfoBaseX, InfoBaseY + IconSize * 1.5);
+    Canvas.DrawTile(WeaponWeightIcon, IconSize, IconSize, 0, 0, 256, 256);
 
     Canvas.DrawColor = WhiteColor;
-	Canvas.SetPos(InfoBaseX + IconSize * 1.5, InfoBaseY + IconSize * 1.5 + TextYOffset);
-	Canvas.DrawText(WeightText, , FontScale, FontScale, FRI);
+    Canvas.SetPos(InfoBaseX + IconSize * 1.5, InfoBaseY + IconSize * 1.5 + TextYOffset);
+    Canvas.DrawText(WeightText, , FontScale, FontScale, FRI);
     
     if( WeaponPickup.OwnerController != None )
     {
@@ -4833,25 +4832,25 @@ defaultproperties
     
     BlueColor=(R=0,B=255,G=0,A=255)
     
-	MedicLockOnIcon=Texture2D'UI_SecondaryAmmo_TEX.UI_FireModeSelect_ManualTarget'
-	MedicLockOnIconSize=40
-	MedicLockOnColor=(R=0,G=255,B=255,A=192)
-	MedicPendingLockOnColor=(R=92,G=92,B=92,A=192)
+    MedicLockOnIcon=Texture2D'UI_SecondaryAmmo_TEX.UI_FireModeSelect_ManualTarget'
+    MedicLockOnIconSize=40
+    MedicLockOnColor=(R=0,G=255,B=255,A=192)
+    MedicPendingLockOnColor=(R=92,G=92,B=92,A=192)
 
-	MaxWeaponPickupDist=700
-	WeaponPickupScanRadius=75
-	ZedScanRadius=200
-	WeaponAmmoIcon=Texture2D'UI_Menus.TraderMenu_SWF_I10B'
-	WeaponWeightIcon=Texture2D'UI_Menus.TraderMenu_SWF_I26'
-	WeaponIconSize=32
-	WeaponIconColor=(R=192,G=192,B=192,A=255)
-	WeaponOverweightIconColor=(R=255,G=0,B=0,A=192)
-	
-	MedicWeaponRot=(Yaw=16384)
-	MedicWeaponHeight=88
-	MedicWeaponBGColor=(R=0,G=0,B=0,A=128)
-	MedicWeaponNotChargedColor=(R=224,G=0,B=0,A=128)
-	MedicWeaponChargedColor=(R=0,G=224,B=224,A=128)
+    MaxWeaponPickupDist=700
+    WeaponPickupScanRadius=75
+    ZedScanRadius=200
+    WeaponAmmoIcon=Texture2D'UI_Menus.TraderMenu_SWF_I10B'
+    WeaponWeightIcon=Texture2D'UI_Menus.TraderMenu_SWF_I26'
+    WeaponIconSize=32
+    WeaponIconColor=(R=192,G=192,B=192,A=255)
+    WeaponOverweightIconColor=(R=255,G=0,B=0,A=192)
+    
+    MedicWeaponRot=(Yaw=16384)
+    MedicWeaponHeight=88
+    MedicWeaponBGColor=(R=0,G=0,B=0,A=128)
+    MedicWeaponNotChargedColor=(R=224,G=0,B=0,A=128)
+    MedicWeaponChargedColor=(R=0,G=224,B=224,A=128)
     
     TraderArrow=Texture2D'UI_LevelChevrons_TEX.UI_LevelChevron_Icon_03'
     TraderArrowLight=Texture2D'UI_Objective_Tex.UI_Obj_World_Loc'

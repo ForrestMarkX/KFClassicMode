@@ -4,6 +4,34 @@ class ClassicPlayerInput extends KFPlayerInput within ClassicPlayerController
 var bool bHandledTravel;
 var KF2GUIController MyGUIController;
 
+function PlayerInput( float DeltaTime )
+{
+    local int i;
+    
+    if( HUDInterface != None && HUDInterface.HUDWidgets.Length > 0 )
+    {
+        for( i = 0; i < HUDInterface.HUDWidgets.Length; i++ )
+        {
+            if( HUDInterface.HUDWidgets[i].bNoLookInputs )
+            {
+                aMouseX = 0;
+                aMouseY = 0;
+                aBaseX = 0;
+                aBaseY = 0;
+                aBaseZ = 0;
+                aForward = 0;
+                aTurn = 0;
+                aStrafe = 0;
+                aUp = 0;
+                aLookUp = 0;
+                return;
+            }
+        }
+    }
+    
+    Super.PlayerInput(DeltaTime);
+}
+
 exec function GamepadDpadLeft()
 {
     if(Outer.IsSpectating())

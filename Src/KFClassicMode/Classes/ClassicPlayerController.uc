@@ -253,11 +253,11 @@ simulated function UpdatEventState()
 
 reliable server function ServerSetSettings( bool bHideKill, bool bHideDmg, bool bHideNum, bool bHideDeaths )
 {
-	bClientHideKillMsg = bHideKill;
-	bClientHideDamageMsg = bHideDmg;
-	bClientHideNumbers = bHideNum;
+    bClientHideKillMsg = bHideKill;
+    bClientHideDamageMsg = bHideDmg;
+    bClientHideNumbers = bHideNum;
     bClientHidePlayerDeaths = bHideDeaths;
-	bNoDamageTracking = (bHideDmg && bHideNum);
+    bNoDamageTracking = (bHideDmg && bHideNum);
 }
 
 reliable server function SetServerIgnoreDrops(bool bDisable)
@@ -305,6 +305,8 @@ function OpenChatBox()
                 HUDInterface.ChatBox.WindowTitle = "Chat Box - Team";
                 break;
         }
+        
+        PlayerInput.ResetInput();
     }
 }
 
@@ -601,14 +603,14 @@ unreliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool
 
 unreliable client function ReceiveDamageMessage( class<Pawn> Victim, int Damage )
 {
-	if( !bHideDamageMsg && HUDInterface!=None && Victim!=None )
-		HUDInterface.AddKillMessage(Victim,Damage,None,2);
+    if( !bHideDamageMsg && HUDInterface!=None && Victim!=None )
+        HUDInterface.AddKillMessage(Victim,Damage,None,2);
 }
 
 unreliable client function ClientNumberMsg( int Count, vector Pos, class<KFDamageType> Type )
 {
-	if( HUDInterface!=None )
-		HUDInterface.AddNumberMsg(Count,Pos,Type);
+    if( HUDInterface!=None )
+        HUDInterface.AddNumberMsg(Count,Pos,Type);
 }
 
 function SetSavedPerkIndex( byte NewSavedPerkIndex )
@@ -705,9 +707,9 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
     local string LeftBracket, RightBracket;
     local array<String> StringArray;
     local bool bUsesKey;
-	local KFGameReplicationInfo KFGRI;
-	local KFWeeklyOutbreakInformation WeeklyInfo;
-	local int ModifierIndex;
+    local KFGameReplicationInfo KFGRI;
+    local KFWeeklyOutbreakInformation WeeklyInfo;
+    local int ModifierIndex;
     local FPriorityMessage PriorityMsg;
     
     // Stops corrupted kill messages from spamming the console sometimes
@@ -835,8 +837,8 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
 
 state Dead
 {
-	function BeginState(Name PreviousStateName)
-	{
+    function BeginState(Name PreviousStateName)
+    {
         local Color SpectatorColor;
 
         Super.BeginState(PreviousStateName);
@@ -862,16 +864,16 @@ state Dead
 
 state Spectating
 {
-	function EndState(Name NextStateName)
-	{
-		Super.EndState(NextStateName);
+    function EndState(Name NextStateName)
+    {
+        Super.EndState(NextStateName);
         
         if( VisSpectator != None )
         {
             VisSpectator.Remove();
             bIsSpectating = false;
         }
-	}
+    }
     
     exec function Use()
     {
@@ -882,8 +884,8 @@ state Spectating
 
 unreliable client function ClientFirePause( float Time )
 {
-	NextFireTimer = WorldInfo.TimeSeconds+Time;
-	NeqFireTime = 200.f / Time;
+    NextFireTimer = WorldInfo.TimeSeconds+Time;
+    NeqFireTime = 200.f / Time;
 }
 
 unreliable server function FireLaser()
@@ -892,13 +894,13 @@ unreliable server function FireLaser()
     local Rotator CameraRot;
     local Projectile SpectatorProj;
     
-	if( VisSpectator != None && NextFireTimer<WorldInfo.TimeSeconds )
-	{
+    if( VisSpectator != None && NextFireTimer<WorldInfo.TimeSeconds )
+    {
         SpectatorLoc = VisSpectator.GetLocation();
         GetPlayerViewPoint(CameraLoc, CameraRot);
         
-		ClientFirePause(RefireRate);
-		NextFireTimer = WorldInfo.TimeSeconds+RefireRate;
+        ClientFirePause(RefireRate);
+        NextFireTimer = WorldInfo.TimeSeconds+RefireRate;
         
         if( KFPawn_Human(GetViewTarget())!=None && KFPawn_Human(GetViewTarget()).Health > 0 )
         {
@@ -919,7 +921,7 @@ unreliable server function FireLaser()
             SpectatorProj.InstigatorController = Self;
             PlayAkEvent(ZapFireSound);
         }
-	}
+    }
 }
 
 static function string StripColorMessage(string Str)

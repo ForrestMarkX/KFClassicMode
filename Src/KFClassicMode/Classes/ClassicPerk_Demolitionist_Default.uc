@@ -311,15 +311,15 @@ DefaultProperties
     ExtraAmmoIgnoredClassNames(1)="KFWeap_Thrown_C4"
     OnlySecondaryAmmoWeapons(0)="KFWeap_AssaultRifle_M16M203"
     
-   	ZedTimeModifyingStates(0)="WeaponFiring"
-   	ZedTimeModifyingStates(1)="WeaponBurstFiring"
-   	ZedTimeModifyingStates(2)="WeaponSingleFiring"
-   	ZedTimeModifyingStates(3)="Reloading"
-   	ZedTimeModifyingStates(4)="WeaponSingleFireAndReload"
-   	ZedTimeModifyingStates(5)="FiringSecondaryState"
-   	ZedTimeModifyingStates(6)="AltReloading"
+       ZedTimeModifyingStates(0)="WeaponFiring"
+       ZedTimeModifyingStates(1)="WeaponBurstFiring"
+       ZedTimeModifyingStates(2)="WeaponSingleFiring"
+       ZedTimeModifyingStates(3)="Reloading"
+       ZedTimeModifyingStates(4)="WeaponSingleFireAndReload"
+       ZedTimeModifyingStates(5)="FiringSecondaryState"
+       ZedTimeModifyingStates(6)="AltReloading"
     ZedTimeModifyingStates(7)="WeaponThrowing"
-	ZedTimeModifyingStates(8)="HuskCannonCharge"
+    ZedTimeModifyingStates(8)="HuskCannonCharge"
     
     PrimaryWeaponDef=class'KFWeapDef_HX25'
     SecondaryWeaponDef=class'KFWeapDef_9mm'

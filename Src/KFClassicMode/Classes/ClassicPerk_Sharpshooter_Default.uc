@@ -5,26 +5,26 @@ var float CameraViewShakeScale;
 
 static function bool IsDamageTypeOnPerk( class<KFDamageType> KFDT )
 {
-	if( KFDT != none && default.AdditionalOnPerkDTNames.Find( KFDT.name ) != INDEX_NONE )
-	{
-		return true;
-	}
+    if( KFDT != none && default.AdditionalOnPerkDTNames.Find( KFDT.name ) != INDEX_NONE )
+    {
+        return true;
+    }
 
-	return super.IsDamageTypeOnPerk( KFDT );
+    return super.IsDamageTypeOnPerk( KFDT );
 }
 
 static simulated function bool IsWeaponOnPerk( KFWeapon W, optional array < class<KFPerk> > WeaponPerkClass, optional class<KFPerk> InstigatorPerkClass, optional name WeaponClassName )
 {
-	if( W != none && default.AdditionalOnPerkWeaponNames.Find( W.class.name ) != INDEX_NONE )
-	{
-		return true;
-	}
+    if( W != none && default.AdditionalOnPerkWeaponNames.Find( W.class.name ) != INDEX_NONE )
+    {
+        return true;
+    }
     else if (WeaponClassName != '' && default.AdditionalOnPerkWeaponNames.Find(WeaponClassName) != INDEX_NONE)
     {
         return true;
     }
 
-	return super.IsWeaponOnPerk( W, WeaponPerkClass, InstigatorPerkClass, WeaponClassName );
+    return super.IsWeaponOnPerk( W, WeaponPerkClass, InstigatorPerkClass, WeaponClassName );
 }
 
 function float GetStunPowerModifier( optional class<DamageType> DamageType, optional byte HitZoneIdx )
@@ -121,13 +121,13 @@ DefaultProperties
     
     AutoBuyLoadOutPath=(class'KFWeapDef_Winchester1894', class'KFWeapDef_Crossbow', class'KFWeapDef_M14EBR', class'KFWeapDef_RailGun', class'KFWeapDef_M99')
     
-	AdditionalOnPerkWeaponNames(0)="KFWeap_Pistol_9mm"
-   	AdditionalOnPerkWeaponNames(1)="KFWeap_Pistol_Dual9mm"
-   	AdditionalOnPerkWeaponNames(2)="KFWeap_Revolver_Rem1858"
-   	AdditionalOnPerkWeaponNames(3)="KFWeap_Revolver_SW500"
-	AdditionalOnPerkDTNames(0)="KFDT_Ballistic_9mm"
-	AdditionalOnPerkDTNames(1)="KFDT_Ballistic_SW500"
-	AdditionalOnPerkDTNames(2)="KFDT_Ballistic_Rem1858"
+    AdditionalOnPerkWeaponNames(0)="KFWeap_Pistol_9mm"
+       AdditionalOnPerkWeaponNames(1)="KFWeap_Pistol_Dual9mm"
+       AdditionalOnPerkWeaponNames(2)="KFWeap_Revolver_Rem1858"
+       AdditionalOnPerkWeaponNames(3)="KFWeap_Revolver_SW500"
+    AdditionalOnPerkDTNames(0)="KFDT_Ballistic_9mm"
+    AdditionalOnPerkDTNames(1)="KFDT_Ballistic_SW500"
+    AdditionalOnPerkDTNames(2)="KFDT_Ballistic_Rem1858"
     
     CameraViewShakeScale=0.5
     HeadshotDamageMultipliers.Empty

@@ -34,9 +34,7 @@ function SetVisible(bool B)
 {
     bDrawBackground = B;
     ChatBoxText.bUseOutlineText = !B;
-    
-    PC.PlayerInput.ResetInput();
-    PC.IgnoreLookInput(B);
+    bNoLookInputs = B;
     
     if( B )
     {

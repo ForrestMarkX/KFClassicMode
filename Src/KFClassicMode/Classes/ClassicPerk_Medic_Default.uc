@@ -9,7 +9,7 @@ var float SelfHealingSurgePct;
 
 simulated function bool IsHealingSurgeActive()
 {
-	return CurrentVetLevel >= int(MaximumLevel * 0.25f);
+    return CurrentVetLevel >= int(MaximumLevel * 0.25f);
 }
 
 simulated function bool GetHealingSpeedBoostActive()
@@ -72,19 +72,19 @@ function bool RepairArmor( Pawn HealTarget )
 
 simulated function float GetSelfHealingSurgePct()
 {
-	return SelfHealingSurgePct;
+    return SelfHealingSurgePct;
 }
 
 function ModifyHealth( out int InHealth )
 {
-	local float TempHealth;
+    local float TempHealth;
 
-	if( IsHealingSurgeActive() )
-	{
-		TempHealth = InHealth;
-		TempHealth += InHealth * 0.25f;
-		InHealth = Round( TempHealth );
-	}
+    if( IsHealingSurgeActive() )
+    {
+        TempHealth = InHealth;
+        TempHealth += InHealth * 0.25f;
+        InHealth = Round( TempHealth );
+    }
 }
 
 function ModifyArmor( out byte MaxArmor )

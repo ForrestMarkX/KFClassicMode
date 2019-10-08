@@ -17,9 +17,9 @@ simulated function PostBeginPlay()
     
     Super.PostBeginPlay();
     
-	RandOffset.X = FRand()*40.f-20.f;
-	RandOffset.Y = FRand()*40.f-20.f;
-	RandOffset.Z = FRand()*25.f+10.f;
+    RandOffset.X = FRand()*40.f-20.f;
+    RandOffset.Y = FRand()*40.f-20.f;
+    RandOffset.Z = FRand()*25.f+10.f;
     
     RepLink = class'ClientPerkRepLink'.static.FindContentRep(WorldInfo);
     if( RepLink != None )

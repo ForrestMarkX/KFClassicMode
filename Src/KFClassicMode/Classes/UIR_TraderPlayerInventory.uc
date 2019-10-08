@@ -126,8 +126,8 @@ function Refresh(optional bool bForce)
 {
     local int ArmorPrice,FillPrice;
     local KFAutoPurchaseHelper KFAPH;
-	local float MissingAmmo, MagSize;
-	local float PricePerMag;
+    local float MissingAmmo, MagSize;
+    local float PricePerMag;
     local float PricePerRound;
     local float AmmoCostScale;
     local KFGameReplicationInfo KFGRI;

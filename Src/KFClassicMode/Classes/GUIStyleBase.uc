@@ -827,26 +827,26 @@ final function DrawTextJustified( byte Justification, float X1, float Y1, float 
 
 static final function float TimeFraction( float Start, float End, float Current )
 {
-	return FClamp((Current - Start) / (End - Start), 0.f, 1.f);
+    return FClamp((Current - Start) / (End - Start), 0.f, 1.f);
 }
 
 static final function string LTrim(coerce string S)
 {
-	while (Left(S, 1) == " ")
-		S = Right(S, Len(S) - 1);
-	return S;
+    while (Left(S, 1) == " ")
+        S = Right(S, Len(S) - 1);
+    return S;
 }
 
 static final function string RTrim(coerce string S)
 {
-	while (Right(S, 1) == " ")
-		S = Left(S, Len(S) - 1);
-	return S;
+    while (Right(S, 1) == " ")
+        S = Left(S, Len(S) - 1);
+    return S;
 }
 
 static final function string Trim(coerce string S)
 {
-	return LTrim(RTrim(S));
+    return LTrim(RTrim(S));
 }
 
 defaultproperties

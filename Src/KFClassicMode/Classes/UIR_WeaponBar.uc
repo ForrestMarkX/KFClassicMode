@@ -15,12 +15,12 @@ function InitMenu()
 
 function SetHighlight(bool bValue, optional bool bUpgraded)
 {
-	bHighlighted = bValue;
+    bHighlighted = bValue;
     if( bUpgraded )
         BarColor = UpgradeColor;
-	else if( !bHighlighted )
-		BarColor = OriginalBarColor;
-	else BarColor = HighlightColor;
+    else if( !bHighlighted )
+        BarColor = OriginalBarColor;
+    else BarColor = HighlightColor;
 }
 
 function DrawMenu()

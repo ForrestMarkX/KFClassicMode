@@ -12,7 +12,7 @@ function bool CouldBeZedShrapnel( class<KFDamageType> KFDT )
 
 simulated function bool IsFuseActive()
 {
-	return CurrentVetLevel >= int(MaximumLevel * 0.25f);
+    return CurrentVetLevel >= int(MaximumLevel * 0.25f);
 }
 
 simulated function bool IsRangeActive()
@@ -27,7 +27,7 @@ simulated function bool IsZedShrapnelActive()
 
 simulated function bool IsNapalmActive()
 {
-	return CurrentVetLevel >= int(MaximumLevel * 0.5f);
+    return CurrentVetLevel >= int(MaximumLevel * 0.5f);
 }
 
 simulated function bool IsInfernoActive()
@@ -47,18 +47,18 @@ simulated function bool GetIsUberAmmoActive( KFWeapon KFW )
 
 simulated function float GetZedTimeModifier( KFWeapon W )
 {
-	local name StateName;
+    local name StateName;
 
-	if( CanUseInferno() && IsWeaponOnPerk( W,, self.class ) )
-	{
-		StateName = W.GetStateName();
-		if( ZedTimeModifyingStates.Find( StateName ) != INDEX_NONE )
-		{
-			return 0.9f;
-		}
-	}
+    if( CanUseInferno() && IsWeaponOnPerk( W,, self.class ) )
+    {
+        StateName = W.GetStateName();
+        if( ZedTimeModifyingStates.Find( StateName ) != INDEX_NONE )
+        {
+            return 0.9f;
+        }
+    }
 
-	return 0.f;
+    return 0.f;
 }
 
 simulated function float GetSnarePowerModifier( optional class<DamageType> DamageType, optional byte HitZoneIdx )
@@ -73,22 +73,22 @@ simulated function float GetSnarePowerModifier( optional class<DamageType> Damag
 
 function float GetDoTScalerAdditions(class<KFDamageType> KFDT)
 {
-	local float ScalarAdditions;
+    local float ScalarAdditions;
 
-	if (IsDamageTypeOnPerk(KFDT))
-	{
-		if (IsFuseActive())
-		{
-			ScalarAdditions += 1.5f;
-		}
+    if (IsDamageTypeOnPerk(KFDT))
+    {
+        if (IsFuseActive())
+        {
+            ScalarAdditions += 1.5f;
+        }
 
-		if (IsNapalmActive())
-		{
-			ScalarAdditions += 1.5f;
-		}
-	}
+        if (IsNapalmActive())
+        {
+            ScalarAdditions += 1.5f;
+        }
+    }
 
-	return ScalarAdditions;
+    return ScalarAdditions;
 }
 
 function ApplySkillsToPawn()
@@ -289,11 +289,11 @@ DefaultProperties
     SnarePower=100
     SnareCausingDmgTypeClass="KFDT_Fire_Ground"
     
-	ZedTimeModifyingStates(0)="WeaponFiring"
-   	ZedTimeModifyingStates(1)="WeaponBurstFiring"
-   	ZedTimeModifyingStates(2)="WeaponSingleFiring"
-   	ZedTimeModifyingStates(3)="SprayingFire"
-	ZedTimeModifyingStates(4)="HuskCannonCharge"
+    ZedTimeModifyingStates(0)="WeaponFiring"
+       ZedTimeModifyingStates(1)="WeaponBurstFiring"
+       ZedTimeModifyingStates(2)="WeaponSingleFiring"
+       ZedTimeModifyingStates(3)="SprayingFire"
+    ZedTimeModifyingStates(4)="HuskCannonCharge"
     
     WeaponDamage=(Name="Weapon Damage",Increment=0.008f,Rank=0,StartingValue=1.f,MaxValue=1.20) //1.25
     WeaponReload=(Name="Weapon Reload Speed",Increment=0.008f,Rank=0,StartingValue=0.f,MaxValue=0.20)

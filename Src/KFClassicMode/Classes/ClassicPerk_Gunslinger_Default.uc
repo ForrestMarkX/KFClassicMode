@@ -163,26 +163,26 @@ simulated function float GetReloadRateScale( KFWeapon KFW )
 
 static simulated function bool IsWeaponOnPerk( KFWeapon W, optional array < class<KFPerk> > WeaponPerkClass, optional class<KFPerk> InstigatorPerkClass, optional name WeaponClassName )
 {
-	if( W != none && default.AdditionalOnPerkWeaponNames.Find( W.class.name ) != INDEX_NONE )
-	{
-		return true;
-	}
+    if( W != none && default.AdditionalOnPerkWeaponNames.Find( W.class.name ) != INDEX_NONE )
+    {
+        return true;
+    }
     else if (WeaponClassName != '' && default.AdditionalOnPerkWeaponNames.Find(WeaponClassName) != INDEX_NONE)
     {
         return true;
     }
 
-	return super.IsWeaponOnPerk( W, WeaponPerkClass, InstigatorPerkClass, WeaponClassName );
+    return super.IsWeaponOnPerk( W, WeaponPerkClass, InstigatorPerkClass, WeaponClassName );
 }
 
 static function bool IsDamageTypeOnPerk( class<KFDamageType> KFDT )
 {
-	if( KFDT != none && default.AdditionalOnPerkDTNames.Find( KFDT.name ) != INDEX_NONE )
-	{
-		return true;
-	}
+    if( KFDT != none && default.AdditionalOnPerkDTNames.Find( KFDT.name ) != INDEX_NONE )
+    {
+        return true;
+    }
 
-	return super.IsDamageTypeOnPerk( KFDT );
+    return super.IsDamageTypeOnPerk( KFDT );
 }
 
 simulated function float GetCostScaling(byte Level, optional STraderItem TraderItem, optional KFWeapon Weapon)
@@ -254,21 +254,21 @@ DefaultProperties
     
     SpecialZedClassNames(0)="KFPawn_ZedFleshpound"
     
-   	ZedTimeModifyingStates(0)="WeaponFiring"
-   	ZedTimeModifyingStates(1)="WeaponBurstFiring"
-   	ZedTimeModifyingStates(2)="WeaponSingleFiring"
-   	ZedTimeModifyingStates(3)="WeaponSingleFireAndReload"
+       ZedTimeModifyingStates(0)="WeaponFiring"
+       ZedTimeModifyingStates(1)="WeaponBurstFiring"
+       ZedTimeModifyingStates(2)="WeaponSingleFiring"
+       ZedTimeModifyingStates(3)="WeaponSingleFireAndReload"
     ZedTimeModifyingStates(4)="Reloading"
     ZedTimeModifyingStates(5)="AltReloading"
     
-   	AdditionalOnPerkWeaponNames(0)="KFWeap_Pistol_9mm"
-   	AdditionalOnPerkWeaponNames(1)="KFWeap_Pistol_Dual9mm"
-   	AdditionalOnPerkWeaponNames(2)="KFWeap_GrenadeLauncher_HX25"
-   	AdditionalOnPerkDTNames(0)="KFDT_Ballistic_9mm"
-   	AdditionalOnPerkDTNames(1)="KFDT_Ballistic_Pistol_Medic"
-   	AdditionalOnPerkDTNames(2)="KFDT_Ballistic_Winchester"
-   	AdditionalOnPerkDTNames(3)="KFDT_Ballistic_HX25Impact"
-   	AdditionalOnPerkDTNames(4)="KFDT_Ballistic_HX25SubmunitionImpact"
+       AdditionalOnPerkWeaponNames(0)="KFWeap_Pistol_9mm"
+       AdditionalOnPerkWeaponNames(1)="KFWeap_Pistol_Dual9mm"
+       AdditionalOnPerkWeaponNames(2)="KFWeap_GrenadeLauncher_HX25"
+       AdditionalOnPerkDTNames(0)="KFDT_Ballistic_9mm"
+       AdditionalOnPerkDTNames(1)="KFDT_Ballistic_Pistol_Medic"
+       AdditionalOnPerkDTNames(2)="KFDT_Ballistic_Winchester"
+       AdditionalOnPerkDTNames(3)="KFDT_Ballistic_HX25Impact"
+       AdditionalOnPerkDTNames(4)="KFDT_Ballistic_HX25SubmunitionImpact"
     
     EXPActions(0)="Dealing Gunslinger weapon damage"
     EXPActions(1)="Killing Zeds with a Gunslinger weapon"

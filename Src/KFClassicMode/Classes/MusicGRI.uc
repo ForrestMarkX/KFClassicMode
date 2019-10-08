@@ -283,6 +283,12 @@ simulated function Tick(float DT)
         GRI.MusicComp = None;
     }
     
+    if( GRI.CurrentMusicTrackInfo != None )
+    {
+        GRI.CurrentMusicTrackInfo = None;
+        GRI.ReplicatedMusicTrackInfo = None;
+    }
+    
     if( bWaveIsActive != GRI.bWaveIsActive )
     {
         CurrentTrackInfo = None;

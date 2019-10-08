@@ -231,9 +231,9 @@ DefaultProperties
     
     AutoBuyLoadOutPath=(class'KFWeapDef_AR15', class'KFWeapDef_Bullpup', class'KFWeapDef_AK12', class'KFWeapDef_SCAR', class'KFWeapDef_MedicRifleGrenadeLauncher')
     
-   	ZedTimeModifyingStates(0)="WeaponFiring"
-   	ZedTimeModifyingStates(1)="WeaponBurstFiring"
-   	ZedTimeModifyingStates(2)="WeaponSingleFiring"
+       ZedTimeModifyingStates(0)="WeaponFiring"
+       ZedTimeModifyingStates(1)="WeaponBurstFiring"
+       ZedTimeModifyingStates(2)="WeaponSingleFiring"
     
     ZedTimeExtension=(Name="Zed Time Extension",Increment=1.f,Rank=0,StartingValue=1.f,MaxValue=6.f)
     CloakedEnemyDetection=(Name="Cloaked Enemy Detection Range",Increment=200.f,Rank=0,StartingValue=1000.f,MaxValue=6000.f)

@@ -727,6 +727,31 @@ function SetupDefaultConfig()
         iVersionNumber++;
     }
     
+    if( iVersionNumber <= 6 )
+    {
+        if( TraderInventory.Find("KFGame.KFWeapDef_NailGun_HRG") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_NailGun_HRG");
+        if( TraderInventory.Find("KFGame.KFWeapDef_SW500_HRG") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_SW500_HRG");
+        if( TraderInventory.Find("KFGame.KFWeapDef_SW500Dual_HRG") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_SW500Dual_HRG");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_ChiappaRhinoDual") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_ChiappaRhinoDual");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_Healthrower_HRG") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Healthrower_HRG");
+        if( TraderInventory.Find("KFGame.KFWeapDef_IonThruster") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_IonThruster");
+        if( TraderInventory.Find("KFGame.KFWeapDef_ChiappaRhino") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_ChiappaRhino");        
+            
+        MapInfo.Name = "KF-AshwoodAsylum";
+        MapInfo.Type = "Halloween";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        iVersionNumber++;
+    }
+    
     SaveConfig();
 }
 

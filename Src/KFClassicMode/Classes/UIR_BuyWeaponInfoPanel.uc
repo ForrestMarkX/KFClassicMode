@@ -488,8 +488,8 @@ function InternalOnClick( KFGUI_Button Sender )
 {
     local UI_TraderMenu Trader;
     local int Index;
-	local SItemInformation ItemInfo;
-	local KFAutoPurchaseHelper PurchaseHelper;
+    local SItemInformation ItemInfo;
+    local KFAutoPurchaseHelper PurchaseHelper;
     
     if( CurrentInfo == default.CurrentInfo )
         return;

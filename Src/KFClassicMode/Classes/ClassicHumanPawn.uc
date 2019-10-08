@@ -11,8 +11,8 @@ var float BaseMeleeIncrease;
 
 replication
 {
-	if( true )
-		RepRegenHP;
+    if( true )
+        RepRegenHP;
 }
 
 simulated function PostBeginPlay()
@@ -283,7 +283,7 @@ function SacrificeExplode()
 function GiveHealthOverTime()
 {
     RepRegenHP = HealthToRegen;
-	Super.GiveHealthOverTime();
+    Super.GiveHealthOverTime();
 }
 
 function SetSprinting(bool bNewSprintStatus)
