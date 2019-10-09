@@ -347,7 +347,7 @@ function ButtonClicked( KFGUI_Button Sender )
         
         Owner.OpenMenu(PC.FlashUIClass);
         PC.MyGFxManager.OpenMenu(Sender.ID == 'Options' ? UI_OptionsSelection : UI_Gear);
-        DoClose();
+        SetVisibility(false);
         break;
     case 'Disconnect':
         PC.ConsoleCommand("DISCONNECT");

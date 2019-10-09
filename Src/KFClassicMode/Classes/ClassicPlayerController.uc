@@ -319,6 +319,21 @@ function CloseChatBox()
 function OpenLobbyMenu()
 {
     GUIController.OpenMenu(LobbyMenuClass);
+    SetTimer(1.f, true, 'CheckLobbyMenu');
+}
+
+function CheckLobbyMenu()
+{
+    if( KFPlayerReplicationInfo(PlayerReplicationInfo).bReadyToPlay )
+    {
+        ClearTimer('CheckLobbyMenu');
+        return;
+    }
+        
+    if( LobbyMenu == None && !KFPlayerReplicationInfo(PlayerReplicationInfo).bReadyToPlay )
+    {
+        GUIController.OpenMenu(LobbyMenuClass);
+    }
 }
 
 function OpenTraderMenu( optional bool bForce=false )
@@ -571,11 +586,8 @@ reliable server function ServerChangePerks( ClassicPerk_Base P )
     ChangePerks(P);
 }
 
-unreliable client function ClientKillMessage( class<DamageType> DamType, class<Pawn> Killed, Controller Killer, PlayerReplicationInfo KilledPRI, PlayerReplicationInfo KillerPRI )
+unreliable client function ClientKillMessage( class<Pawn> Killed, Pawn Killer, PlayerReplicationInfo KilledPRI, PlayerReplicationInfo KillerPRI, optional bool bTeamKill )
 {
-    if( Player==None || KilledPRI==None )
-        return;
-    
     if( KilledPRI==KillerPRI || (KillerPRI==None && Killed==None) )
     {
         if( KilledPRI.GetTeamNum()==0 )
@@ -589,7 +601,7 @@ unreliable client function ClientKillMessage( class<DamageType> DamType, class<P
     }
     
     if( !bHidePlayerDeathMsg )
-        HUDInterface.AddPlayerDeathMessage(Killed,Killer.Pawn,KilledPRI,Killer.bIsPlayer);
+        HUDInterface.AddPlayerDeathMessage(Killed,Killer,KilledPRI,bTeamKill);
 }
 
 unreliable client function ReceiveKillMessage( class<Pawn> Victim, optional bool bGlobal, optional PlayerReplicationInfo KillerPRI )
@@ -833,33 +845,6 @@ reliable client event ReceiveLocalizedMessage( class<LocalMessage> Message, opti
     }
     
     Super.ReceiveLocalizedMessage(Message, Switch, RelatedPRI_1, RelatedPRI_2, OptionalObject);
-}
-
-state Dead
-{
-    function BeginState(Name PreviousStateName)
-    {
-        local Color SpectatorColor;
-
-        Super.BeginState(PreviousStateName);
-        
-        if( bEnabledVisibleSpectators && !KFGameReplicationInfo(WorldInfo.GRI).bMatchIsOver )
-        {
-            SpectatorColor.R = RandRange(55, 255);
-            SpectatorColor.G = RandRange(55, 255);
-            SpectatorColor.B = RandRange(55, 255);
-            SpectatorColor.A = 255;
-            
-            if( VisSpectator != None )
-                VisSpectator.Remove();
-            
-            bIsSpectating = true;
-            
-            VisSpectator = Spawn(Rand(2) == 0 ? class'SpectatorFlame' : class'SpectatorUFO', self,, Location,,, true);
-            VisSpectator.SetPlayerOwner(self);
-            VisSpectator.SetColor(SpectatorColor);
-        }
-    }
 }
 
 state Spectating

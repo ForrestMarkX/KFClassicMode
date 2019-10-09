@@ -5,20 +5,29 @@ var int SpareAmmo[2];
 
 var byte UpgradeLevel;
 
+var bool bDisablePickup;
+var Pawn DroppedPawn;
 var PlayerController OwnerController;
+var string OwnerName;
 
 replication
 {
     if (bNetDirty)
-        MagazineAmmo,SpareAmmo,UpgradeLevel,OwnerController;
+        MagazineAmmo,SpareAmmo,UpgradeLevel,bDisablePickup,DroppedPawn,OwnerName;
 }
 
-simulated function PreBeginPlay()
+simulated function PostBeginPlay()
 {
-    Super.PreBeginPlay();
+    Super.PostBeginPlay();
     
-    if( Role == ROLE_Authority && Instigator != None && Instigator.Controller != None )
+    DroppedPawn = Instigator;
+    if( ClassicPlayerController(Instigator.Controller) != None )
+        bDisablePickup = ClassicPlayerController(Instigator.Controller).bPickupsDisabled;
+        
+    if( PlayerController(Instigator.Controller) != None )
         OwnerController = PlayerController(Instigator.Controller);
+        
+    OwnerName = DroppedPawn.GetHumanReadableName();
 }
 
 simulated function SetPickupMesh(PrimitiveComponent NewPickupMesh)

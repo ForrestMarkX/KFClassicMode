@@ -621,8 +621,8 @@ function RenderVisibleSpectatorInfo()
     Canvas.Font = GUIStyle.PickFont(FontScalar);
     FontScalar += 0.3f;
     
-    Pawn = KFPawn(PlayerOwner.GetViewTarget());
-    if( Pawn != None && Pawn.Controller != None && Pawn.Controller != PlayerOwner )
+    Pawn = KFPawn(ClassicPlayerOwner.ViewTarget);
+    if( Pawn != None )
         ItemInfo = "heal player";
     else ItemInfo = "fire laser";
     
@@ -2558,9 +2558,9 @@ function ShowQuickSyringe()
     }
 }
 
-function DrawImportantHealthBar(float X, float Y, float W, float H, string S, float HealthFrac, Color MainColor, Color BarColor, Texture2D Icon, optional float BorderScale, optional bool bDisabled, optional bool bTrackDamageHistory, optional int Health, optional int HealthMax)
+function DrawImportantHealthBar(float X, float Y, float W, float H, string S, float HealthFrac, Color MainColor, Color BarColor, Texture2D Icon, optional float BorderScale, optional bool bDisabled, optional bool bTrackDamageHistory, optional int Health, optional int HealthMax, optional KFZEDBossInterface Interface)
 {
-    local float FontScalar,MainBoxH,XPos,YPos,IconBoxX,IconBoxY,IconXL,IconYL,XL,YL,HistoryX;
+    local float FontScalar,MainBoxH,XPos,YPos,IconBoxX,IconBoxY,IconXL,IconYL,XL,YL,HistoryX,ShieldHealthPct;
     local Color BoxColor,FadeColor;
     
     if( BorderScale == 0.f )
@@ -2631,6 +2631,13 @@ function DrawImportantHealthBar(float X, float Y, float W, float H, string S, fl
         DamageHistoryNum++;
     }
     else GUIStyle.DrawRoundedBoxEx(BorderScale, X, Y, W * HealthFrac, H, BarColor, false, true, false, true);
+    
+    if( Interface != None )
+    {
+        ShieldHealthPct = Interface.GetShieldHealthPercent();
+        if( ShieldHealthPct > 0.f && Interface.GetShieldPSC() != None )
+            GUIStyle.DrawRoundedBoxEx(ScaledBorderSize, X, Y, W * ShieldHealthPct, H * 0.25, MakeColor(0, 162, 232, 255), false, true, false, false);
+    }
 
     Canvas.DrawColor = BoxColor;
     Canvas.SetPos(IconBoxX+MainBoxH,IconBoxY);
@@ -2663,10 +2670,9 @@ function DrawBossHealthBars()
 {
     local KFPawn_MonsterBoss BossPawn;
     local KFPawn_Monster MonsterPawn;
-    local KFZEDBossInterface ZEDInterface;
     local int i;
-    local float BarH, BarW, MainBarX, MainBarY, MainBoxW, ArmorW, ArmorH, ShieldW, ShieldH, ShieldX, ShieldY;
-    local float HealthFrac, ShieldHealthPct, ArmorPct;
+    local float BarH, BarW, MainBarX, MainBarY, MainBoxW, ArmorW, ArmorH;
+    local float HealthFrac, ArmorPct;
     local Color PawnHealthColor;
     local ArmorZoneInfo ArmorZone;
     
@@ -2675,7 +2681,6 @@ function DrawBossHealthBars()
         
     MonsterPawn = BossRef.GetMonsterPawn();
     BossPawn = KFPawn_MonsterBoss(MonsterPawn);
-    ZEDInterface = KFZEDBossInterface(MonsterPawn);
     
     if( MonsterPawn.IsDoingSpecialMove(SM_BossTheatrics) )
         return;
@@ -2704,21 +2709,7 @@ function DrawBossHealthBars()
         else PawnHealthColor = BattlePhaseColors[0];
     }
     
-    DrawImportantHealthBar(MainBarX, MainBarY, BarW, BarH, GetNameOf(MonsterPawn.Class), HealthFrac, HudMainColor, PawnHealthColor, BossInfoIcon,,,true,MonsterPawn.Health,MonsterPawn.HealthMax);
-    
-    if( ZEDInterface != None )
-    {
-        ShieldHealthPct = ZEDInterface.GetShieldHealthPercent();
-        if( ShieldHealthPct > 0.f && ZEDInterface.GetShieldPSC() != None )
-        {
-            ShieldW = (BarW-(BarH * 2)) * ShieldHealthPct;
-            ShieldH = BarH * 0.25;
-            ShieldX = MainBarX + (BarH * 2);
-            ShieldY = MainBarY;
-            
-            GUIStyle.DrawRoundedBoxEx(ScaledBorderSize, ShieldX, ShieldY, ShieldW, ShieldH, MakeColor(0, 162, 232, 255), false, true, false, false);
-        }
-    }
+    DrawImportantHealthBar(MainBarX, MainBarY, BarW, BarH, GetNameOf(MonsterPawn.Class), HealthFrac, HudMainColor, PawnHealthColor, BossInfoIcon,,,true,MonsterPawn.Health,MonsterPawn.HealthMax,KFZEDBossInterface(MonsterPawn));
     
     if( MonsterPawn.ArmorInfo != None )
     {

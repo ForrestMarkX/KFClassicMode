@@ -1,47 +1,42 @@
-class UIR_DailyInfo extends KFGUI_FloatingWindow;
+class UIR_SeasonalInfo extends UIR_DailyInfo;
 
-var KFGUI_TextField DailyDescription;
-var KFGUI_List DailyList;
-
-var KFPlayerController PC;
-var array<Texture2D> DailyIcons;
-
-var int Reward;
-var string CompletedString, RewardString;
+var array<Texture2D> SeasonalIcons;
+var KFGUI_List SeasonalList;
+var class<KFGFxSpecialEventObjectivesContainer> CurrentSeasonal;
+var KFGUI_Image SeasonalIcon;
 
 function InitMenu()
 {
     local int i;
     
+    CurrentSeasonal = class'KFGFxMenu_StartGame'.static.GetSpecialEventClass(class'KFGameEngine'.static.GetSeasonalEventId());
+    
     Super.InitMenu();
     
-    PC = KFPlayerController(GetPlayer());
-    WindowTitle = class'KFGFxDailyObjectivesContainer'.default.TitleString;
+    SeasonalIcon = KFGUI_Image(FindComponentID('SeasonalIcon'));
+    SeasonalIcon.Image = Texture2D(DynamicLoadObject(CurrentSeasonal.default.IconURL, class'Texture2D'));
     
-    DailyDescription = KFGUI_TextField(FindComponentID('DailyDescription'));
-    DailyDescription.SetText(class'KFGFxDailyObjectivesContainer'.default.OverviewString);
+    WindowTitle = CurrentSeasonal.default.CurrentSpecialEventString;
+    DailyDescription.SetText(CurrentSeasonal.default.CurrentSpecialEventDescriptionString);
     
-    DailyList = KFGUI_List(FindComponentID('DailyList'));
-    DailyList.OnDrawItem = DrawDailyEntry;
-    DailyList.ChangeListSize(class'KFGFxDailyObjectivesContainer'.default.NUM_OF_DAILIES);
+    SeasonalList = KFGUI_List(FindComponentID('SeasonalList'));
+    SeasonalList.ListItemsPerPage = CurrentSeasonal.default.SpecialEventObjectiveInfoList.Length;
+    SeasonalList.OnDrawItem = DrawSeasonalEntry;
+    SeasonalList.ChangeListSize(CurrentSeasonal.default.SpecialEventObjectiveInfoList.Length);
     
-    for( i=0; i<class'KFGFxDailyObjectivesContainer'.default.NUM_OF_DAILIES; i++ )
+    for( i=0; i<CurrentSeasonal.default.ObjectiveIconURLs.Length; i++ )
     {
-        DailyIcons.AddItem(Texture2D(DynamicLoadObject(Mid(class'KFGFxDailyObjectivesContainer'.static.GetIconForObjective(PC.GetDailyObjective(i)), Len("img://")), class'Texture2D')));
+        SeasonalIcons.AddItem(Texture2D(DynamicLoadObject(CurrentSeasonal.default.ObjectiveIconURLs[i], class'Texture2D')));
     }
-	
-	CompletedString = Localize("BanImporter", "msgStatusDone", "WebAdmin");
-    Reward = class'KFOnlineStatsWrite'.static.GetDailyEventReward();
-    RewardString = class'KFMission_LocalizedStrings'.default.RewardString;
 }
 
-function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float Width, bool bFocus )
+function DrawSeasonalEntry( Canvas C, int Index, float YOffset, float Height, float Width, bool bFocus )
 {
-    local DailyEventInformation EventInfo;
     local bool bIsCompleted, bIsProgress;
-    local string Title, Description, Progress;
+    local string Title, Description, ProgressString;
     local Texture2D Icon;
-    local float IconH, XS, YS, TextX, TextY, FontScalar, ProgressMult, ProgressX, ProgressY, ProgressW, ProgressH, RewardX, RewardY, RewardW, RewardH, BorderSize;
+    local float IconH, XS, YS, TextX, TextY, FontScalar, DescScaler, ProgressMult, ProgressX, ProgressY, ProgressW, ProgressH, RewardX, RewardY, RewardW, RewardH, BorderSize;
+    local int Progress, MaxProgress;
     
     YOffset *= 1.05;
     BorderSize = Height*0.05;
@@ -51,13 +46,12 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
     YOffset += BorderSize;
     Height -= BorderSize;
     
-    EventInfo = PC.GetDailyObjective(Index);
-    bIsCompleted = PC.IsDailyObjectiveComplete(Index);
-    bIsProgress = class'KFGFxDailyObjectivesContainer'.static.IsProgressObjective(EventInfo);
+    bIsCompleted = PC.IsEventObjectiveComplete(Index);
+    bIsProgress = CurrentSeasonal.default.UsesProgressList[Index];
     
-    Title = class'KFGFxDailyObjectivesContainer'.static.FormTitleForObjective(EventInfo);
-    Description = class'KFGFxDailyObjectivesContainer'.static.FormDescriptionForObjective(EventInfo);
-    Icon = DailyIcons[Index];
+    Title = CurrentSeasonal.default.SpecialEventObjectiveInfoList[Index].TitleString;
+    Description = CurrentSeasonal.default.SpecialEventObjectiveInfoList[Index].DescriptionString;
+    Icon = SeasonalIcons[Index];
     
     IconH = Height;
     
@@ -69,13 +63,15 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
     C.DrawRect(IconH, IconH, Icon);
     
     C.Font = Owner.CurrentStyle.PickFont(FontScalar);
-    C.TextSize(Description, XS, YS, FontScalar, FontScalar);
+    DescScaler = FontScalar * 0.85;
+    
+    C.TextSize(Description, XS, YS, DescScaler, DescScaler);
     
     TextX = IconH+(Owner.HUDOwner.ScaledBorderSize*6);
     TextY = YOffset + (Height/2) - (YS/2.5);
     
     C.SetPos(TextX, TextY);
-    C.DrawText(Description,, FontScalar, FontScalar);
+    C.DrawText(Description,, DescScaler, DescScaler);
     
     TextY = YOffset + (Height/2) - (YS/0.75);
     
@@ -84,15 +80,16 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
     
     if( bIsProgress )
     {
-        Progress = PC.GetCurrentDailyValue(Index)$"/"$PC.GetMaxDailyValue(Index);
-        ProgressMult = FClamp(Float(PC.GetCurrentDailyValue(Index)) / Float(PC.GetMaxDailyValue(Index)), 0, 1);
-        C.TextSize(Progress, XS, YS, FontScalar, FontScalar);
+        CurrentSeasonal.static.GetObjectiveProgressValues(Index, Progress, MaxProgress, ProgressMult);
+        ProgressString = string(Progress);
+        
+        C.TextSize(ProgressString, XS, YS, FontScalar, FontScalar);
         
         ProgressW = Width * 0.25f;
-        ProgressH = YS * 1.125f;
+        ProgressH = YS * 1.05f;
         
         ProgressX = Width - ProgressW - (Owner.HUDOwner.ScaledBorderSize*2);
-        ProgressY = YOffset + (Owner.HUDOwner.ScaledBorderSize*2);
+        ProgressY = YOffset + Owner.HUDOwner.ScaledBorderSize;
         
         Owner.CurrentStyle.DrawRoundedBoxEx(Owner.HUDOwner.ScaledBorderSize*2, ProgressX-(Owner.HUDOwner.ScaledBorderSize*2), ProgressY, Owner.HUDOwner.ScaledBorderSize*2, ProgressH, MakeColor(195, 195, 195, 255), true, false, true, false);
         Owner.CurrentStyle.DrawRoundedBoxEx(Owner.HUDOwner.ScaledBorderSize*2, ProgressX+ProgressW, ProgressY, Owner.HUDOwner.ScaledBorderSize*2, ProgressH, MakeColor(195, 195, 195, 255), false, true, false, true);
@@ -103,13 +100,15 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
         
         C.SetDrawColor(255, 255, 255, 255);
         C.SetPos(ProgressX + (ProgressW/2) - (XS/2), ProgressY + (ProgressH/2) - (YS/2));
-        C.DrawText(Progress,, FontScalar, FontScalar);
+        C.DrawText(ProgressString,, FontScalar, FontScalar);
     }
     
-    C.TextSize(Reward, XS, YS, FontScalar, FontScalar);
+    FontScalar *= 0.95;
+    
+    C.TextSize(PC.GetSpecialEventRewardValue(), XS, YS, FontScalar, FontScalar);
     
     RewardW = Width * 0.275f;
-    RewardH = YS * 1.25f;
+    RewardH = YS * 1.05f;
     
     RewardX = Width - RewardW;
     RewardY = YOffset + Height - RewardH;
@@ -132,10 +131,13 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
 	
     if( bIsCompleted )
     {
+        FontScalar *= 0.825;
+        
         Owner.CurrentStyle.DrawRoundedBox(Owner.HUDOwner.ScaledBorderSize*2, -Owner.HUDOwner.ScaledBorderSize, YOffset, Width+Owner.HUDOwner.ScaledBorderSize, Height, MakeColor(8, 8, 8, 190));
 		
 		C.TextSize(CompletedString, XS, YS, FontScalar, FontScalar);
-        TextY = YOffset + (Height - YS);
+        TextY = YOffset + (Height/2) - (YS/2);
+        TextX = (Owner.HUDOwner.ScaledBorderSize*2) + (IconH/2) - (XS/2);
         
         C.SetDrawColor(0, 255, 0, 255);
         C.SetPos(TextX, TextY);
@@ -143,55 +145,27 @@ function DrawDailyEntry( Canvas C, int Index, float YOffset, float Height, float
     }
 }
 
-function ButtonClicked( KFGUI_Button Sender )
-{
-    switch( Sender.ID )
-    {
-    case 'Close':
-        DoClose();
-        break;
-    }
-}
-
 defaultproperties
 {
-    bAlwaysTop=true
+    XSize=0.4
+    XPosition=0.3
     
-    XSize=0.3
-    YSize=0.5
-    XPosition=0.35
-    YPosition=0.25
+    YSize=0.675
+    YPosition=0.125
     
-    Begin Object Class=KFGUI_TextField Name=DailyDescription
+    Begin Object Class=KFGUI_Image Name=SeasonalIcon
         XSize=0.98
-        YSize=0.25
-        YPosition=0.1
+        YSize=0.175
         XPosition=0.01
-        ID="DailyDescription"
+        YPosition=0.05
+        bAlignCenter=true
+        ID="SeasonalIcon"
     End Object
-    Components.Add(DailyDescription)
+    Components.Add(SeasonalIcon)
     
-    Begin Object Class=KFGUI_List Name=DailyList
-        XSize=0.95
+    Begin Object Name=DailyList
         YSize=0.5
-        YPosition=0.35
-        XPosition=0.025
-        ID="DailyList"
-        bClickable=false
-        ListItemsPerPage=3
+        YPosition=0.25
+        ID="SeasonalList"
     End Object
-    Components.Add(DailyList)
-    
-    Begin Object class=KFGUI_Button Name=Close
-        ID="Close"
-        YPosition=0.89
-        XPosition=0.375
-        XSize=0.25
-        YSize=0.05
-        FontScale=1.25
-        ButtonText="Close"
-        OnClickLeft=ButtonClicked
-        OnClickRight=ButtonClicked
-    End Object
-    Components.Add(Close)   
 }

@@ -6,6 +6,12 @@ var enum eImageStyle
     ISTY_Stretched
 } ImageStyle;
 
+var enum eScaleStyle
+{
+    ISTY_Height,
+    ISTY_Width
+} ScaleStyle;
+
 var Color ImageColor;
 var Texture Image;
 var bool bAlignCenter, bForceUniformSize;
@@ -36,8 +42,16 @@ function DrawMenu()
             
             if( bForceUniformSize )
             {
-                YL = CompPos[3];
-                XL = YL;
+                if( ScaleStyle == ISTY_Height )
+                {
+                    YL = CompPos[3];
+                    XL = YL;
+                }
+                else
+                {
+                    XL = CompPos[2];
+                    YL = XL;
+                }
             }
             else
             {
@@ -77,8 +91,16 @@ function DrawMenu()
                 
                 if( bForceUniformSize )
                 {
-                    YL = CompPos[3];
-                    XL = YL;
+                    if( ScaleStyle == ISTY_Height )
+                    {
+                        YL = CompPos[3];
+                        XL = YL;
+                    }
+                    else
+                    {
+                        XL = CompPos[2];
+                        YL = XL;
+                    }
                 }
                 else
                 {

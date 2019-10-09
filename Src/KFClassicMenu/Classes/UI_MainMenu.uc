@@ -3,7 +3,7 @@ Class UI_MainMenu extends KFGUI_Page
 
 var MenuPlayerController PC;
 var KFGUI_List MenuParty;
-var KFGUI_Button SoloGame, MultiplayerGame, Gear, Perks, Settings, InventoryB, Vault, Exit, DailyInfo;
+var KFGUI_Button SoloGame, MultiplayerGame, Gear, Perks, Settings, InventoryB, Vault, Exit, DailyInfo, SeasonalInfo;
 var Texture ItemBoxTexture, ItemBarTexture;
 var array<KFPlayerReplicationInfo> KFPRIArray;
 var KFGameReplicationInfo KFGRI;
@@ -37,6 +37,10 @@ function InitMenu()
     Vault = KFGUI_Button(FindComponentID('Vault'));
     Exit = KFGUI_Button(FindComponentID('Exit'));
     DailyInfo = KFGUI_Button(FindComponentID('DailyInfo'));
+    SeasonalInfo = KFGUI_Button(FindComponentID('SeasonalInfo'));
+    
+    if( class'KFGameEngine'.static.GetSeasonalEventId() == SEI_None )
+        SeasonalInfo.SetVisibility(false);
     
     SoloGame.ButtonText = class'KFGFxWidget_MenuBar'.default.SoloString;
     MultiplayerGame.ButtonText = class'KFGFxWidget_MenuBar'.default.ServerBrowserString;
@@ -47,6 +51,7 @@ function InitMenu()
     Vault.ButtonText = class'KFGFxWidget_MenuBar'.default.MenuStrings[3];
     Exit.ButtonText = class'KFGFxWidget_MenuBar'.default.MenuStrings[7];
     DailyInfo.ButtonText = class'KFMission_LocalizedStrings'.default.DailyObjectiveString;
+    SeasonalInfo.ButtonText = class'KFMission_LocalizedStrings'.default.SeasonalString;
     
     ItemBoxTexture = Owner.CurrentStyle.ItemBoxTextures[`ITEMBOX_NORMAL];
     ItemBarTexture = Owner.CurrentStyle.ItemBoxTextures[`ITEMBOX_BAR_NORMAL];
@@ -126,8 +131,6 @@ function StartMapImageDownload()
 
 function CreateAndStartDownloader()
 {
-    ImageDownloader = None;
-    
     if( ImageCount >= MapList.Length )
         return;
         
@@ -138,7 +141,9 @@ function CreateAndStartDownloader()
             return;
     }
 
-    ImageDownloader = new(Self) class'MapImageDownloader';
+	if( ImageDownloader == None )
+		ImageDownloader = new(Self) class'MapImageDownloader';
+		
     ImageDownloader.MapName = MapList[ImageCount];
     ImageDownloader.DownloadImageFromURL(Repl(MapImageURL, "<Map>", MapList[ImageCount]), ImageDownloadComplete);
 }
@@ -304,6 +309,9 @@ function ButtonClicked( KFGUI_Button Sender )
         return;
     case 'DailyInfo':
         Owner.OpenMenu(class'UIR_DailyInfo');
+        return;    
+    case 'SeasonalInfo':
+        Owner.OpenMenu(class'UIR_SeasonalInfo');
         return;
     }
     
@@ -334,7 +342,21 @@ defaultproperties
         DrawOverride=DrawMenuButtons
         TextColor=(R=255,G=255,B=255,A=255)
     End Object
-    Components.Add(DailyInfo)   
+    Components.Add(DailyInfo)       
+    
+    Begin Object class=KFGUI_Button Name=SeasonalInfo
+        ID="SeasonalInfo"
+        XSize=0.25
+        YSize=0.025
+        XPosition=0.375
+        YPosition=0.795
+        FontScale=2
+        OnClickLeft=ButtonClicked
+        OnClickRight=ButtonClicked
+        DrawOverride=DrawMenuButtons
+        TextColor=(R=255,G=255,B=255,A=255)
+    End Object
+    Components.Add(SeasonalInfo)   
     
     Begin Object Class=UIR_WeeklyInfo Name=WeeklyFrame
         XSize=0.25

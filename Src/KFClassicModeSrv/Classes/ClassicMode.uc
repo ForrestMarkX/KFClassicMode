@@ -720,7 +720,7 @@ function SetupDefaultConfig()
         bDisableUpgradeSystem = false;
         
         bEnabledVisibleSpectators = true;
-        SpectatorRefireRate = 1.5f;
+        SpectatorRefireRate = 1.f;
         SpectatorZapDamage = 25.f;
         SpectatorHealAmount = 3.f;
     
@@ -890,7 +890,7 @@ function SetMaxPlayers()
 
 function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor Pickup, out byte bAllowPickup)
 {
-    local string                     S, WeaponName, PlayerName;
+    local string                     S, WeaponName;
     local bool                       Ret;
     local int                        SellPrice;
     local byte                       ItemIndex;
@@ -900,27 +900,25 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
     local KFInventoryManager         InvMan;
     local PlayerController           PC;
     local ClassicPlayerController    CPC;
-    local PlayerReplicationInfo      PRI;
     local STraderItem                Item;
+    local ClassicDroppedPickup       Drop;
     
     Ret = Super.OverridePickupQuery(Other, ItemClass, Pickup, bAllowPickup);
-    if( ClassicDroppedPickup(Pickup) == None || Pickup.Instigator == None || Pickup.Instigator == Other )
+    Drop = ClassicDroppedPickup(Pickup);
+    if( Drop == None || Drop.DroppedPawn == Other )
         return Ret;
     
-    CPC = ClassicPlayerController(ClassicDroppedPickup(Pickup).OwnerController);
-    if( CPC == None )
-        return Ret;
-        
-    if( Other.Controller == CPC )
+    CPC = ClassicPlayerController(Drop.OwnerController);
+    if( CPC == None || CPC == Other.Controller )
         return Ret;
     
-    if( CPC != None && CPC.bPickupsDisabled && CPC != Other.Controller && class<KFCarryableObject>(ItemClass) == None )
+    if( Drop.bDisablePickup && CPC != Other.Controller && class<KFCarryableObject>(ItemClass) == None )
     {
         bAllowPickup = 0;
         return true;
     }
     
-    if( !bBroadcastPickups || bAllowPickup == 0 || !Other.InvManager.HandlePickupQuery(ItemClass, Pickup) )
+    if( !bBroadcastPickups || !Other.InvManager.HandlePickupQuery(ItemClass, Pickup) )
         return Ret;
 
     Weapon = class<KFWeapon>(ItemClass);
@@ -947,29 +945,16 @@ function bool OverridePickupQuery(Pawn Other, class<Inventory> ItemClass, Actor 
         
     WeaponName = WeaponDef.static.GetItemName();
     SellPrice = InvMan.GetAdjustedSellPriceFor(Item);
-    
-    PRI = CPC.PlayerReplicationInfo;
-    if( PRI != None )
-    {
-        PlayerName = PRI.GetHumanReadableName();
-    }
-    
-    if( PlayerName == "" )
-    {
-        PlayerName = Pickup.Instigator.GetHumanReadableName();
-        if( PlayerName == "" )
-            return Ret;
-    }
 
     S = "%p #{DEF}picked up %o's %w #{DEF}($%$#{DEF}).";
     S = Repl(S, "%p", "#{C00101}"$class'ClassicPlayerController'.static.StripColorMessage(Other.GetHumanReadableName()));
-    S = Repl(S, "%o", "#{01C001}"$class'ClassicPlayerController'.static.StripColorMessage(PlayerName));
+    S = Repl(S, "%o", "#{01C001}"$class'ClassicPlayerController'.static.StripColorMessage(Drop.OwnerName));
     S = Repl(S, "%w", "#{0160C0}"$WeaponName);
     S = Repl(S, "%$", "#{C0C001}"$SellPrice);
     
     foreach WorldInfo.AllControllers(class'PlayerController', PC)
     {
-        PC.ClientMessage(S, 'Log');
+        PC.ClientMessage(S);
     }
     
     return Ret;
@@ -1174,15 +1159,101 @@ function PlayerChangeSpec( ClassicPlayerController PC, bool bSpectator )
     }
 }
 
+function bool IsFromMod(Object O)
+{
+    local string PackageName;
+    
+    if( O == None )
+        return false;
+    
+    PackageName = string(O.GetPackageName());
+    if( PackageName ~= "KFGameContent" || PackageName ~= "KFGame" )
+        return false;
+        
+    return true;
+}
+
 function ScoreKill(Controller Killer, Controller Killed)
 {
     local KFPawn_Monster KFM;
+    local int i, j;
+    local KFPlayerController KFPC;
+    local KFPlayerReplicationInfo DamagerKFPRI;
+    local float XP;
+    local KFPerk InstigatorPerk;
+    local ClassicPlayerController C;
+    local Color SpectatorColor;
     
     KFM = KFPawn_Monster(Killed.Pawn);
     if( KFM!=None && Killed.GetTeamNum()!=0 && Killer.bIsPlayer && Killer.GetTeamNum()==0 )
     {
         if( Killer.PlayerReplicationInfo!=None )
             BroadcastKillMessage(Killed.Pawn,Killer);
+            
+        if( KFM.DamageHistory.Length > 0 && IsFromMod(KFM) )
+        {
+            for( i = 0; i<KFM.DamageHistory.Length; i++ )
+            {
+                DamagerKFPRI = KFPlayerReplicationInfo(KFM.DamageHistory[i].DamagerPRI);
+                if( DamagerKFPRI != None )
+                {
+                    if( KFM.DamageHistory[i].DamagePerks.Length <= 0 )
+                    {
+                        continue;
+                    }
+
+                    // Distribute experience points
+                    KFPC = KFPlayerController(DamagerKFPRI.Owner);
+                    if( KFPC != none )
+                    {
+                        InstigatorPerk = KFPC.GetPerk();
+                        if( InstigatorPerk.ShouldGetAllTheXP() )
+                        {
+                            KFPC.OnPlayerXPAdded(KFM.static.GetXPValue(MyKFGI.GameDifficulty), InstigatorPerk.Class);
+                            continue;
+                        }
+
+                        XP = KFM.static.GetXPValue(MyKFGI.GameDifficulty) / KFM.DamageHistory[i].DamagePerks.Length;
+
+                        for( j = 0; j < KFM.DamageHistory[i].DamagePerks.Length; j++ )
+                        {
+                            KFPC.OnPlayerXPAdded(FCeil(XP), KFM.DamageHistory[i].DamagePerks[j]);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    if( KFPawn_Human(Killed.Pawn) != None )
+    {
+        if( bEnabledVisibleSpectators && !KFGameReplicationInfo(WorldInfo.GRI).bMatchIsOver )
+        {
+            C = ClassicPlayerController(Killed);
+            if( C != None )
+            {
+                SpectatorColor.R = RandRange(55, 255);
+                SpectatorColor.G = RandRange(55, 255);
+                SpectatorColor.B = RandRange(55, 255);
+                SpectatorColor.A = 255;
+                
+                if( C.VisSpectator != None )
+                    C.VisSpectator.Remove();
+                
+                C.bIsSpectating = true;
+
+                C.VisSpectator = Spawn(Rand(1) == 0 ? class'SpectatorFlame' : class'SpectatorUFO', C,, C.Location,,, true);
+                C.VisSpectator.SetPlayerOwner(C);
+                C.VisSpectator.SetColor(SpectatorColor);
+            }
+        }
+        
+        foreach WorldInfo.AllControllers(class'ClassicPlayerController',C)
+        {
+            if( C.bClientHidePlayerDeaths )
+                continue;
+            C.ClientKillMessage(Killed.Pawn.Class, Killer.Pawn, Killed.PlayerReplicationInfo, Killer.PlayerReplicationInfo, Killer.bIsPlayer);
+        }
     }
     
     Super.ScoreKill(Killer, Killed);

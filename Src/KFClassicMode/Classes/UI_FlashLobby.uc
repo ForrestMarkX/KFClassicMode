@@ -49,7 +49,7 @@ function DoClose()
     
     if( !KFGameReplicationInfo(PC.WorldInfo.GRI).bMatchHasBegun )
     {
-        Owner.OpenMenu(PC.LobbyMenuClass);
+        PC.LobbyMenu.SetVisibility(true);
         PC.MyGFxManager.SetHUDVisiblity(false);
     }
     else

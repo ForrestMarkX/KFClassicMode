@@ -1,21 +1,8 @@
 Class HealProj extends Projectile;
 
 var Actor SeekTarget;
-var ParticleSystemComponent    ParticleSystemComponent;
+var ParticleSystemComponent ParticleSystemComponent;
 var ParticleSystem ProjectileTemplate;
-
-simulated function PreBeginPlay()
-{
-    local ClientPerkRepLink RepLink;
-    
-    RepLink = class'ClientPerkRepLink'.static.FindContentRep(WorldInfo);
-    if( RepLink != None )
-    {
-        ProjectileTemplate = ParticleSystem(RepLink.ObjRef.ReferencedObjects[165]);
-    }
-    
-    Super.PreBeginPlay();
-}
 
 simulated function PostBeginPlay()
 {
@@ -57,7 +44,7 @@ defaultproperties
     ParticleSystemComponent=ParticleSystemComponent0
     Components.Add(ParticleSystemComponent0)
     
-    ProjectileTemplate=ParticleSystem'KFClassicMode_Assets.UFO.FX_Healer_Ball'
+    ProjectileTemplate=ParticleSystem'ZED_Clot_EMIT.FX_Player_Zed_Buff_01'
     
     Speed=250.f
     MaxSpeed=500.f

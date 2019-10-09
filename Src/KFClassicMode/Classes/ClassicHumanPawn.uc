@@ -179,7 +179,6 @@ function StopTraderDialog()
 
 simulated function bool Died(Controller Killer, class<DamageType> DmgType, vector HitLocation)
 {
-    local ClassicPlayerController C;
     local PlayerReplicationInfo KillerPRI;
 
     if( WorldInfo.NetMode!=NM_Client && PlayerReplicationInfo!=None )
@@ -194,12 +193,6 @@ simulated function bool Died(Controller Killer, class<DamageType> DmgType, vecto
                 if( PlayerController(Killer)==None ) // If was killed by a monster, don't broadcast PRI along with it.
                     KillerPRI = None;
             }
-        }
-        foreach WorldInfo.AllControllers(class'ClassicPlayerController',C)
-        {
-            if( C.bClientHidePlayerDeaths )
-                continue;
-            C.ClientKillMessage(DmgType, self.Class, Killer, PlayerReplicationInfo, KillerPRI);
         }
     }
     return Super.Died(Killer, DmgType, HitLocation);
