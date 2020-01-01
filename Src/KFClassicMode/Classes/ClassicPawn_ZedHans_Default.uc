@@ -22,7 +22,7 @@ function PossessedBy( Controller C, bool bVehicleTransition )
 
 simulated function float GetShieldHealthPercent()
 {
-    return ByteToFloat(ShieldHealthPctByte);
+    return LastShieldHealthPct;
 }
 
 simulated function ParticleSystemComponent GetShieldPSC()

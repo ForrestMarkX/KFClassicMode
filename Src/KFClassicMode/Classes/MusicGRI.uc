@@ -1,4 +1,4 @@
-class MusicGRI extends Info;
+class MusicGRI extends ReplicationInfo;
 
 var MusicTrackStruct CurrentMusicTrack;
 var AudioComponent MusicCompCue;
@@ -6,7 +6,7 @@ var KFGameReplicationInfo GRI;
 var bool bWaveIsActive, bInitialBossMusicTrackCreated;
 var byte UpdateCounter, TimerCount;
 var KFMusicTrackInfo CurrentTrackInfo;
-var SoundCue BossMusic, MenuMusic;
+var SoundCue BossMusic;
 var KFMusicTrackInfo_Custom BossTrack, MenuTrack;
 
 var string WaveMusic, TraderMusic;
@@ -37,15 +37,7 @@ simulated function PostBeginPlay()
     Super.PostBeginPlay();
     
     Engine = KFGameEngine(class'Engine'.static.GetEngine());
-    if ( class'WorldInfo'.static.IsMenuLevel() )
-    {
-        MenuTrack = New(None) class'KFMusicTrackInfo_Custom';
-        MenuTrack.StandardSong = MenuMusic;
-        MenuTrack.InstrumentalSong = MenuMusic;
-        
-        UpdateMusicTrack(MenuTrack);
-    }
-    else SetupMusicInfo();
+    SetupMusicInfo();
 }
 
 simulated function SetupMusicInfo()
@@ -54,6 +46,7 @@ simulated function SetupMusicInfo()
     local KFEventHelper EventHelper;
     local EEventTypes EventType;
     local bool bNoClassicMusic;
+    local ClientPerkRepLink RepLink;
     
     if( WorldInfo.NetMode == NM_DedicatedServer )
         return;
@@ -122,6 +115,15 @@ simulated function SetupMusicInfo()
         return;
     }
     
+    RepLink = class'ClientPerkRepLink'.static.FindContentRep(WorldInfo);
+    if( RepLink != None && BossTrack == None )
+    {
+        BossTrack = New(None) class'KFMusicTrackInfo_Custom';
+        BossTrack.StandardSong = BossMusic != None ? BossMusic : SoundCue(RepLink.ObjRef.ReferencedObjects[101]);
+        BossTrack.InstrumentalSong = BossMusic != None ? BossMusic : SoundCue(RepLink.ObjRef.ReferencedObjects[101]);
+        BossTrack.bLoop = true;
+    }
+    
     ForceStartMusic();
 }
 
@@ -152,7 +154,7 @@ simulated function UpdateMusicTrack( KFMusicTrackInfo NextMusicTrackInfo )
         return;
     
     CurrentTrack = SoundCue(CustomInfo.StandardSong);
-    
+
     CurrentTrack.SoundClass = 'Music';
     Music.TheSoundCue = CurrentTrack;
     Music.FadeInTime = CustomInfo.FadeInTime;
@@ -238,7 +240,7 @@ simulated function PlayNewMusicTrack( optional bool bGameStateChanged, optional 
     else if( CurrentTrackInfo != none )
         bLoop = CurrentTrackInfo.bLoop;
 
-    if( GRI != None && GRI.IsBossWave() )
+    if( GRI != None && GRI.IsBossWave() && !bForceAmbient )
         NextMusicTrackInfo = BossTrack;
     else if( bLoop )
         NextMusicTrackInfo = CurrentTrackInfo;
@@ -254,6 +256,9 @@ simulated function PlayNewMusicTrack( optional bool bGameStateChanged, optional 
 
 simulated function Tick(float DT)
 {
+    if( WorldInfo.NetMode == NM_DedicatedServer )
+        return;
+        
     if( MusicCompCue != None )
     {
         if( !MusicCompCue.IsPlaying() )
@@ -293,7 +298,7 @@ simulated function Tick(float DT)
     {
         CurrentTrackInfo = None;
         bWaveIsActive = GRI.bWaveIsActive;
-        PlayNewMusicTrack( true, false );
+        PlayNewMusicTrack( true, !bWaveIsActive );
         return;
     }
 }
@@ -314,24 +319,29 @@ simulated function ForceStartMusic()
     PlayNewMusicTrack(false, !bWaveIsActive);
 }
 
-reliable client function ForceBossMusic()
+reliable client function ForceBossMusic(KFPawn_Monster Pawn)
 {
-    if( GRI.IsBossWave() && !ClassicPlayerController(GetALocalPlayerController()).bDisableClassicMusic )
+    if( ClassicPlayerController(GetALocalPlayerController()).bDisableClassicMusic )
     {
-        UpdateMusicTrack(BossTrack);
+        if( Pawn.IsA('KFPawn_ZedHans') )
+            GRI.ForceNewMusicTrack(class'KFGameInfo'.default.ForcedMusicTracks[EFM_Boss1]);
+        else if( Pawn.IsA('KFPawn_ZedPatriarch') )
+            GRI.ForceNewMusicTrack(class'KFGameInfo'.default.ForcedMusicTracks[EFM_Boss2]);
+        else if( Pawn.IsA('KFPawn_ZedMatriarch') )
+            GRI.ForceNewMusicTrack(class'KFGameInfo'.default.ForcedMusicTracks[EFM_Boss3]);
+        else if( Pawn.IsA('KFPawn_ZedFleshpoundKing') )
+            GRI.ForceNewMusicTrack(class'KFGameInfo'.default.ForcedMusicTracks[EFM_Boss4]);
+        else if( Pawn.IsA('KFPawn_ZedBloatKing') )
+            GRI.ForceNewMusicTrack(class'KFGameInfo'.default.ForcedMusicTracks[EFM_Boss5]);
     }
+    else UpdateMusicTrack(BossTrack);
 }
 
 defaultproperties
 {
-    RemoteRole=ROLE_SimulatedProxy
-    bAlwaysRelevant=true
     bAlwaysTick=true
     
-    bStatic=False
-    bNoDelete=False
-
-    Components.Remove(Sprite)
+    BossMusic=SoundCue'KFClassicMode_Assets.Music.RandomBossMusic'
     
     WaveMusic="KFClassicMusic.RandomWaveMusic"
     TraderMusic="KFClassicMusic.RandomTraderMusic"

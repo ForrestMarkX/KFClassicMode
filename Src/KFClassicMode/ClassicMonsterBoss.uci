@@ -3,12 +3,9 @@ function PlayBossMusic()
 {
     local MusicGRI MusicGRI;
     
-	Super.PlayBossMusic();
-    
     MusicGRI = class'MusicGRI'.static.FindMusicGRI(WorldInfo);
     if( MusicGRI != None )
-    {
-        MusicGRI.ForceBossMusic();
-    }
+        MusicGRI.ForceBossMusic(self);
+    else SetTimer(0.2, false, nameof(PlayBossMusic));
 }
 `endif

@@ -308,6 +308,7 @@ function PostBeginPlay()
         AIClassList[14].Replacment = class'KFClassicMode.ClassicPawn_ZedHans_Default';
         AIClassList[15].Replacment = class'KFClassicMode.ClassicPawn_ZedBloatKing_Default';
         AIClassList[16].Replacment = class'KFClassicMode.ClassicPawn_ZedFleshpoundKing_Default';
+        AIClassList[17].Replacment = class'KFClassicMode.ClassicPawn_ZedMatriarch_Default';
     }
     
     for(i=0; i<PickupReplacments.Length; i++)
@@ -367,7 +368,7 @@ function InitMutator(string Options, out string ErrorMessage)
         MusicReplicationInfo = WorldInfo.Game.Spawn(MusicReplicationInfoClass);
     }
     
-    if( Len(ZEDReplacmentTable) != 0 )
+    if( Len(ZEDReplacmentTable) != 0 && ZEDReplacmentTable != "ExampleProfile" )
     {
         LoadInfoObject(ZEDReplacmentTable);
     }
@@ -745,6 +746,27 @@ function SetupDefaultConfig()
             TraderInventory.AddItem("KFGame.KFWeapDef_ChiappaRhino");        
             
         MapInfo.Name = "KF-AshwoodAsylum";
+        MapInfo.Type = "Halloween";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        iVersionNumber++;
+    }
+    
+    if( iVersionNumber <= 7 )
+    {
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGWinterbiteDual") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGWinterbiteDual");
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGWinterbite") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGWinterbite");
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGIncision") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGIncision");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_MosinNagant") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_MosinNagant");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_G18") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_G18");      
+            
+        MapInfo.Name = "KF-Sanitarium";
         MapInfo.Type = "Halloween";
         MapInfo.MaxMonsters = 32;
         MapTypes.AddItem(MapInfo);
@@ -1279,19 +1301,19 @@ final function BroadcastKillMessage( Pawn Killed, Controller Killer )
 
 function NetDamage(int OriginalDamage, out int Damage, Pawn Injured, Controller InstigatedBy, vector HitLocation, out vector Momentum, class<DamageType> DamageType, Actor DamageCauser)
 {
-	Super.NetDamage(OriginalDamage, Damage, Injured, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser);
+    Super.NetDamage(OriginalDamage, Damage, Injured, InstigatedBy, HitLocation, Momentum, DamageType, DamageCauser);
 
-	if( LastDamageDealer!=None )
-	{
-		ClearTimer('CheckDamageDone');
-		CheckDamageDone();
-	}
+    if( LastDamageDealer!=None )
+    {
+        ClearTimer('CheckDamageDone');
+        CheckDamageDone();
+    }
     
-	if( Damage>0 && InstigatedBy != None )
-	{
-		if( KFPawn_Monster(Injured) != None && ClassicPlayerController(InstigatedBy) != None )
-		{
-			LastDamageDealer = ClassicPlayerController(InstigatedBy);
+    if( Damage>0 && InstigatedBy != None )
+    {
+        if( KFPawn_Monster(Injured) != None && ClassicPlayerController(InstigatedBy) != None )
+        {
+            LastDamageDealer = ClassicPlayerController(InstigatedBy);
             if( LastDamageDealer.bNoDamageTracking )
                 return;
                 
@@ -1300,26 +1322,26 @@ function NetDamage(int OriginalDamage, out int Damage, Pawn Injured, Controller 
             LastDamagePosition = HitLocation;
             LastDamageDMGType = class<KFDamageType>(DamageType);
             SetTimer(0.1,false,'CheckDamageDone');
-		}
-	}
+        }
+    }
 }
 
 final function CheckDamageDone()
 {
-	local int Damage;
+    local int Damage;
 
-	if( LastDamageDealer!=None && LastHitZed!=None && LastHitHP!=LastHitZed.Health )
-	{
-		Damage = LastHitHP-Max(LastHitZed.Health,0);
-		if( Damage>0 )
+    if( LastDamageDealer!=None && LastHitZed!=None && LastHitHP!=LastHitZed.Health )
+    {
+        Damage = LastHitHP-Max(LastHitZed.Health,0);
+        if( Damage>0 )
         {
-			if( !LastDamageDealer.bClientHideDamageMsg && KFPawn_Monster(LastHitZed)!=None )
-				LastDamageDealer.ReceiveDamageMessage(LastHitZed.Class,Damage);
+            if( !LastDamageDealer.bClientHideDamageMsg && KFPawn_Monster(LastHitZed)!=None )
+                LastDamageDealer.ReceiveDamageMessage(LastHitZed.Class,Damage);
             if( !LastDamageDealer.bClientHideNumbers )
                 LastDamageDealer.ClientNumberMsg(Damage,LastDamagePosition,LastDamageDMGType);
         }
-	}
-	LastDamageDealer = None;
+    }
+    LastDamageDealer = None;
 }
 
 final function SavePlayerPerk( ClassicPlayerController PC )
@@ -1722,10 +1744,10 @@ function bool CheckReplacement(Actor A)
         return false;
     }
     
-	KFW = KFWeapon(A);
-	if( KFW != None )
+    KFW = KFWeapon(A);
+    if( KFW != None )
     {
-		KFW.DroppedPickupClass = class'ClassicDroppedPickup';
+        KFW.DroppedPickupClass = class'ClassicDroppedPickup';
         return true;
     }
   
@@ -1734,44 +1756,44 @@ function bool CheckReplacement(Actor A)
 
 function ModifyPickupFactories()
 {
-	local PickupReplacmentStruct Replacment;
-	
-	foreach LoadedWeaponReplacements(Replacment)
-	{
-		ReplaceWeaponPickup(Replacment.OriginalClass, Replacment.ReplacmentClass);
-	}
+    local PickupReplacmentStruct Replacment;
+    
+    foreach LoadedWeaponReplacements(Replacment)
+    {
+        ReplaceWeaponPickup(Replacment.OriginalClass, Replacment.ReplacmentClass);
+    }
 
-	Super.ModifyPickupFactories();
+    Super.ModifyPickupFactories();
 }
 
 function ReplaceWeaponPickup(class<KFWeapon> OldWeaponClass, class<KFWeapon> NewWeaponClass)
 {
-	local KFPickupFactory       KFPF;
-	local KFPickupFactory_Item  KFPFI;
-	local int                   i;
-	
-	foreach MyKFGI.ItemPickups(KFPF)
-	{
-		KFPFI = KFPickupFactory_Item(KFPF);
-		if( KFPFI != None )
-		{
-			for( i = 0; i < KFPFI.ItemPickups.Length; i++ )
-			{
-				if( KFPFI.ItemPickups[i].ItemClass == OldWeaponClass )
-				{
-					KFPFI.ItemPickups[i].ItemClass = NewWeaponClass;
-					break;
-				}
-			}
-		}
-	}
+    local KFPickupFactory       KFPF;
+    local KFPickupFactory_Item  KFPFI;
+    local int                   i;
+    
+    foreach MyKFGI.ItemPickups(KFPF)
+    {
+        KFPFI = KFPickupFactory_Item(KFPF);
+        if( KFPFI != None )
+        {
+            for( i = 0; i < KFPFI.ItemPickups.Length; i++ )
+            {
+                if( KFPFI.ItemPickups[i].ItemClass == OldWeaponClass )
+                {
+                    KFPFI.ItemPickups[i].ItemClass = NewWeaponClass;
+                    break;
+                }
+            }
+        }
+    }
 }
 
 // Copy of GameInfo::ChoosePlayerStart, modified to get the closest spawn to Trader.
 function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam, optional string incomingName)
 {
-	local PlayerStart P, BestStart;
-	local int BestRating, NewRating;
+    local PlayerStart P, BestStart;
+    local int BestRating, NewRating;
     local KFTraderTrigger T;
     local KFGameReplicationInfo GRI;
     local NavigationPoint Ret;
@@ -1788,19 +1810,19 @@ function NavigationPoint FindPlayerStart(Controller Player, optional byte InTeam
     if( T == None )
         return Ret;
 
-	foreach WorldInfo.AllNavigationPoints(class'PlayerStart', P)
-	{
+    foreach WorldInfo.AllNavigationPoints(class'PlayerStart', P)
+    {
         if( !P.bEnabled )
             continue;
             
-		NewRating = VSizeSq(P.Location - T.Location);
-		if( NewRating < BestRating )
-		{
-			BestRating = NewRating;
-			BestStart = P;
-		}
-	}
-	return BestStart;
+        NewRating = VSizeSq(P.Location - T.Location);
+        if( NewRating < BestRating )
+        {
+            BestRating = NewRating;
+            BestStart = P;
+        }
+    }
+    return BestStart;
 }
 
 function string ZEDNameToClass(string ClassName)
@@ -1846,6 +1868,8 @@ function string ZEDNameToClass(string ClassName)
         Case "Abomination":
         Case "King Bloat":
             return "KFGameContent.KFPawn_ZedBloat_King";
+        Case "Matriarch":
+            return "KFGameContent.KFPawn_ZedMatriarch";
         default:
             return ClassName;
     }
@@ -2176,6 +2200,7 @@ defaultproperties
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedHans', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedBloatKing', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
     AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedFleshpoundKing', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
+    AIClassList.Add((Original=class'KFGameContent.KFPawn_ZedMatriarch', Replacment=class'KFClassicMode.ClassicPawn_ZedPatriarch'))
     
     DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_9mm', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_9mm'))
     DefaultWeaponReplacements.Add((OriginalClass=class'KFGameContent.KFWeap_Pistol_Dual9mm', ReplacmentClass=class'KFClassicMode.ClassicWeap_Pistol_Dual9mm'))

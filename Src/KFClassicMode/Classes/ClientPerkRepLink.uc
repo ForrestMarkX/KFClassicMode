@@ -286,7 +286,7 @@ simulated final function SetupMusicGRI()
     local MusicGRI MusicGRI;
     
     MusicGRI = class'MusicGRI'.static.FindMusicGRI(WorldInfo);
-    if( MusicGRI == None )
+    if( MusicGRI == None || MusicGRI.BossTrack != None )
         return;
         
     MusicGRI.BossMusic = SoundCue(ObjRef.ReferencedObjects[101]);

@@ -1,4 +1,4 @@
-class ClassicPawn_ZedFleshpoundKing_Default extends KFPawn_ZedFleshpoundKing 
+class ClassicPawn_ZedMatriarch_Default extends KFPawn_ZedMatriarch 
     implements(KFZEDBossInterface);
 
 `define PLAYENTRANCESOUND true

@@ -18,7 +18,9 @@ var string PasswordIcon, VACIcon, StatsIcon;
 var array<int> PingFilter;
 var ESteamMatchmakingType SearchType;
 
-var globalconfig string SavedServerName;
+var config string SavedServerName;
+var config Bool bNoPassword, bNoMutators, bNotFull, bNotEmpty, bUsesStats, bCustom, bDedicated, bVAC_Secure, bInLobby, bInProgress, bOnlyStockMaps, bOnlyCustomMaps, bLimitServerResults;
+var config byte SavedGameModeIndex, SavedMapIndex, SavedDifficultyIndex, SavedLengthIndex, SavedPingIndex;
 
 var transient string TransitionMap, TransitionGame, AnyString;
 var transient array<string> DifficultyStrings, LengthStrings, GameModeStrings, MapStrings;
@@ -76,15 +78,15 @@ function InitMenu()
     
     ServerRightClick.OnSelectedItem = ClickedRow;
     
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.NotEmptyString,"Do not display empty servers.",'bNoEmpty',Filters.default.bNotEmpty);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.NotFullString,"Do not display full servers.",'bNoFull',Filters.default.bNotFull);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.NoPasswordString,"Do not display passworded servers.",'bNoPassword',Filters.default.bNoPassword);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.NoRankedCustomString,"Do not display custom servers.",'bNoCustom',Filters.default.bCustom);
-    AddCheckBox(Localize("KFGFxServerBrowser_Filters", "NoStatsEnabledString", "KFGame"),"Do not display ranked servers.",'bNoRanked',!Filters.default.bUsesStats);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.InLobbyString,"Only display servers that are in the lobby.",'bInLobby',Filters.default.bInLobby);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.InProgressString,"Only display servers that are in progress.",'bInProgress',Filters.default.bInProgress);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.OnlyStockMapsString,"Only display servers using stock maps.",'bOnlyStock',Filters.default.bOnlyStockMaps);
-    AddCheckBox(class'KFGFxServerBrowser_Filters'.default.OnlyCustomMapsString,"Only display servers using custom maps.",'bOnlyCustom',Filters.default.bOnlyCustomMaps);
+    AddCheckBox(Filters.default.NotEmptyString,"Do not display empty servers.",'bNoEmpty',bNotEmpty);
+    AddCheckBox(Filters.default.NotFullString,"Do not display full servers.",'bNoFull',bNotFull);
+    AddCheckBox(Filters.default.NoPasswordString,"Do not display passworded servers.",'bNoPassword',bNoPassword);
+    AddCheckBox(Filters.default.NoRankedCustomString,"Do not display custom servers.",'bNoCustom',bCustom);
+    AddCheckBox(Localize("KFGFxServerBrowser_Filters", "NoStatsEnabledString", "KFGame"),"Do not display ranked servers.",'bNoRanked',!bUsesStats);
+    AddCheckBox(Filters.default.InLobbyString,"Only display servers that are in the lobby.",'bInLobby',bInLobby);
+    AddCheckBox(Filters.default.InProgressString,"Only display servers that are in progress.",'bInProgress',bInProgress);
+    AddCheckBox(Filters.default.OnlyStockMapsString,"Only display servers using stock maps.",'bOnlyStock',bOnlyStockMaps);
+    AddCheckBox(Filters.default.OnlyCustomMapsString,"Only display servers using custom maps.",'bOnlyCustom',bOnlyCustomMaps);
     
     PingBox = AddComboBox(class'KFGFxMenu_ServerBrowser'.default.PingString,"Do not show servers with a ping higher than this.",'PingSetting',PingLabel);
     PingBox.Values.AddItem(AnyString);
@@ -117,7 +119,7 @@ function InitMenu()
         GameModeBox.Values.AddItem(GameModeStrings[i]);
     }
     
-    class'KFGFxMenu_StartGame'.static.GetMapList(MapStrings, Filters.default.SavedGameModeIndex);
+    class'KFGFxMenu_StartGame'.static.GetMapList(MapStrings, SavedGameModeIndex);
     MapsBox = AddComboBox(class'KFGFxMenu_ServerBrowser'.default.MapString,"Only show servers using this map.",'MapSetting',MapsLabel);
     MapsBox.Values.AddItem(AnyString);
     for( i=0; i<MapStrings.Length; i++ )
@@ -131,51 +133,45 @@ function InitMenu()
 
 function ShowMenu()
 {
-    local int SavedPingIndex, SavedDifficultyIndex, SavedLengthIndex, SavedGameModeIndex, SavedMapIndex;
-    
     Super.ShowMenu();
     
     GameInterface.SetMatchmakingTypeMode(SearchType);
     RefreshList();
     PlayerInfo.EmptyList();
     
-    SavedPingIndex = Filters.default.SavedPingIndex;
-    
-    SavedDifficultyIndex = Filters.default.SavedDifficultyIndex;
-    if (SavedDifficultyIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].DifficultyLevels)
+    if (SavedDifficultyIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(SavedGameModeIndex)].DifficultyLevels)
         SavedDifficultyIndex = 255;
     
-    SavedLengthIndex = Filters.default.SavedLengthIndex;
-    if (SavedLengthIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(Filters.default.SavedGameModeIndex)].Lengths)
+    if (SavedLengthIndex >= class'KFGameInfo'.default.GameModes[GetUsableGameMode(SavedGameModeIndex)].Lengths)
         SavedLengthIndex = 255;
     
-    SavedGameModeIndex = Filters.default.SavedGameModeIndex;
     if (SavedGameModeIndex >= class'KFGameInfo'.default.GameModes.Length)
         SavedGameModeIndex = 255;
     
     if( SavedGameModeIndex == 255 )
         GameModeBox.SetValue(AnyString);
-    else GameModeBox.SetValue(GameModeStrings[Filters.default.SavedGameModeIndex]); 
+    else GameModeBox.SetValue(GameModeStrings[SavedGameModeIndex]); 
     
-    SavedMapIndex = Filters.default.SavedMapIndex;
     if (SavedMapIndex >= class'KFGameInfo'.default.GameModes.Length)
         SavedMapIndex = 255;
     
     if( SavedDifficultyIndex == 255 )
         DifficultyBox.SetValue(AnyString);
-    else DifficultyBox.SetValue(DifficultyStrings[Filters.default.SavedDifficultyIndex]);  
+    else DifficultyBox.SetValue(DifficultyStrings[SavedDifficultyIndex]);  
 
     if( SavedMapIndex == 255 )
         MapsBox.SetValue(AnyString);
-    else MapsBox.SetValue(MapStrings[Filters.default.SavedMapIndex]);     
+    else MapsBox.SetValue(MapStrings[SavedMapIndex]);     
     
     if( SavedLengthIndex == 255 )
         LengthBox.SetValue(AnyString);
-    else LengthBox.SetValue(LengthStrings[Filters.default.SavedLengthIndex]); 
+    else LengthBox.SetValue(LengthStrings[SavedLengthIndex]); 
     
     if( SavedPingIndex == 255 )
         PingBox.SetValue(AnyString);
-    else PingBox.SetValue(class'KFGFxMenu_ServerBrowser'.default.PingOptionStrings[Filters.default.SavedPingIndex]);   
+    else PingBox.SetValue(class'KFGFxMenu_ServerBrowser'.default.PingOptionStrings[SavedPingIndex]);
+
+    SaveConfig();    
 }
 
 function int GetUsableGameMode(int ModeIndex)
@@ -257,24 +253,24 @@ function BuildServerFilters(OnlineGameSearch Search)
     Search.AddServerFilter("version_match", string(class'KFGameEngine'.static.GetKFGameVersion()));
     
     // Does nothing?
-    Search.TestAddServerFilter( Filters.default.bNotFull, "notfull");
-    Search.TestAddServerFilter( Filters.default.bNotEmpty, "hasplayers");
+    Search.TestAddServerFilter( bNotFull, "notfull");
+    Search.TestAddServerFilter( bNotEmpty, "hasplayers");
 
     if (!class'WorldInfo'.static.IsConsoleBuild())
     {
-        Search.TestAddServerFilter( Filters.default.bDedicated, "dedicated");
-        Search.TestAddServerFilter( Filters.default.bVAC_Secure, "secure");
+        Search.TestAddServerFilter( bDedicated, "dedicated");
+        Search.TestAddServerFilter( bVAC_Secure, "secure");
     }
 
-    if (Filters.default.bInProgress && !Filters.default.bInLobby)
-        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInProgress, 'bInProgress', 1);
-    else if (Filters.default.bInLobby)
-        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bInLobby, 'bInProgress', 0);
+    if (bInProgress && !bInLobby)
+        Search.TestAddBoolGametagFilter(GametagSearch, bInProgress, 'bInProgress', 1);
+    else if (bInLobby)
+        Search.TestAddBoolGametagFilter(GametagSearch, bInLobby, 'bInProgress', 0);
 
     if (!class'WorldInfo'.static.IsConsoleBuild())
-        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bNoPassword, 'bRequiresPassword', 0);
+        Search.TestAddBoolGametagFilter(GametagSearch, bNoPassword, 'bRequiresPassword', 0);
 
-    Mode = Filters.default.SavedGameModeIndex;
+    Mode = SavedGameModeIndex;
     if (Mode >= 0 && Mode < 255)
         Search.AddGametagFilter(GametagSearch, 'Mode', string(Mode));
         
@@ -282,8 +278,8 @@ function BuildServerFilters(OnlineGameSearch Search)
     if (MapName != "")
         Search.AddServerFilter("map", MapName);
     
-    if (Filters.default.bCustom && !class'WorldInfo'.static.IsConsoleBuild())
-        Search.TestAddBoolGametagFilter(GametagSearch, Filters.default.bCustom, 'bCustom', 0);
+    if (bCustom && !class'WorldInfo'.static.IsConsoleBuild())
+        Search.TestAddBoolGametagFilter(GametagSearch, bCustom, 'bCustom', 0);
 
     if (Len(GametagSearch) > 0)
         Search.AddServerFilter("gametagsand", GametagSearch);
@@ -294,10 +290,10 @@ function BuildServerFilters(OnlineGameSearch Search)
 function string GetSelectedMap()
 {
     local array<string> MapList;
-    class'KFGFxMenu_StartGame'.static.GetMapList(MapList, Filters.default.SavedGameModeIndex);
-    if( Filters.default.SavedMapIndex >= MapList.Length )
+    class'KFGFxMenu_StartGame'.static.GetMapList(MapList, SavedGameModeIndex);
+    if( SavedMapIndex >= MapList.Length )
         return "";
-    return MapList[Filters.default.SavedMapIndex];
+    return MapList[SavedMapIndex];
 }
 
 function bool ShouldServerBeFiltered(KFOnlineGameSettings Settings)
@@ -315,13 +311,13 @@ function bool ShouldServerBeFiltered(KFOnlineGameSettings Settings)
         else MapIndex = INDEX_NONE;
     }
     
-    if( Filters.default.bOnlyStockMaps && MapIndex == INDEX_NONE )
+    if( bOnlyStockMaps && MapIndex == INDEX_NONE )
         return true;
-    else if( Filters.default.bOnlyCustomMaps && MapIndex != INDEX_NONE )
+    else if( bOnlyCustomMaps && MapIndex != INDEX_NONE )
         return true;
 
     NumPlayers = Settings.NumPublicConnections-Settings.NumOpenPublicConnections-Settings.NumSpectators;
-    if( (Filters.default.bNotFull && NumPlayers >= Settings.NumPublicConnections) || (Filters.default.bNotEmpty && NumPlayers <= 0) || Settings.PingInMs > PingFilter[Filters.default.SavedPingIndex] || (Filters.default.SavedDifficultyIndex != 255 && Settings.Difficulty != Filters.default.SavedDifficultyIndex) || (Filters.default.SavedLengthIndex != 255 && GetWaveFilter(Filters.default.SavedLengthIndex, Settings.NumWaves)) || (!Filters.default.bUsesStats && Settings.bUsesStats) )
+    if( (bNotFull && NumPlayers >= Settings.NumPublicConnections) || (bNotEmpty && NumPlayers <= 0) || Settings.PingInMs > PingFilter[SavedPingIndex] || (SavedDifficultyIndex != 255 && Settings.Difficulty != SavedDifficultyIndex) || (SavedLengthIndex != 255 && GetWaveFilter(SavedLengthIndex, Settings.NumWaves)) || (!bUsesStats && Settings.bUsesStats) )
         return true;
         
     if( SavedServerName != "" )
@@ -448,6 +444,9 @@ function bool IsEndlessModeIndex(int ModeIndex, optional byte NumWaves)
 
 function SelectedServer(KFGUI_ListItem Item, int Row, bool bRight, bool bDblClick)
 {
+    if( Item == None )
+        return;
+        
     SelectedServerIndex = Item.Value;
 
     if( bRight )
@@ -786,31 +785,31 @@ function OnComboChanged(KFGUI_ComboBox Sender)
     {
         case 'PingSetting':
             if( SavedIndex == -1 )
-                Filters.default.SavedPingIndex = 255;
-            else Filters.default.SavedPingIndex = SavedIndex;
+                SavedPingIndex = 255;
+            else SavedPingIndex = SavedIndex;
             break;        
         case 'DifficultySetting':
             if( SavedIndex == -1 )
-                Filters.default.SavedDifficultyIndex = 255;
-            else Filters.default.SavedDifficultyIndex = SavedIndex;
+                SavedDifficultyIndex = 255;
+            else SavedDifficultyIndex = SavedIndex;
             break;        
         case 'LengthSetting':
             if( SavedIndex == -1 )
-                Filters.default.SavedLengthIndex = 255;
-            else Filters.default.SavedLengthIndex = SavedIndex;
+                SavedLengthIndex = 255;
+            else SavedLengthIndex = SavedIndex;
             break;        
         case 'GamemodeSetting':
             if( SavedIndex == -1 )
-                Filters.default.SavedGameModeIndex = 255;
-            else Filters.default.SavedGameModeIndex = SavedIndex;       
+                SavedGameModeIndex = 255;
+            else SavedGameModeIndex = SavedIndex;       
         case 'MapSetting':
             if( SavedIndex == -1 )
-                Filters.default.SavedMapIndex = 255;
-            else Filters.default.SavedMapIndex = SavedIndex;
+                SavedMapIndex = 255;
+            else SavedMapIndex = SavedIndex;
             break;
     }
     
-    Filters.static.StaticSaveConfig();
+    SaveConfig();
 }
 
 function CheckChange( KFGUI_CheckBox Sender )
@@ -818,35 +817,35 @@ function CheckChange( KFGUI_CheckBox Sender )
     switch( Sender.ID )
     {
         case 'bNoEmpty':
-            Filters.default.bNotEmpty = Sender.bChecked;
+            bNotEmpty = Sender.bChecked;
             break;
         case 'bNoFull':
-            Filters.default.bNotFull = Sender.bChecked;
+            bNotFull = Sender.bChecked;
             break;
         case 'bNoPassword':
-            Filters.default.bNoPassword = Sender.bChecked;
+            bNoPassword = Sender.bChecked;
             break;
         case 'bNoCustom':
-            Filters.default.bCustom = Sender.bChecked;
+            bCustom = Sender.bChecked;
             break;        
         case 'bNoRanked':
-            Filters.default.bUsesStats = !Sender.bChecked;
+            bUsesStats = !Sender.bChecked;
             break;
         case 'bOnlyStock':
-            Filters.default.bOnlyStockMaps = Sender.bChecked;
+            bOnlyStockMaps = Sender.bChecked;
             break;
         case 'bOnlyCustom':
-            Filters.default.bOnlyCustomMaps = Sender.bChecked;
+            bOnlyCustomMaps = Sender.bChecked;
             break;        
         case 'bInProgress':
-            Filters.default.bInProgress = Sender.bChecked;
+            bInProgress = Sender.bChecked;
             break;       
         case 'bInLobby':
-            Filters.default.bInLobby = Sender.bChecked;
+            bInLobby = Sender.bChecked;
             break;
     }
     
-    Filters.static.StaticSaveConfig();
+    SaveConfig();
 }
 
 function CloseMenu()

@@ -332,7 +332,7 @@ defaultproperties
     
     Begin Object class=KFGUI_Button Name=DailyInfo
         ID="DailyInfo"
-        XSize=0.25
+        XSize=0.275
         YSize=0.025
         XPosition=0.375
         YPosition=0.8225
@@ -346,7 +346,7 @@ defaultproperties
     
     Begin Object class=KFGUI_Button Name=SeasonalInfo
         ID="SeasonalInfo"
-        XSize=0.25
+        XSize=0.275
         YSize=0.025
         XPosition=0.375
         YPosition=0.795
@@ -359,7 +359,7 @@ defaultproperties
     Components.Add(SeasonalInfo)   
     
     Begin Object Class=UIR_WeeklyInfo Name=WeeklyFrame
-        XSize=0.25
+        XSize=0.275
         YSize=0.15
         XPosition=0.375
         YPosition=0.85

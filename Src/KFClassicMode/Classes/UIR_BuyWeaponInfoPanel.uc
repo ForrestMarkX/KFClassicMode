@@ -571,10 +571,10 @@ defaultproperties
     
     Begin Object Class=KFGUI_Image Name=IImage
         ID="ItemIcon"
-        YPosition=0.113025
-        XPosition=0.147005
-        XSize=0.748718
-        YSize=0.374359
+        YPosition=0.16128125
+        XPosition=0.23375625
+        XSize=0.5615385
+        YSize=0.28076925
         bAlignCenter=true
     End Object
     Components.Add(IImage)
