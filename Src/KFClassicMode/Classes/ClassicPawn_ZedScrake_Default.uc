@@ -5,4 +5,6 @@ class ClassicPawn_ZedScrake_Default extends KFPawn_ZedScrake implements(KFZEDInt
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Scrake_Archetype'
 }

@@ -18,6 +18,9 @@ simulated function SetCharacterArch( KFCharacterInfoBase Info, optional bool bFo
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Fleshpound_Archetype'
+    
     PawnAnimInfo=KFPawnAnimInfo'KFClassicMode_Assets.ZEDs.Fleshpound_AnimGroup'
     ControllerClass=class'ClassicAIController_ZedFleshpound'
     DifficultySettings=class'ClassicDifficulty_Fleshpound'

@@ -138,7 +138,7 @@ function Refresh(optional bool bForce)
     
     if( BuyMagB != None )
     {
-        BuyMagB.ButtonText = "£" @ Sellable.AmmoPricePerMagazine;
+        BuyMagB.ButtonText = Chr(208) @ Sellable.AmmoPricePerMagazine;
         
         if( !KFAPH.GetCanAfford(bIsSecondaryAmmo ? Sellable.DefaultItem.WeaponDef.default.SecondaryAmmoMagPrice : Sellable.AmmoPricePerMagazine) || (bIsSecondaryAmmo ? Sellable.SecondaryAmmoCount == Sellable.MaxSecondaryAmmo : Sellable.SpareAmmoCount == Sellable.MaxSpareAmmo) )
             BuyMagB.bDisabled = true;
@@ -179,7 +179,7 @@ function Refresh(optional bool bForce)
             MissingAmmo = FFloor(KFAPH.TotalDosh / PricePerRound);
         }
             
-        FillAmmoB.ButtonText = "£" @ FillPrice;
+        FillAmmoB.ButtonText = Chr(208) @ FillPrice;
         FillAmmoB.bDisabled = !GetButtonEnabled(PricePerRound, Sellable.SpareAmmoCount, Sellable.MaxSpareAmmo, MissingAmmo);
     }
     
@@ -187,7 +187,7 @@ function Refresh(optional bool bForce)
     {
         if ( KFAPH.ArmorItem.SpareAmmoCount == 0 )
         {
-            PurchaseVest.ButtonText = "Buy: £" @ ArmorPrice;
+            PurchaseVest.ButtonText = "Buy: " $ Chr(208) @ ArmorPrice;
         }
         else if ( KFAPH.ArmorItem.SpareAmmoCount == KFAPH.ArmorItem.MaxSpareAmmo )
         {
@@ -195,7 +195,7 @@ function Refresh(optional bool bForce)
         }
         else
         {
-            PurchaseVest.ButtonText = "Repair: £" @ ArmorPrice;
+            PurchaseVest.ButtonText = "Repair: " $ Chr(208) @ ArmorPrice;
         }
         
         PurchaseVest.bDisabled = !GetButtonEnabled(KFAPH.ArmorItem.AmmoPricePerMagazine, KFAPH.ArmorItem.SpareAmmoCount, KFAPH.ArmorItem.MaxSpareAmmo);

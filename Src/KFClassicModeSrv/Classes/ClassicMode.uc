@@ -365,7 +365,7 @@ function InitMutator(string Options, out string ErrorMessage)
     
     if( !bDisableMusic )
     {
-        MusicReplicationInfo = WorldInfo.Game.Spawn(MusicReplicationInfoClass);
+        MusicReplicationInfo = MusicReplicationInfoClass.static.FindMusicGRI(WorldInfo);
     }
     
     if( Len(ZEDReplacmentTable) != 0 && ZEDReplacmentTable != "ExampleProfile" )
@@ -414,7 +414,7 @@ function SetupDefaultConfig()
     
     if( iVersionNumber <= 0 )
     {
-        SaleItems = class'KFGameReplicationInfo'.default.TraderItems.SaleItems;
+        SaleItems = KFGFxObject_TraderItems(DynamicLoadObject(class'KFGameReplicationInfo'.default.TraderItemsPath, class'KFGFxObject_TraderItems')).SaleItems;
         foreach SaleItems(TraderItem)
         {
             WepDef = TraderItem.WeaponDef;
@@ -770,6 +770,16 @@ function SetupDefaultConfig()
         MapInfo.Type = "Halloween";
         MapInfo.MaxMonsters = 32;
         MapTypes.AddItem(MapInfo);
+        
+        iVersionNumber++;
+    }
+    
+    if( iVersionNumber <= 8 )
+    {
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGIncendiaryRifle") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGIncendiaryRifle");
+        if( TraderInventory.Find("KFGame.KFWeapDef_CompoundBow") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_CompoundBow");     
         
         iVersionNumber++;
     }

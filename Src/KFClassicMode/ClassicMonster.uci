@@ -37,3 +37,103 @@ simulated function ZeroMovementVariables()
 		Super.ZeroMovementVariables();
 }
 `endif
+
+`if(`notdefined(OVERRIDEHEADEXPLODEFUNC))
+simulated function PlayHeadAsplode()
+{
+	local KFGoreManager GoreManager;
+	local name BoneName;
+
+	if( HitZones[HZI_Head].bPlayedInjury )
+		return;
+
+	if ( (bTearOff || bPlayedDeath) && TimeOfDeath > 0 && `TimeSince(TimeOfDeath) > 0.75 )
+		return;
+
+	GoreManager = KFGoreManager(WorldInfo.MyGoreEffectManager);
+	if( GoreManager != none && GoreManager.AllowHeadless() )
+	{
+		if( !bIsGoreMesh && !bDisableHeadless )
+		{
+			SwitchToGoreMesh();
+		}
+	}
+
+	if( bIsGoreMesh && GoreManager != none )
+	{
+        BoneName = HitZones[HZI_Head].BoneName;
+		GoreManager.CrushBone( self, BoneName );
+        SoundGroupArch.PlayHeadPopSounds( self, mesh.GetBoneLocation(BoneName) );
+		HitZones[HZI_Head].bPlayedInjury = true;
+	}
+
+	SpawnHeadShotEffect(KFPlayerReplicationInfo(HitFxInfo.DamagerPRI));
+}
+`endif
+
+`if(`notdefined(OVERRIDEDISMEMBERMENTFUNC))
+simulated function bool PlayDismemberment(int InHitZoneIndex, class<KFDamageType> InDmgType, optional vector HitDirection)
+{
+	local KFGoreManager GoreManager;
+	local name BreakBoneName;
+
+	if( HitZones[InHitZoneIndex].bPlayedInjury )
+		return false;
+
+	if ( !InDmgType.static.CanDismemberHitZone( HitZones[InHitZoneIndex].ZoneName ) )
+		return false;
+
+	GoreManager = KFGoreManager(WorldInfo.MyGoreEffectManager);
+	if( GoreManager != none && GoreManager.AllowMutilation() )
+	{
+		if( !bIsGoreMesh )
+			SwitchToGoreMesh();
+
+		if( bIsGoreMesh )
+		{
+			BreakBoneName = HitZones[InHitZoneIndex].BoneName;
+			if ( Health <= 0 && !IsZero(HitDirection) )
+			{
+				InDmgType.static.GetBoneToDismember(self, HitDirection, HitZones[InHitZoneIndex].ZoneName, BreakBoneName);
+			}
+
+			GoreManager.CauseDismemberment(self, BreakBoneName, InDmgType);
+			if (InHitZoneIndex == HZI_HEAD)
+				SpawnHeadShotEffect(KFPlayerReplicationInfo(HitFxInfo.DamagerPRI));
+			PlayHitZoneGoreSounds(BreakBoneName, mesh.GetBoneLocation(BreakBoneName));
+			HitZones[InHitZoneIndex].bPlayedInjury = true;
+
+			if ( Health > 0 && bHasBrokenConstraints )
+				InitPartialKinematics();
+			return true;
+		}
+	}
+	return false;
+}
+`endif
+
+final simulated function SpawnHeadShotEffect(KFPlayerReplicationInfo DamagerPRI)
+{
+	local KFPlayerController PC;
+	local HeadshotEffectEx SHeadshotEffect;
+	local vector SpawnVector;
+
+	if (DamagerPRI != none)
+	{
+		if (WorldInfo.NetMode != NM_DedicatedServer)
+		{
+			PC = KFPlayerController(WorldInfo.GetALocalPlayerController());
+
+			if (PC == none || (PC.bHideRemotePlayerHeadshotEffects && DamagerPRI != PC.PlayerReplicationInfo))
+				return;
+                
+			SHeadshotEffect = class'ClassicHeadShotEffectList'.static.GetUnlockedHeadshotEffect(ClassicPlayerReplicationInfo(DamagerPRI).GetHeadShotEffectIndex());
+			if (SHeadshotEffect.Id != INDEX_NONE && SHeadshotEffect.EffectPS != none)
+			{
+				Mesh.GetSocketWorldLocationAndRotation(class'KFSM_Stunned'.default.DazedFXSocketName, SpawnVector);
+				WorldInfo.MyEmitterPool.SpawnEmitter(SHeadshotEffect.EffectPS, SpawnVector);
+				HeadShotAkComponent.PlayEvent(SHeadshotEffect.HeadshotSoundEffect, true, true);
+			}
+		}
+	}
+}

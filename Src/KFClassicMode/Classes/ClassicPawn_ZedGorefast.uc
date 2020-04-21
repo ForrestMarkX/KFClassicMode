@@ -4,6 +4,9 @@ class ClassicPawn_ZedGorefast extends KFPawn_ZedGorefast implements(KFZEDInterfa
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Gorefast_Archetype'
+    
     Begin Object Name=MeleeHelper_0
         BaseDamage=15.f
         MomentumTransfer=5000.f

@@ -4,11 +4,27 @@ Class SpectatorUFO extends Actor
 var const editconst StaticMeshComponent StaticMeshComponent;
 var PlayerController PlayerOwner;
 var Vector RandOffset;
+var MaterialInstanceConstant MIC;
+var repnotify Color CurrentColor;
 
 replication
 {
     if( true )
-        PlayerOwner;
+        PlayerOwner, CurrentColor;
+}
+
+`include(VisSpectatorLoc.uci);
+
+simulated function ReplicatedEvent(name VarName)
+{
+    local LinearColor LC;
+    
+    if( VarName == 'CurrentColor' )
+    {
+        LC = ColorToLinearColor(CurrentColor);
+        MIC.SetVectorParameterValue('Scalar_Glow_Color', LC);
+    }
+    else Super.ReplicatedEvent(VarName);
 }
 
 simulated function PostBeginPlay()
@@ -26,6 +42,7 @@ simulated function PostBeginPlay()
     RandOffset.Y = FRand()*40.f-20.f;
     RandOffset.Z = FRand()*25.f+10.f;
     RotationRate.Yaw = 8192+Rand(32768);
+    SetPhysics(PHYS_Rotating);
     
     RepLink = class'ClientPerkRepLink'.static.FindContentRep(WorldInfo);
     if( RepLink != None )
@@ -33,50 +50,12 @@ simulated function PostBeginPlay()
         StaticMeshComponent.SetStaticMesh(StaticMesh(RepLink.ObjRef.ReferencedObjects[166]), true);
     }
     
-    StaticMeshComponent.CreateAndSetMaterialInstanceConstant(0);
-}
-
-simulated function Tick(float DT)
-{
-    local KFPawn SpectatedPawn;
-    local Vector CameraLoc, Loc;
-    local Rotator CameraRot;
-    
-    Super.Tick(DT);
-    
-    if( WorldInfo.NetMode == NM_Client )
-        StaticMeshComponent.SetRotation(StaticMeshComponent.Rotation + (RotationRate * DT));
-    
-    if( PlayerOwner == None )
-        return;
-
-    SpectatedPawn = KFPawn(PlayerOwner.GetViewTarget());
-    if( SpectatedPawn != None )
-    {
-        if( WorldInfo.NetMode != NM_DedicatedServer && bHidden && PlayerOwner == GetALocalPlayerController() )
-            SetHidden(false);
-            
-        Loc = SpectatedPawn.Location+(SpectatedPawn.CylinderComponent.CollisionHeight*vect(0,0,1))+RandOffset;
-        if( Loc != Location )
-            SetLocation(Loc);
-    }
-    else 
-    {
-        if( WorldInfo.NetMode != NM_DedicatedServer && !bHidden && PlayerOwner == GetALocalPlayerController() )
-            SetHidden(true);
-            
-        PlayerOwner.GetPlayerViewPoint(CameraLoc, CameraRot);
-        if( CameraLoc != Location )
-            SetLocation(CameraLoc);
-    }
+    MIC = StaticMeshComponent.CreateAndSetMaterialInstanceConstant(0);
 }
 
 function SetColor(Color C)
 {
-    local LinearColor LC;
-    
-    LC = ColorToLinearColor(C);
-    MaterialInstanceConstant(StaticMeshComponent.GetMaterial(0)).SetVectorParameterValue('Scalar_Glow_Color', LC);
+    CurrentColor = C;
 }
 
 function Vector GetLocation()

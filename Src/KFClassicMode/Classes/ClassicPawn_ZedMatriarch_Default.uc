@@ -17,4 +17,6 @@ simulated function ParticleSystemComponent GetShieldPSC()
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Matriarch_Archetype'
 }

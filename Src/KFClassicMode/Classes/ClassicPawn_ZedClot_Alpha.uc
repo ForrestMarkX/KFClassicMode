@@ -7,6 +7,9 @@ simulated function ZeroMovementVariables();
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Clot_Alpha_Archetype'
+    
     DifficultySettings=class'ClassicDifficulty_ClotAlpha'
     ControllerClass=class'ClassicAIController_ZedClot_Alpha'
     PawnAnimInfo=KFPawnAnimInfo'KFClassicMode_Assets.ZEDs.AlphaClot_AnimGroup'

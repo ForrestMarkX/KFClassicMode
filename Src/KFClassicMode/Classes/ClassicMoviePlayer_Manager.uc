@@ -43,5 +43,8 @@ function ConditionalPauseGame(bool bPause);
 defaultproperties
 {
     WidgetBindings.Remove((WidgetName="gearMenu",WidgetClass=class'KFGFxMenu_Gear'))
-    WidgetBindings.Add((WidgetName="gearMenu",WidgetClass=class'ClassicMenu_Gear'))    
+    WidgetBindings.Add((WidgetName="gearMenu",WidgetClass=class'ClassicMenu_Gear'))
+    
+    WidgetBindings.Remove((WidgetName="inventoryMenu",WidgetClass=class'KFGFxMenu_Inventory'))
+    WidgetBindings.Add((WidgetName="inventoryMenu",WidgetClass=class'ClassicMenu_Inventory'))
 }

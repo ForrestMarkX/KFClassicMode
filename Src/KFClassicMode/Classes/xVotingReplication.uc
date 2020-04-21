@@ -158,13 +158,12 @@ reliable client simulated function ClientNotifyVoteWin( int GameIndex, int MapIn
 }
 reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
 {
-    local xUI_MapRank R;
-
     if( bShowRank )
     {
-        R = xUI_MapRank(Class'KF2GUIController'.Static.GetGUIController(GetPlayer()).OpenMenu(class'xUI_MapRank'));
-        R.RepInfo = Self;
+        SetTimer(0.5f,false,'DelayedOpenRankUI');
 
+        ClassicPlayerController(GetPlayer()).bMapVoteOpen = true;
+        
         if( KFGFxHudWrapper(GetPlayer().myHUD)!=None )
             KFGFxHudWrapper(GetPlayer().myHUD).HudMovie.DisplayPriorityMessage("MAP VOTE TIME","Cast your votes!",2);
         
@@ -172,7 +171,11 @@ reliable client simulated function ClientOpenMapvote( optional bool bShowRank )
             KFGameReplicationInfo(WorldInfo.GRI).ProcessChanceDrop();
     }
     if( bAllReceived )
-        SetTimer(0.1,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
+        SetTimer(0.1f,false,'DelayedOpenMapvote'); // To prevent no-mouse issue when local server host opens it from chat.
+}
+simulated function DelayedOpenRankUI()
+{
+    xUI_MapRank(Class'KF2GUIController'.Static.GetGUIController(GetPlayer()).OpenMenu(class'xUI_MapRank')).RepInfo = Self;
 }
 simulated function DelayedOpenMapvote()
 {

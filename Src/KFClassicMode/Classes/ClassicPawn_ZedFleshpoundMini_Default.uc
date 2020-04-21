@@ -5,4 +5,6 @@ class ClassicPawn_ZedFleshpoundMini_Default extends KFPawn_ZedFleshpoundMini imp
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_FleshpoundMini_Archetype'
 }

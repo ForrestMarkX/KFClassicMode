@@ -105,4 +105,6 @@ DefaultProperties
     
     WeaponDamage=(Name="Berserker Damage",Increment=0.01,Rank=0,StartingValue=0.f,MaxValue=0.25)
     DamageResistance=(Name="Damage Resistance",Increment=0.03f,Rank=0,StartingValue=0.f,MaxValue=0.15f)
+    
+    CustomLevelInfo="%d increase in melee weapon damage|%s resistence to all damage|%a increase in melee weapon attack speed|%m faster melee movement speed|%b resistence to Bloat Bile"
 }

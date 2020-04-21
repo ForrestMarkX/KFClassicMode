@@ -1,0 +1,34 @@
+simulated function Tick(float DT)
+{
+    local KFPawn SpectatedPawn;
+    local Vector CameraLoc, Loc;
+    local Rotator CameraRot;
+    
+    Super.Tick(DT);
+    
+    if( PlayerOwner == None )
+        return;
+
+    SpectatedPawn = KFPawn(PlayerOwner.GetViewTarget());
+    if( SpectatedPawn != None )
+    {
+        if( WorldInfo.NetMode != NM_DedicatedServer && bHidden && PlayerOwner == GetALocalPlayerController() )
+            SetHidden(false);
+
+        Loc = SpectatedPawn.Location+(SpectatedPawn.CylinderComponent.CollisionHeight*vect(0,0,1))+RandOffset;
+        if( Loc != Location )
+            MoveSmooth((Loc-Location)*(DT*30.f));
+    }
+    else
+    {
+        if( WorldInfo.NetMode != NM_DedicatedServer && !bHidden && PlayerOwner == GetALocalPlayerController() )
+            SetHidden(true);
+
+        if( PlayerOwner != None )
+        {
+            PlayerOwner.GetPlayerViewPoint(CameraLoc, CameraRot);
+            if( CameraLoc != Location )
+                MoveSmooth((CameraLoc-Location)*(DT*30.f));
+        }
+    }
+}

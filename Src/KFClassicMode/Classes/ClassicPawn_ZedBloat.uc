@@ -12,6 +12,9 @@ function SpawnPukeMinesOnDeath();
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Bloat_Archetype'
+    
     DifficultySettings=class'ClassicDifficulty_Bloat'
     ControllerClass=class'ClassicAIController_ZedBloat'
     PawnAnimInfo=KFPawnAnimInfo'KFClassicMode_Assets.ZEDs.Bloat_AnimGroup'

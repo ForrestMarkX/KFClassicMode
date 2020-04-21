@@ -4,6 +4,9 @@ class ClassicPawn_ZedScrake extends KFPawn_ZedScrake implements(KFZEDInterface);
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Scrake_Archetype'
+    
     DifficultySettings=class'ClassicDifficulty_Scrake'
     ControllerClass=class'ClassicAIController_ZedScrake'
     PawnAnimInfo=KFPawnAnimInfo'KFClassicMode_Assets.ZEDs.Scrake_AnimGroup'

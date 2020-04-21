@@ -5,6 +5,9 @@ class ClassicPawn_ZedHusk_Default extends KFPawn_ZedHusk implements(KFZEDInterfa
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Husk_Archetype'
+    
     ElitePawnClass.Empty
     ElitePawnClass.Add(class'ClassicPawn_ZedDAR_EMP_Default')
     ElitePawnClass.Add(class'ClassicPawn_ZedDAR_Laser_Default')

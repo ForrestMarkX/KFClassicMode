@@ -247,7 +247,7 @@ function UpdateHeader()
     if( KFAPH.TotalDosh != OldTotalDosh )
     {
         OldTotalDosh = KFAPH.TotalDosh;
-        Money.SetText("£" $ KFAPH.TotalDosh);
+        Money.SetText(Chr(208) $ KFAPH.TotalDosh);
         
         Inv.RefreshItemComponents();
         Sale.RefreshItemComponents();

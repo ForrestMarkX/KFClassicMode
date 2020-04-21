@@ -5,4 +5,6 @@ class ClassicPawn_ZedBloat_Default extends KFPawn_ZedBloat implements(KFZEDInter
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Bloat_Archetype'
 }

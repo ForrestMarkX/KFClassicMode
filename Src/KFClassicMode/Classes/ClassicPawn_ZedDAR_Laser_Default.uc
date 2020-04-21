@@ -5,4 +5,6 @@ class ClassicPawn_ZedDAR_Laser_Default extends KFPawn_ZedDAR_Laser implements(KF
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_DAR_Laser_Archetype'
 }

@@ -239,7 +239,6 @@ struct FScriptedPawnCache
     var Texture2D Icon;
 };
 var array<FScriptedPawnCache> ScriptedPawnCache;
-var array<KFPawn_Human> PawnList;
 
 var Texture2D BossInfoIcon;
 
@@ -420,8 +419,8 @@ simulated function PostBeginPlay()
         CreateAndSetConsoleReplacment();
 }
 
-function CreateAndSetConsoleReplacment()
-{
+function CreateAndSetConsoleReplacment();
+/*{
     if( (bNoConsoleReplacement && !bIsMenu) || ConsoleClass == None )
         return;
         
@@ -439,7 +438,7 @@ function CreateAndSetConsoleReplacment()
     
     if( UI_Console(NewConsole) != None )
         UI_Console(NewConsole).OriginalConsole = OrgConsole;
-}
+}*/
 
 function ResetHUDColors()
 {
@@ -467,7 +466,6 @@ function BuildCacheItems()
     local FDoorCache MyCache;
     local KFPawn_Scripted Pawn;
     local KFPawn KFPawn;
-    local KFPawn_Human KFPH;
     local FScriptedPawnCache ScriptedCache;
     
     foreach DynamicActors(class'KFDoorActor',Door)
@@ -491,10 +489,6 @@ function BuildCacheItems()
             
             ScriptedPawnCache.AddItem(ScriptedCache);
         }
-        
-        KFPH = KFPawn_Human(KFPawn);
-        if( KFPH != None && PawnList.Find(KFPH) == INDEX_NONE )
-            PawnList.AddItem(KFPH);
     }
 }
 
@@ -626,7 +620,7 @@ function RenderVisibleSpectatorInfo()
         ItemInfo = "heal player";
     else ItemInfo = "fire laser";
     
-    UseKeyName = "Tap ["$class'KFLocalMessage_Interaction'.static.GetKeyBind(PlayerOwner, IMT_DoshActivate)$"] to "$ItemInfo$".";
+    UseKeyName = "Tap ["@class'KFLocalMessage_Interaction'.static.GetKeyBind(PlayerOwner, IMT_DoshActivate)@"] to "$ItemInfo$".";
     Canvas.TextSize(UseKeyName, XL, YL, FontScalar, FontScalar);
     
     BoxW = XL+(ScaledBorderSize*2)+16;
@@ -651,6 +645,8 @@ function RenderVisibleSpectatorInfo()
 
 delegate int SortRenderDistance(KFPawn_Human PawnA, KFPawn_Human PawnB)
 {
+    if( PawnA == None || PawnB == None )
+        return -1;
     return VSizeSq(PawnA.Location - PlayerOwner.Location) < VSizeSq(PawnB.Location - PlayerOwner.Location) ? -1 : 0;
 }
 
@@ -744,11 +740,9 @@ function DrawHUD()
         {
             Canvas.EnableStencilTest(true);
             
-            // Probably slow but needed to properly sort the rendering so farther elements don't overlap closer ones.
-            PawnList.Sort(SortRenderDistance);
-            foreach PawnList( KFPH )
+            foreach WorldInfo.AllPawns( class'KFPawn_Human', KFPH )
             {
-                if( KFPH != None && KFPH.IsAliveAndWell() && KFPH != KFPlayerOwner.Pawn && KFPH.Mesh.SkeletalMesh != none && KFPH.Mesh.bAnimTreeInitialised )
+                if( KFPH.IsAliveAndWell() && KFPH != KFPlayerOwner.Pawn && KFPH.Mesh.SkeletalMesh != none && KFPH.Mesh.bAnimTreeInitialised )
                 {
                     PlayerPartyInfoLocation = KFPH.Mesh.GetPosition() + ( KFPH.CylinderComponent.CollisionHeight * vect(0,0,1) );
                     if(`TimeSince(KFPH.Mesh.LastRenderTime) < 0.2f && Normal(PlayerPartyInfoLocation - PLCameraLoc) dot PLCameraDir > 0.f )
@@ -1256,8 +1250,6 @@ function RenderKFHUD(KFPawn_Human KFPH)
     FRI.bClipText = true;
     FRI.bEnableShadow = true;
     
-    Canvas.Font = GUIStyle.PickFont(OriginalFontScalar);
-    
     scale_w = GUIStyle.ScreenScale(64);
     scale_w2 = GUIStyle.ScreenScale(32);
     
@@ -1275,7 +1267,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
         
         if( CircleText != "" )
         {
-            Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, false, KFGRI.IsEndlessWave());
+           Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, KFGRI.IsEndlessWave() ? FONT_INFINITE : FONT_NAME);
             
             FontScalar = OriginalFontScalar + GUIStyle.ScreenScale(KFGRI.IsEndlessWave() ? 0.75 : 0.3);
             DrawCircleSize = GUIStyle.ScreenScale(128);
@@ -1308,7 +1300,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             
             if( SubCircleText != "" )
             {
-                Canvas.Font = GUIStyle.PickFont(OriginalFontScalar);
+                Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, FONT_NAME);
                 FontScalar = OriginalFontScalar;
                 
                 Canvas.TextSize(SubCircleText, XL, YL, FontScalar, FontScalar);
@@ -1329,14 +1321,12 @@ function RenderKFHUD(KFPawn_Human KFPH)
         }
     }
     
-    Canvas.Font = GUIStyle.PickFont(OriginalFontScalar);
-    
     if( !bShowHUD || KFPH == None )
         return;
         
     Inv = KFInventoryManager(KFPH.InvManager);
         
-    Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, true);
+    Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, FONT_NUMBER);
     FontScalar = OriginalFontScalar + GUIStyle.ScreenScale(0.3);
     
     HBRI.IconScale = scale_w2;
@@ -1567,6 +1557,10 @@ function RenderKFHUD(KFPawn_Human KFPH)
                 ObjectiveProgress = MapObjective.GetProgressText();
                 Canvas.DrawColor = FontColor;
             }
+            
+            if( MapObjective.GetProgressTextIsDosh() )
+                ObjectiveProgress = Chr(208) $ ObjectiveProgress;
+                
             Canvas.TextSize(ObjectiveProgress, XL, YL, FontScalar, FontScalar);
             
             XPos = ObjX + (ObjectiveSize - XL - ObjectivePadding);
@@ -1585,7 +1579,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             Canvas.SetDrawColor(0, 255, 0, 255);
             FontScalar = OriginalFontScalar + GUIStyle.ScreenScale(0.1);
         
-            ObjectiveReward = "£" $ (MapObjective.HasFailedObjective() ? 0 : MapObjective.GetDoshReward());
+            ObjectiveReward = Chr(208) $ (MapObjective.HasFailedObjective() ? 0 : MapObjective.GetDoshReward());
             Canvas.TextSize(ObjectiveReward, XL, YL, FontScalar, FontScalar);
             
             XPos = ObjX + (ObjectiveSize - XL - ObjectivePadding);
@@ -1684,7 +1678,7 @@ function RenderKFHUD(KFPawn_Human KFPH)
             Canvas.DrawColor = FontColor;
             GUIStyle.DrawTextShadow(WeaponName, (SizeX * 0.95f) - XL, SizeY * 0.892f, 1, FontScalar);
             
-            Canvas.Font = GUIStyle.PickFont(OriginalFontScalar,true);
+            Canvas.Font = GUIStyle.PickFont(OriginalFontScalar, FONT_NUMBER);
             
             BoxXL = SizeX * 0.915;
             FontScalar = OriginalFontScalar + GUIStyle.ScreenScale(0.3);
@@ -2198,7 +2192,7 @@ function DrawPriorityMessage()
     
     TempSize = `TimeSince(PriorityMessage.StartTime);
     
-    Canvas.Font = GUIStyle.PickFont(OrignalFontScalar);
+    Canvas.Font = GUIStyle.PickFont(OrignalFontScalar, FONT_NAME);
     
     bHasIcon = PriorityMessage.Icon != None;
     bHasSecondaryIcon = PriorityMessage.SecondaryIcon != None;
@@ -3039,7 +3033,7 @@ function RenderVoteKick(Canvas C, float Y)
     KFInput.GetKeyBindFromCommand(TempKeyBind, "GBA_VoteNo");
     NoS = Class'KFCommon_LocalizedStrings'.default.NoString@"-"@Repl(KFInput.GetBindDisplayName(TempKeyBind), "XboxTypeS_", "");
     
-    C.Font = GUIStyle.PickFont(TextScale);
+    C.Font = GUIStyle.PickFont(TextScale, FONT_NAME);
     
     C.DrawColor = MakeColor(0, 255, 0, 255);
     C.TextSize(YesS, TextWidth, TextHeight, TextScale, TextScale);
@@ -3109,14 +3103,9 @@ function DrawDefeatEndScreen()
 function Texture GetClipIcon(KFWeapon Wep, bool bSingleFire)
 {
     if( bSingleFire )
-    {
         return GetBulletIcon(Wep);
-    }
-        
-    if( Wep.IsA('KFWeap_Flame_CaulkBurn') || Wep.IsA('KFWeap_Flame_Flamethrower') )
-    {
+    else if( Wep.FireModeIconPaths[Wep.const.DEFAULT_FIREMODE] != None && Wep.FireModeIconPaths[Wep.const.DEFAULT_FIREMODE].Name == 'UI_FireModeSelect_Flamethrower' )
         return FlameTankIcon;
-    }
     
     return ClipsIcon;
 }
@@ -3124,49 +3113,45 @@ function Texture GetClipIcon(KFWeapon Wep, bool bSingleFire)
 function Texture GetBulletIcon(KFWeapon Wep)
 {
     if( Wep.bUseAltFireMode )
-    {
         return GetSecondaryAmmoIcon(Wep);
-    }
-        
-    if( Wep.IsA('KFWeap_Eviscerator') )
-    {
-        return SawbladeIcon;
-    }
-    else if( Wep.IsA('KFWeap_Flame_CaulkBurn') || Wep.IsA('KFWeap_Flame_Flamethrower') || Wep.IsA('KFWeap_HuskCannon') )
-    {
-        return FlameIcon;
-    }
-    else if( Wep.IsA('KFWeap_Bow_Crossbow') )
-    {
-        return ArrowIcon;
-    }
-    else if( Wep.IsA('KFWeap_GrenadeLauncher_HX25') || Wep.IsA('KFWeap_GrenadeLauncher_M79') )
-    {
-        return M79Icon;
-    }
-    else if( Wep.IsA('KFWeap_Healer_Syringe') )
-    {
-        return SyringIcon;
-    }
-    else if( Wep.IsA('KFWeap_RocketLauncher_RPG7') )
-    {
-        return RocketIcon;
-    }    
-    else if( Wep.IsA('KFWeap_Welder') )
-    {
+    else if( Wep.IsA('KFWeap_Edged_IonThruster') )
         return BoltIcon;
-    }    
-    else if( Wep.IsA('KFWeap_AssaultRifle_AR15') )
+    else
     {
-        return BurstBulletIcon;
-    }
-    else if( Wep.IsA('KFWeap_Thrown_C4') )
-    {
-        return PipebombIcon;
-    }    
-    else if( Wep.IsA('KFWeap_Rifle_M99') )
-    {
-        return SingleBulletIcon;
+        if( KFWeap_ThrownBase(Wep) != None && Wep.FireModeIconPaths[class'KFWeap_ThrownBase'.const.THROW_FIREMODE] != None )
+        {
+            Switch(Wep.FireModeIconPaths[class'KFWeap_ThrownBase'.const.THROW_FIREMODE].Name)
+            {       
+                case 'UI_FireModeSelect_Grenade':
+                    return PipebombIcon;
+            }
+        }
+        else if( Wep.FireModeIconPaths[Wep.const.DEFAULT_FIREMODE] != None )
+        {
+            Switch(Wep.FireModeIconPaths[Wep.const.DEFAULT_FIREMODE].Name)
+            {
+                case 'UI_FireModeSelect_Flamethrower':
+                    return FlameIcon;
+                case 'UI_FireModeSelect_Sawblade':
+                    return SawbladeIcon;
+                case 'UI_FireModeSelect_BulletSingle':
+                    if( Wep.MagazineCapacity[Wep.const.DEFAULT_FIREMODE] > 1 )
+                        return BulletsIcon;
+                    return SingleBulletIcon;
+                case 'UI_FireModeSelect_Grenade':
+                    return M79Icon;
+                case 'UI_FireModeSelect_MedicDart':
+                    return SyringIcon;
+                case 'UI_FireModeSelect_Rocket':
+                    return RocketIcon;
+                case 'UI_FireModeSelect_Electricity':
+                    return BoltIcon;
+                case 'UI_FireModeSelect_BulletBurst':
+                    return BurstBulletIcon;
+                case 'UI_FireModeSelect_BulletArrow':
+                    return ArrowIcon;
+            }
+        }
     }
     
     return BulletsIcon;
@@ -3174,33 +3159,36 @@ function Texture GetBulletIcon(KFWeapon Wep)
 
 function Texture GetSecondaryAmmoIcon(KFWeapon Wep)
 {
-    if( Wep.IsA('KFWeap_Eviscerator') )
+    if( Wep.UsesSecondaryAmmo() && Wep.SecondaryAmmoTexture != None )
     {
-        return FlameTankIcon;
-    }    
-    else if( Wep.IsA('KFWeap_AssaultRifle_M16M203') || Wep.IsA('KFWeap_AssaultRifle_MedicRifleGrenadeLauncher') )
-    {
-        return M79Icon;
-    }    
-    else if( Wep.IsA('KFWeap_Rifle_RailGun') || Wep.IsA('KFWeap_RocketLauncher_Seeker6') )
-    {
-        return AutoTargetIcon;
+        Switch(Wep.SecondaryAmmoTexture.Name)
+        {
+            case 'GasTank':
+                return FlameTankIcon;
+            case 'MedicDarts':
+                return SyringIcon;
+            case 'UI_FireModeSelect_Grenade':
+                return M79Icon;
+        }
     }
-    else if( Wep.IsA('KFWeap_SMG_MP5RAS') || Wep.IsA('KFWeap_AssaultRifle_AK12') || Wep.IsA('KFWeap_AssaultRifle_AK12') || Wep.IsA('KFWeap_SMG_HK_UMP') || Wep.IsA('KFWeap_AssaultRifle_Microwave') )
+    else if( Wep.FireModeIconPaths[Wep.const.ALTFIRE_FIREMODE] != None )
     {
-        return BurstBulletIcon;
-    }
-    else if( Wep.IsA('KFWeap_DualBase') )
-    {
-        return BulletsIcon;
-    }
-    else if( Wep.IsA('KFWeap_AssaultRifle_LazerCutter') )
-    {
-        return BoltIcon;
-    }
-    else if( Wep.IsA('KFWeap_MedicBase') || Wep.IsA('KFWeap_Blunt_MedicBat') )
-    {
-        return SyringIcon;
+        Switch(Wep.FireModeIconPaths[Wep.const.ALTFIRE_FIREMODE].Name)
+        {
+            case 'UI_FireModeSelect_AutoTarget':
+            case 'UI_FireModeSelect_ManualTarget':
+                return AutoTargetIcon;
+            case 'UI_FireModeSelect_BulletBurst':
+                return BurstBulletIcon;
+            case 'UI_FireModeSelect_BulletSingle':
+                if( Wep.MagazineCapacity[Wep.ALTFIRE_FIREMODE] > 1 )
+                    return BulletsIcon;
+                else return SingleBulletIcon;
+            case 'UI_FireModeSelect_Electricity':
+                return BoltIcon;
+            case 'UI_FireModeSelect_MedicDart':
+                return SyringIcon;
+        }
     }
     
     return SingleBulletIcon;
@@ -3230,7 +3218,9 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
     local color CurrentArmorColor, CurrentHealthColor;
     local byte FadeAlpha, PerkLevel;
     local class<ClassicPerk_Base> PerkClass;
+    local FontRenderInfo MyFontRenderInfo;
 
+    MyFontRenderInfo = Canvas.CreateFontRenderInfo(true);
     ResModifier = WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale;
     KFPRI = KFPlayerReplicationInfo(KFPH.PlayerReplicationInfo);
 
@@ -3254,7 +3244,7 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
     //Player name text
     Canvas.DrawColor = WhiteColor;
     Canvas.DrawColor.A = FadeAlpha;
-    GUIStyle.DrawTextShadow(KFPRI.PlayerName, ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y - 3.5f, 1, FontScale);
+    GUIStyle.DrawTextShadow(KFPRI.PlayerName, ScreenPos.X - (BarLength * 0.5f), ScreenPos.Y - 3.5f, 1, FontScale, MyFontRenderInfo);
     
     //Info Color
     switch(PlayerInfoType)
@@ -3301,7 +3291,7 @@ simulated function bool DrawFriendlyHumanPlayerInfo( KFPawn_Human KFPH )
     //Draw perk level and name text
     Canvas.DrawColor = WhiteColor;
     Canvas.DrawColor.A = FadeAlpha;
-    GUIStyle.DrawTextShadow(PerkLevel@PerkClass.static.GetPerkName(), ScreenPos.X - (BarLength * 0.5f), BarY, 1, FontScale);
+    GUIStyle.DrawTextShadow(PerkLevel@PerkClass.static.GetPerkName(), ScreenPos.X - (BarLength * 0.5f), BarY, 1, FontScale, MyFontRenderInfo);
 
     // drop shadow for perk icon
     Canvas.DrawColor = PlayerBarShadowColor;
@@ -3801,7 +3791,7 @@ function DrawDamage()
     local vector HBScreenPos;
     local string S;
 
-    Canvas.Font = GUIStyle.PickFont(Sc);
+    Canvas.Font = GUIStyle.PickFont(Sc, FONT_NAME);
     
     for( i=0; i < DAMAGEPOPUP_COUNT ; i++ ) 
     {
@@ -4195,7 +4185,7 @@ final function Vector DrawDirectionalIndicator(Vector Loc, Texture Mat, float Ic
     local bool bWasStencilEnabled;
 
     FI.bClipText = true;
-    Canvas.Font = GUIStyle.PickFont(FontScalar);
+    Canvas.Font = GUIStyle.PickFont(FontScalar, FONT_NAME);
     FontScalar *= FontMult;
     
     X = PLCameraDir;
@@ -4495,7 +4485,7 @@ static function Font GetFontSizeIndex(int FontSize)
         case 1:
             return Font'UI_Canvas_Fonts.Font_Main';
         default:
-            return Font(DynamicLoadObject("KFClassicMode_Assets.Font.KFMainFont", class'Font'));
+            return Font'KFClassicMode_Assets.Font.KFNormalFont';
     }
 }
 

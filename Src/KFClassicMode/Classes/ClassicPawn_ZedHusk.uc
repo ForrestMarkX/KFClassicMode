@@ -31,6 +31,9 @@ function ApplySpecialZoneHealthMod(float HealthMod)
 
 DefaultProperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Husk_Archetype'
+    
     DifficultySettings=class'ClassicDifficulty_Husk'
     AnimTreeReplacment=AnimTree'KFClassicMode_Assets.ZEDs.AT_Husk_Classic'
     

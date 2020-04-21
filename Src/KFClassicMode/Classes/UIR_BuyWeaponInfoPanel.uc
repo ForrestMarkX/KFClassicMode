@@ -428,7 +428,7 @@ function RefreshUpgradeButton(SItemInformation Item)
         return;
     }
     
-    UpgradeB.ButtonText = "Upgrade (£"$Item.DefaultItem.WeaponDef.static.GetUpgradePrice(Item.ItemUpgradeLevel)$")";
+    UpgradeB.ButtonText = "Upgrade ("$Chr(208)$Item.DefaultItem.WeaponDef.static.GetUpgradePrice(Item.ItemUpgradeLevel)$")";
     UpgradeB.SetDisabled(!PC.GetPurchaseHelper().CanUpgrade(Item.DefaultItem, CanCarryIndex, CanAffordIndex));
 }
 
@@ -469,7 +469,7 @@ function Timer()
     KFAPH = PC.GetPurchaseHelper();
     if ( Trader.MyBuyable != Trader.default.MyBuyable && Trader.MyBuyable.bInventory && KFAPH.IsSellable(Trader.MyBuyable.Item) && !Trader.MyBuyable.bSecondary )
     {
-        SaleValue.SetText("Sell Value: £" $ KFAPH.GetAdjustedSellPriceFor(Trader.MyBuyable.Item));
+        SaleValue.SetText("Sell Value: " $ Chr(208) $ KFAPH.GetAdjustedSellPriceFor(Trader.MyBuyable.Item));
         SaleValue.bVisible = true;
         
         LWeight.XPosition = 0.f;

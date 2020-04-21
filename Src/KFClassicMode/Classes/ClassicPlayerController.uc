@@ -38,14 +38,14 @@ var float NeqFireTime,RefireRate,ZapDamage,HealAmount;
 var class<Projectile> ZapProjectile, HealProjectile;
 var AkEvent ZapFireSound, HealFireSound;
 
-var config int SelectedEmoteIndex, ConfigVer;
+var config int SelectedEmoteIndex, SelectedHeadshotIndex, ConfigVer;
 var globalconfig string ControllerType;
 var globalconfig array<name> FavoriteWeaponClassNames;
 
 // UBOOL is packed together and you lose the packing if the bool vars are seperated.
-var bool bBehindView, bSetPerk, bMOTDReceived, bPlayerNeedsPerkUpdate, bPickupsDisabled, bClientHideKillMsg, bClientHideDamageMsg, bClientHideNumbers, bClientHidePlayerDeaths, bNoDamageTracking;
+var bool bBehindView, bSetPerk, bMOTDReceived, bPlayerNeedsPerkUpdate, bPickupsDisabled, bClientHideKillMsg, bClientHideDamageMsg, bClientHideNumbers, bClientHidePlayerDeaths, bNoDamageTracking, bMapVoteOpen;
 var transient bool bDisableGameplayChanges, bDisableUpgrades, bEnableTraderSpeed, bEnabledVisibleSpectators, bIsSpectating;
-var globalconfig bool bHideKillMsg, bHideDamageMsg, bHidePlayerDeathMsg, bEnableBWZEDTime, bDisallowOthersToPickupWeapons, bDisableClassicTrader, bDisableClassicMusic;
+var globalconfig bool bHideKillMsg, bHideDamageMsg, bHidePlayerDeathMsg, bEnableBWZEDTime, bDisallowOthersToPickupWeapons, bDisableClassicTrader, bDisableClassicMusic, bSetDefaultEmote, bSetDefaultHeadshotFX;
 
 replication
 {
@@ -247,7 +247,6 @@ simulated function UpdatEventState()
 {
     if( EventHelper == None )
         EventHelper = class'KFEventHelper'.static.FindEventHelper(WorldInfo);
-        
     UpdateSeasonalState();
 }
 
@@ -1185,6 +1184,25 @@ simulated event name GetSeasonalStateName()
     return EventHelper.GetSeasonalName(EventHelper.GetSeasonalID());
 }
 
+function OnReadProfileSettingsComplete(byte LocalUserNum,bool bWasSuccessful)
+{
+    Super.OnReadProfileSettingsComplete(LocalUserNum, bWasSuccessful);
+    
+    if( !bSetDefaultEmote )
+    {
+        bSetDefaultEmote = true;
+        SelectedEmoteIndex = class'KFEmoteList'.static.GetEquippedEmoteId();
+        SaveConfig();
+    }
+    
+    if( !bSetDefaultHeadshotFX )
+    {
+        bSetDefaultHeadshotFX = true;
+        SelectedHeadshotIndex = class'KFHeadShotEffectList'.static.GetEquippedHeadShotEffectId();
+        SaveConfig();
+    }
+}
+
 function NotifyLevelUp(class<KFPerk> PerkClass, byte PerkLevel, byte NewPrestigeLevel);
 
 defaultproperties
@@ -1201,8 +1219,8 @@ defaultproperties
     
     ZapProjectile=class'ShockProj'
     HealProjectile=class'HealProj'
-    ZapFireSound=AkEvent'WW_WEP_Lazer_Cutter.Play_WEP_LazerCutter_Single_3P'
-    HealFireSound=AkEvent'WW_WEP_Helios.Play_WEP_Helios_Echo_Single_3P'
+    ZapFireSound=AkEvent'WW_Emotes.Play_Emote_Deluxe_SpiritFingers_Shots'
+    HealFireSound=AkEvent'WW_WEP_SA_Microwave_Gun.Play_SA_MicrowaveGun_Fire_Secondary_3P'
     
     PerkList.Empty
 }

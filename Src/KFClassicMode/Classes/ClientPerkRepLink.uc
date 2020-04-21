@@ -105,8 +105,9 @@ simulated final function InitRep()
     MyStyle = GUIStyleBase(FindObject("KFClassicMode.Default__GUIStyleBase",class'GUIStyleBase'));
     if( MyStyle != None )
     {
-        MyStyle.MainFont = Font(ObjRef.ReferencedObjects[104]);
+        MyStyle.MainFont = Font(ObjRef.ReferencedObjects[168]);
         MyStyle.InfiniteFont = Font(ObjRef.ReferencedObjects[155]);
+        MyStyle.NameFont = Font(ObjRef.ReferencedObjects[104]);
         
         MyStyle.BorderTextures[`BOX_INNERBORDER] = Texture2D(ObjRef.ReferencedObjects[35]);
         MyStyle.BorderTextures[`BOX_INNERBORDER_TRANSPARENT] = Texture2D(ObjRef.ReferencedObjects[36]);
@@ -203,7 +204,8 @@ simulated final function InitRep()
     KFWaitingMessage(FindObject("KFClassicMode.Default__KFWaitingMessage",class'KFWaitingMessage')).CurrentFont = Font(ObjRef.ReferencedObjects[43]);
     ClassicHumanPawn(FindObject("KFClassicMode.Default__ClassicHumanPawn",class'ClassicHumanPawn')).TraderComBeep = SoundCue(ObjRef.ReferencedObjects[100]);
     
-    HealProj(FindObject("KFClassicMode.Default__HealProj",class'HealProj')).ProjectileTemplate = ParticleSystem(ObjRef.ReferencedObjects[165]);
+    HealProj(FindObject("KFClassicMode.Default__HealProj",class'HealProj')).ProjFlightTemplate = ParticleSystem(ObjRef.ReferencedObjects[165]);
+    HealProj(FindObject("KFClassicMode.Default__HealProj",class'HealProj')).ProjFlightTemplateZedTime = ParticleSystem(ObjRef.ReferencedObjects[165]);
     SpectatorUFO(FindObject("KFClassicMode.Default__SpectatorUFO",class'SpectatorUFO')).StaticMeshComponent.SetStaticMesh(StaticMesh(ObjRef.ReferencedObjects[166]), true);
     SpectatorFlame(FindObject("KFClassicMode.Default__SpectatorFlame",class'SpectatorFlame')).EmitterTemplate = ParticleSystem(ObjRef.ReferencedObjects[167]);
    

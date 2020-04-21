@@ -1,5 +1,6 @@
 Class ClassicPlayerReplicationInfo extends KFPlayerReplicationInfo;
 
+var int CurrentHeadShotEffectIndex;
 var byte CurrentPerkLevel;
 var transient int RepIndex, RepState;
 
@@ -15,6 +16,7 @@ struct FMyCustomChar // Now without constant.
     
     structdefaultproperties
     {
+        CharacterIndex=INDEX_NONE
         AttachmentMeshIndices[0]=`CLEARED_ATTACHMENT_INDEX
         AttachmentMeshIndices[1]=`CLEARED_ATTACHMENT_INDEX
         AttachmentMeshIndices[2]=`CLEARED_ATTACHMENT_INDEX
@@ -63,6 +65,9 @@ simulated function ClientInitialize(Controller C)
     local ClassicPlayerReplicationInfo PRI;
 
     Super.ClientInitialize(C);
+    
+    LoadAllHeadshotEffects();
+    ServerSetCurrentHeadShotSFX(ClassicPlayerController(C).SelectedHeadshotIndex);
     
     if( WorldInfo.NetMode!=NM_DedicatedServer )
     {
@@ -505,7 +510,7 @@ simulated delegate OnCharListDone();
 // Player has a server specific setting for a character selected.
 simulated final function bool UsesCustomChar()
 {
-    if( LocalOwnerPRI==None )
+    if( LocalOwnerPRI==None || CustomCharacter.CharacterIndex < 0 )
         return false; // Not yet init on client.
     return CustomCharacter.CharacterIndex<(LocalOwnerPRI.CustomCharList.Length+CharacterArchetypes.Length);
 }
@@ -705,6 +710,40 @@ simulated function Texture2D GetCurrentIconToDisplay()
     }
 
     return class'KFLocalMessage_VoiceComms'.default.VoiceCommsIcons[CurrentVoiceCommsRequest];
+}
+
+simulated function LoadAllHeadshotEffects()
+{
+    local ClassicHeadShotEffectList EffectList;
+    local int i;
+    
+    EffectList = ClassicHeadShotEffectList(FindObject("KFClassicMode.Default__ClassicHeadShotEffectList",class'ClassicHeadShotEffectList'));
+    for(i=0; i<EffectList.HeadshotFXIDs.Length; i++)
+    {
+        EffectList.HeadshotFXIDs[i].EffectPS = ParticleSystem(class'ClassicCharacterInfo'.Static.SafeLoadObject(EffectList.HeadshotFXIDs[i].EffectPSName, class'ParticleSystem'));
+    }
+}
+
+reliable server function ServerSetCurrentHeadShotSFX(int ItemID)
+{
+    CurrentHeadShotEffectIndex = ItemID;
+}
+
+simulated final function int GetHeadShotEffectIndex()
+{
+	return CurrentHeadShotEffectIndex;
+}
+
+// BodyVariants, HeadVariants, and CosmeticVariants are const but the asset var isn't used anyway so lets just not full load a UPK
+simulated function bool StartLoadCosmeticContent(KFCharacterInfo_Human CharArch, INT CosmeticType, INT CosmeticIdx)
+{
+    return true;
+}
+
+// I already load the headshot effects so lets make this function do nothing
+simulated function StartLoadHeadshotFxContent()
+{
+    return;
 }
 
 defaultproperties

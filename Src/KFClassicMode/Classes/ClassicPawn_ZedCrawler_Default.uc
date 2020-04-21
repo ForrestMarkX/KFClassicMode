@@ -5,6 +5,9 @@ class ClassicPawn_ZedCrawler_Default extends KFPawn_ZedCrawler implements(KFZEDI
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Crawler_Archetype'
+    
     ElitePawnClass.Empty
     ElitePawnClass.Add(class'ClassicPawn_ZedCrawlerKing_Default')
 }

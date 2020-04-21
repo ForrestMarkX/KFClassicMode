@@ -159,15 +159,10 @@ static final function SetBodyMeshAndSkin( KFCharacterInfo_Human C,
     }
 
     // Character Mesh
-    if( C.BodyVariants.length > 0 )
+    if( C.BodyVariants.Length > 0 )
     {
         // Assign a skin to the body mesh as a material override
-        CurrentBodyMeshIndex = (CurrentBodyMeshIndex < C.BodyVariants.length) ? CurrentBodyMeshIndex : 0;
-        
-        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Body, CurrentBodyMeshIndex))
-        {
-            return;
-        }
+        CurrentBodyMeshIndex = (CurrentBodyMeshIndex < C.BodyVariants.Length) ? CurrentBodyMeshIndex : 0;
 
         // Retrieve the name of the meshes to be used from the archetype
         CharBodyMeshName = C.BodyVariants[CurrentBodyMeshIndex].MeshName;
@@ -196,14 +191,14 @@ static final function SetBodyMeshAndSkin( KFCharacterInfo_Human C,
 static final function SetBodySkinMaterial( KFCharacterInfo_Human C, OutfitVariants CurrentVariant, byte NewSkinIndex, KFPawn KFP)
 {
     local int i;
-
+    
     if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
     {
-        if( CurrentVariant.SkinVariations.length > 0 )
+        if( CurrentVariant.SkinVariations.Length > 0 )
         {
             // Assign a skin to the body mesh as a material override
-            NewSkinIndex = (NewSkinIndex < CurrentVariant.SkinVariations.length) ? NewSkinIndex : 0;
-            KFP.Mesh.SetMaterial(C.BodyMaterialID, CurrentVariant.SkinVariations[NewSkinIndex].Skin);
+            NewSkinIndex = (NewSkinIndex < CurrentVariant.SkinVariations.Length) ? NewSkinIndex : 0;
+            KFP.Mesh.SetMaterial(C.BodyMaterialID, MaterialInstance(SafeLoadObject(CurrentVariant.SkinVariations[NewSkinIndex].SkinName, class'MaterialInstance')));
         }
         else
         {
@@ -222,11 +217,11 @@ static final function SetHeadSkinMaterial( KFCharacterInfo_Human C, OutfitVarian
 
     if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
     {
-        if( CurrentVariant.SkinVariations.length > 0 )
+        if( CurrentVariant.SkinVariations.Length > 0 )
         {
             // Assign a skin to the body mesh as a material override
-            NewSkinIndex = (NewSkinIndex < CurrentVariant.SkinVariations.length) ? NewSkinIndex : 0;
-            KFP.ThirdPersonHeadMeshComponent.SetMaterial(C.HeadMaterialID, CurrentVariant.SkinVariations[NewSkinIndex].Skin);
+            NewSkinIndex = (NewSkinIndex < CurrentVariant.SkinVariations.Length) ? NewSkinIndex : 0;
+            KFP.ThirdPersonHeadMeshComponent.SetMaterial(C.HeadMaterialID, MaterialInstance(SafeLoadObject(CurrentVariant.SkinVariations[NewSkinIndex].SkinName, class'MaterialInstance')));
         }
         else
         {
@@ -248,17 +243,12 @@ static final function SetHeadMeshAndSkin( KFCharacterInfo_Human C,
     local string CharHeadMeshName;
     local SkeletalMesh CharHeadMesh;
 
-    if ( C.HeadVariants.length > 0 )
+    if ( C.HeadVariants.Length > 0 )
     {
-        CurrentHeadMeshIndex = (CurrentHeadMeshIndex < C.HeadVariants.length) ? CurrentHeadMeshIndex : 0;
-        
-        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Head, CurrentHeadMeshIndex))
-        {
-            return;
-        }
+        CurrentHeadMeshIndex = (CurrentHeadMeshIndex < C.HeadVariants.Length) ? CurrentHeadMeshIndex : 0;
 
         CharHeadMeshName = C.HeadVariants[CurrentHeadMeshIndex].MeshName;
-        CharHeadMesh = SkeletalMesh(DynamicLoadObject(CharHeadMeshName, class'SkeletalMesh'));
+        CharHeadMesh = SkeletalMesh(SafeLoadObject(CharHeadMeshName, class'SkeletalMesh'));
 
         // Parent the third person head mesh to the body mesh
         KFP.ThirdPersonHeadMeshComponent.SetSkeletalMesh(CharHeadMesh);
@@ -277,65 +267,42 @@ static final function SetHeadMeshAndSkin( KFCharacterInfo_Human C,
     }
 }
 
-static final function SetAttachmentSkinMaterial( KFCharacterInfo_Human C,
-    int PawnAttachmentIndex,
-    const out AttachmentVariants CurrentVariant,
-    byte NewSkinIndex,
-    KFPawn KFP,
-    optional bool bIsFirstPerson)
+static final function SetAttachmentSkinMaterial(KFCharacterInfo_Human C, int PawnAttachmentIndex, const out AttachmentVariants CurrentVariant, byte NewSkinIndex, KFPawn KFP, optional bool bIsFirstPerson)
 {
-    local int i;
-    if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
-    {
-        if( CurrentVariant.AttachmentItem.SkinVariations.length > 0 )
-        {
-            // Assign a skin to the attachment mesh as a material override
-            if ( NewSkinIndex < CurrentVariant.AttachmentItem.SkinVariations.length )
-            {
-                if (bIsFirstPerson)
-                {
-                    if (KFP.FirstPersonAttachments[PawnAttachmentIndex] != none)
-                    {
-                        KFP.FirstPersonAttachments[PawnAttachmentIndex].SetMaterial(
-                            CurrentVariant.AttachmentItem.SkinMaterialID,
-                            CurrentVariant.AttachmentItem.SkinVariations[NewSkinIndex].Skin1p);
-                    }
-                }
-                else
-                {
-                    KFP.ThirdPersonAttachments[PawnAttachmentIndex].SetMaterial(
-                        CurrentVariant.AttachmentItem.SkinMaterialID,
-                        CurrentVariant.AttachmentItem.SkinVariations[NewSkinIndex].Skin);
-                }
-            }
-            else
-            {
-                `log("Out of bounds skin index for"@CurrentVariant.MeshName);
-                C.RemoveAttachmentMeshAndSkin(PawnAttachmentIndex, KFP);
-            }
-        }
-        else
-        {
-            if (bIsFirstPerson)
-            {
-                if (KFP.FirstPersonAttachments[PawnAttachmentIndex] != none)
-                {
-                    for (i = 0; i < KFP.FirstPersonAttachments[PawnAttachmentIndex].GetNumElements(); i++)
-                    {
-                        KFP.FirstPersonAttachments[PawnAttachmentIndex].SetMaterial(i, none);
-                    }
-                }
-            }
-            else
-            {
-                // Use material specified in the mesh asset
-                for( i=0; i < KFP.ThirdPersonAttachments[PawnAttachmentIndex].GetNumElements(); i++ )
-                {
-                    KFP.ThirdPersonAttachments[PawnAttachmentIndex].SetMaterial(i, none);
-                }
-            }
-        }
-    }
+	local int i;
+    
+	if (KFP.WorldInfo.NetMode != NM_DedicatedServer)
+	{
+		if( CurrentVariant.AttachmentItem.SkinVariations.Length > 0 )
+		{
+			if ( NewSkinIndex < CurrentVariant.AttachmentItem.SkinVariations.Length )
+			{
+				if (bIsFirstPerson)
+				{
+					if (KFP.FirstPersonAttachments[PawnAttachmentIndex] != none)
+						KFP.FirstPersonAttachments[PawnAttachmentIndex].SetMaterial(CurrentVariant.AttachmentItem.SkinMaterialID, MaterialInstance(SafeLoadObject(CurrentVariant.AttachmentItem.SkinVariations[NewSkinIndex].Skin1pName, class'MaterialInstance')));
+				}
+				else KFP.ThirdPersonAttachments[PawnAttachmentIndex].SetMaterial(CurrentVariant.AttachmentItem.SkinMaterialID, MaterialInstance(SafeLoadObject(CurrentVariant.AttachmentItem.SkinVariations[NewSkinIndex].SkinName, class'MaterialInstance')));
+			}
+			else C.RemoveAttachmentMeshAndSkin(PawnAttachmentIndex, KFP);
+		}
+		else
+		{
+			if (bIsFirstPerson)
+			{
+				if (KFP.FirstPersonAttachments[PawnAttachmentIndex] != none)
+				{
+					for (i = 0; i < KFP.FirstPersonAttachments[PawnAttachmentIndex].GetNumElements(); i++)
+						KFP.FirstPersonAttachments[PawnAttachmentIndex].SetMaterial(i, none);
+				}
+			}
+			else
+			{
+				for( i=0; i < KFP.ThirdPersonAttachments[PawnAttachmentIndex].GetNumElements(); i++ )
+					KFP.ThirdPersonAttachments[PawnAttachmentIndex].SetMaterial(i, none);
+			}
+		}
+	}
 }
 
 static final function SetAttachmentMeshAndSkin( KFCharacterInfo_Human C,
@@ -370,11 +337,6 @@ static final function SetAttachmentMeshAndSkin( KFCharacterInfo_Human C,
     if ( C.CosmeticVariants.Length > 0 &&
          CurrentAttachmentMeshIndex < C.CosmeticVariants.Length )
     {
-        if (KFPRI.StartLoadCosmeticContent(C, ECOSMETICTYPE_Attachment, CurrentAttachmentMeshIndex))
-        {
-            return;
-        }
-        
         // Cache values from character info
         CharAttachmentMeshName = bIsFirstPerson ? C.Get1pMeshByIndex(CurrentAttachmentMeshIndex) : C.GetMeshByIndex(CurrentAttachmentMeshIndex);
         CharAttachmentSocketName = bIsFirstPerson ? C.CosmeticVariants[CurrentAttachmentMeshIndex].AttachmentItem.SocketName1p : C.CosmeticVariants[CurrentAttachmentMeshIndex].AttachmentItem.SocketName;
@@ -474,7 +436,7 @@ static final function SetAttachmentMesh(KFCharacterInfo_Human C, int CurrentAtta
         }
 
         // Load and assign skeletal mesh
-        CharacterAttachmentSkelMesh = SkeletalMesh(DynamicLoadObject(CharAttachmentMeshName, class'SkeletalMesh'));
+        CharacterAttachmentSkelMesh = SkeletalMesh(SafeLoadObject(CharAttachmentMeshName, class'SkeletalMesh'));
         SkeletalAttachment.SetSkeletalMesh(CharacterAttachmentSkelMesh);
 
         // Parent animation and LOD transitions to body mesh
@@ -514,7 +476,7 @@ static final function SetAttachmentMesh(KFCharacterInfo_Human C, int CurrentAtta
         }
 
         // Load and assign static mesh
-        CharAttachmentStaticMesh = StaticMesh(DynamicLoadObject(CharAttachmentMeshName, class'StaticMesh'));
+        CharAttachmentStaticMesh = StaticMesh(SafeLoadObject(CharAttachmentMeshName, class'StaticMesh'));
         StaticAttachment.SetStaticMesh(CharAttachmentStaticMesh);
 
         // Set properties
@@ -612,7 +574,8 @@ static final function SetFirstPersonArmsFromArch( KFCharacterInfo_Human C, KFPaw
 
     // First person arms mesh and skin are based on body mesh & skin. 
     // Index of 255 implies use index 0 (default).
-    C.SetArmsMeshAndSkin(
+    SetArmsMeshAndSkin(
+        C,
         bCustom ? EPRI.CustomCharacter.BodyMeshIndex : KFPRI.RepCustomizationInfo.BodyMeshIndex,
         bCustom ? EPRI.CustomCharacter.BodySkinIndex : KFPRI.RepCustomizationInfo.BodySkinIndex,
         KFP,
@@ -638,6 +601,37 @@ static final function SetFirstPersonArmsFromArch( KFCharacterInfo_Human C, KFPaw
         M = KFP.ArmsMesh.CreateAndSetMaterialInstanceConstant(0);
         CloneMIC(M);
     }
+}
+
+static function SetArmsMeshAndSkin(KFCharacterInfo_Human C, byte ArmsMeshIndex, byte ArmsSkinIndex, KFPawn KFP, KFPlayerReplicationInfo KFPRI)
+{
+	local byte CurrentArmMeshIndex, CurrentArmSkinIndex;
+	local string CharArmMeshName;
+	local SkeletalMesh CharArmMesh;
+
+	if (KFP.WorldInfo.NetMode != NM_DedicatedServer && KFP.IsHumanControlled() && KFP.IsLocallyControlled())
+	{
+		if( C.CharacterArmVariants.Length > 0 )
+		{
+			CurrentArmMeshIndex = (ArmsMeshIndex < C.CharacterArmVariants.Length) ? ArmsMeshIndex : 0;
+			CharArmMeshName = C.CharacterArmVariants[CurrentArmMeshIndex].MeshName;
+			CharArmMesh = SkeletalMesh(SafeLoadObject(CharArmMeshName, class'SkeletalMesh'));
+
+			KFP.ArmsMesh.SetSkeletalMesh(CharArmMesh);
+
+			if( C.CharacterArmVariants[CurrentArmMeshIndex].SkinVariants.Length > 0 )
+			{
+				CurrentArmSkinIndex = (ArmsSkinIndex < C.CharacterArmVariants[CurrentArmMeshIndex].SkinVariants.Length) ? ArmsSkinIndex : 0;
+                KFP.ArmsMesh.SetMaterial(0, MaterialInstance(SafeLoadObject(C.CharacterArmVariants[CurrentArmMeshIndex].SkinVariantsName[CurrentArmSkinIndex], class'MaterialInstance')));
+			}
+			else KFP.ArmsMesh.SetMaterial(0, None);
+		}
+		else if( C.ArmMesh != None )
+		{
+			KFP.ArmsMesh.SetMaterial(0, None);
+	        KFP.ArmsMesh.SetSkeletalMesh(C.ArmMesh);
+		}
+	}
 }
 
 static function int GetAttachmentSlotIndex(

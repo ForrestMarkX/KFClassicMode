@@ -6,4 +6,6 @@ class ClassicPawn_ZedPatriarch_Default extends KFPawn_ZedPatriarch implements(KF
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Patriarch_Archetype'
 }

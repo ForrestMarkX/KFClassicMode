@@ -70,6 +70,7 @@ simulated function PostBeginPlay()
     CurrentStyle = new (None) DefaultStyle;
     CurrentStyle.InitStyle();
     CurrentStyle.Owner = self;
+    CurrentStyle.HUDOwner = HUDOwner;
     
     SetTimer(0.1, true, 'SetupFontBlur');
     SetTimer(0.05, true, 'SetupFastFontBlur');
@@ -103,8 +104,9 @@ simulated function SetupStyleTextures()
     RepObject = ClientRep.ObjRef;
     if( RepObject != None )
     {
-        CurrentStyle.MainFont = Font(RepObject.ReferencedObjects[104]);
+        CurrentStyle.MainFont = Font(RepObject.ReferencedObjects[168]);
         CurrentStyle.InfiniteFont = Font(RepObject.ReferencedObjects[155]);
+        CurrentStyle.NameFont = Font(RepObject.ReferencedObjects[104]);
         
         CurrentStyle.BorderTextures[`BOX_INNERBORDER] = Texture2D(RepObject.ReferencedObjects[35]);
         CurrentStyle.BorderTextures[`BOX_INNERBORDER_TRANSPARENT] = Texture2D(RepObject.ReferencedObjects[36]);

@@ -11,9 +11,18 @@ var() byte MaxFontScale;
 var float DefaultHeight; // Default font text size.
 var transient Canvas Canvas;
 var transient KF2GUIController Owner;
+var transient KFHUDInterface HUDOwner;
 
-var Font MainFont, NumberFont, InfiniteFont;
+var Font MainFont, NumberFont, InfiniteFont, NameFont;
 var Color BlurColor, BlurColor2;
+
+enum FFontType
+{
+    FONT_NORMAL,
+    FONT_NUMBER,
+    FONT_NAME,
+    FONT_INFINITE
+};
 
 struct FColorInfo
 {
@@ -22,15 +31,22 @@ struct FColorInfo
 };
 var array<FColorInfo> ColorCodes;
 
+struct FTexturePreCache
+{
+    var string Path;
+    var Texture2D Tex;
+};
+var array<FTexturePreCache> PrecachedTextures;
+
 function InitStyle()
 {
     local FColorInfo ColorInfo;
     
-    ItemTex=Texture2D(DynamicLoadObject("UI_LevelChevrons_TEX.UI_LevelChevron_Icon_02",class'Texture2D'));
+    ItemTex=Texture2D(class'ClassicCharacterInfo'.Static.SafeLoadObject("UI_LevelChevrons_TEX.UI_LevelChevron_Icon_02",class'Texture2D'));
     if( ItemTex==None )
         ItemTex=Texture2D'EngineMaterials.DefaultWhiteGrid';
         
-    NumberFont = Font(DynamicLoadObject("UI_Canvas_Fonts.Font_General", class'Font'));
+    NumberFont = Font(class'ClassicCharacterInfo'.Static.SafeLoadObject("UI_Canvas_Fonts.Font_General", class'Font'));
     
     BlurColor = MakeColor(60, 60, 60, 220);
     BlurColor2 = MakeColor(40, 40, 40, 140);
@@ -100,7 +116,7 @@ function InitStyle()
     ColorCodes.AddItem(ColorInfo);
     
     ColorInfo.Code='C';
-    ColorInfo.Color = MakeColor(255,255,255,255); // White
+    ColorInfo.Color = class'HUD'.default.WhiteColor; // White
     ColorCodes.AddItem(ColorInfo);
     
     ColorInfo.Code='V';
@@ -131,16 +147,22 @@ function RenderCheckbox( KFGUI_CheckBox C );
 function RenderComboBox( KFGUI_ComboBox C );
 function RenderComboList( KFGUI_ComboSelector C );
 
-function Font PickFont( out float Scaler, optional bool bNumbersOnly, optional bool bInfinite )
+function Font PickFont( out float Scaler, optional FFontType FontType )
 {
     Scaler = GetFontScaler();
     
-    if( bNumbersOnly )
-        return NumberFont;
-    else if( bInfinite )
-        return InfiniteFont;
-    
-    return MainFont;
+    switch(FontType)
+    {
+        case FONT_INFINITE:
+            return InfiniteFont;
+        case FONT_NUMBER:
+            return NumberFont;
+        case FONT_NAME:
+            return NameFont;
+        case FONT_NORMAL:
+        default:
+            return MainFont;
+    }
 }
 
 function PickDefaultFontSize( float YRes )
@@ -151,27 +173,15 @@ function PickDefaultFontSize( float YRes )
     S="ABC";
     PickFont(YRes).GetStringHeightAndWidth(S,YL,XL);
     
-    DefaultHeight=float(YL)*YRes;
+    DefaultHeight=(float(YL)*YRes)+1;
 }
 final function float ScreenScale( float Size, optional float MaxRes=1920.f )
 {
-    local float SizeX;
-    
-    if( Owner == None )
-        SizeX = Canvas.SizeX;
-    else SizeX = Owner.ScreenSize.X;
-    
-    return Size * ( SizeX / MaxRes );
+    return Size * ( HUDOwner.SizeX / MaxRes );
 }
-final function float GetFontScaler(optional float Scaler=0.375f, optional float Min=0.175f, optional float Max=0.375f)
+final function float GetFontScaler( optional float Scaler=0.375f, optional float Min=0.175f, optional float Max=0.375f )
 {
-    local float SizeX;
-    
-    if( Owner == None )
-        SizeX = Canvas.SizeX;
-    else SizeX = Owner.ScreenSize.X;
-    
-    return FClamp((SizeX / 1920.f) * Scaler, Min, Max);
+    return FClamp((HUDOwner.SizeX / 1920.f) * Scaler, Min, Max);
 }
 final function DrawText( coerce string S )
 {
@@ -180,7 +190,7 @@ final function DrawText( coerce string S )
     Canvas.Font=PickFont(Scale);
     Canvas.DrawText(S,,Scale,Scale);
 }
-final function DrawCenteredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bVertical, optional bool bUseOutline )
+final function DrawCenteredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bVertical, optional bool bUseOutline, optional FontRenderInfo FRI )
 {
     local float XL,YL;
 
@@ -190,8 +200,8 @@ final function DrawCenteredText( coerce string S, float X, float Y, optional flo
     else Canvas.SetPos(X-(XL*Scale*0.5),Y);
     
     if( bUseOutline )
-        DrawTextShadow(S, Canvas.CurX, Canvas.CurY, 1, Scale);
-    else Canvas.DrawText(S,,Scale,Scale);
+        DrawTextShadow(S, Canvas.CurX, Canvas.CurY, 1, Scale, FRI);
+    else Canvas.DrawText(S,,Scale,Scale,FRI);
 }
 final function string StripColorTags( coerce string S )
 {
@@ -206,7 +216,7 @@ final function string StripColorTags( coerce string S )
     
     return S;
 }
-final function DrawColoredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bUseOutline )
+final function DrawColoredText( coerce string S, float X, float Y, optional float Scale=1.f, optional bool bUseOutline, optional FontRenderInfo FRI )
 {
     local float XL,YL;
     local int i, Index;
@@ -221,11 +231,11 @@ final function DrawColoredText( coerce string S, float X, float Y, optional floa
     if( InStr(S, "\\c") == INDEX_NONE )
     {
         if( bUseOutline )
-            DrawTextShadow(S, X, Y, 1, Scale);
+            DrawTextShadow(S, X, Y, 1, Scale, FRI);
         else 
         {
             Canvas.SetPos(X,Y);
-            Canvas.DrawText(S,,Scale,Scale);
+            Canvas.DrawText(S,,Scale,Scale,FRI);
         }
     }
     else
@@ -238,11 +248,11 @@ final function DrawColoredText( coerce string S, float X, float Y, optional floa
             Canvas.TextSize(PrevT,XL,YL,Scale,Scale);
 
             if( bUseOutline )
-                DrawTextShadow(PrevT, X, Y, 1, Scale);
+                DrawTextShadow(PrevT, X, Y, 1, Scale, FRI);
             else 
             {
                 Canvas.SetPos(X,Y);
-                Canvas.DrawText(PrevT,,Scale,Scale);
+                Canvas.DrawText(PrevT,,Scale,Scale,FRI);
             }
         }
         
@@ -256,7 +266,9 @@ final function DrawColoredText( coerce string S, float X, float Y, optional floa
                     TextColor = ColorCodes[Index].Color;
                 else TextColor = class'HUD'.default.WhiteColor;
                 
-                TextColor.A = OrgC.A;
+                if( TextColor == class'HUD'.default.WhiteColor )
+                    TextColor = OrgC;
+                else TextColor.A = OrgC.A;
                 
                 T = Mid(T, 1);
             }
@@ -265,18 +277,18 @@ final function DrawColoredText( coerce string S, float X, float Y, optional floa
             Canvas.TextSize(T,XL,YL,Scale,Scale);
             
             if( bUseOutline )
-                DrawTextShadow(T, X, Y, 1, Scale);
+                DrawTextShadow(T, X, Y, 1, Scale, FRI);
             else 
             {
                 Canvas.SetPos(X,Y);
-                Canvas.DrawText(T,,Scale,Scale);
+                Canvas.DrawText(T,,Scale,Scale,FRI);
             }
 
             X += XL;
         }
     }
 }
-final function DrawTextBlurry( coerce string S, float X, float Y, optional float Scale=1.f )
+final function DrawTextBlurry( coerce string S, float X, float Y, optional float Scale=1.f, optional FontRenderInfo FRI )
 {
     local Color OldDrawColor;
     
@@ -286,15 +298,15 @@ final function DrawTextBlurry( coerce string S, float X, float Y, optional float
     
     Canvas.DrawColor = BlurColor;
     Canvas.SetPos(X + Owner.FontBlurX, Y + Owner.FontBlurY);
-    Canvas.DrawText(S,,Scale,Scale);
+    Canvas.DrawText(S,,Scale,Scale,FRI);
     
     Canvas.DrawColor = BlurColor2;
     Canvas.SetPos(X + Owner.FontBlurX2, Y + Owner.FontBlurY2);
-    Canvas.DrawText(S,,Scale,Scale);
+    Canvas.DrawText(S,,Scale,Scale,FRI);
     
     Canvas.DrawColor = OldDrawColor;
     Canvas.SetPos(X, Y);
-    Canvas.DrawText(S,,Scale,Scale);
+    Canvas.DrawText(S,,Scale,Scale,FRI);
 }
 final function DrawTextOutline( coerce string S, float X, float Y, int Size, Color OutlineColor, optional float Scale=1.f, optional FontRenderInfo FRI )
 {
@@ -304,7 +316,6 @@ final function DrawTextOutline( coerce string S, float X, float Y, int Size, Col
     OldDrawColor = Canvas.DrawColor;
     OutlineColor.A = OldDrawColor.A;
     
-    Size += 1;
     Steps = (Size * 2) / 3;
     if( Steps < 1 ) 
     {
@@ -325,7 +336,7 @@ final function DrawTextOutline( coerce string S, float X, float Y, int Size, Col
     Canvas.SetPos(X, Y);
     Canvas.DrawText(S,, Scale, Scale, FRI);
 }
-final function DrawTextShadow( coerce string S, float X, float Y, float ShadowSize, optional float Scale=1.f )
+final function DrawTextShadow( coerce string S, float X, float Y, float ShadowSize, optional float Scale=1.f, optional FontRenderInfo FRI  )
 {
     local Color OldDrawColor;
     
@@ -333,11 +344,11 @@ final function DrawTextShadow( coerce string S, float X, float Y, float ShadowSi
     
     Canvas.SetPos(X + ShadowSize, Y + ShadowSize);
     Canvas.SetDrawColor(0, 0, 0, OldDrawColor.A);
-    Canvas.DrawText(S,, Scale, Scale);
+    Canvas.DrawText(S,, Scale, Scale, FRI);
     
     Canvas.SetPos(X, Y);
     Canvas.DrawColor = OldDrawColor;
-    Canvas.DrawText(S,, Scale, Scale);
+    Canvas.DrawText(S,, Scale, Scale, FRI);
 }
 final function DrawTexturedString( coerce string S, float X, float Y, optional float TextScaler=1.f, optional FontRenderInfo FRI, optional bool bUseOutline, optional bool bOnlyTexture )
 {
@@ -361,7 +372,7 @@ final function DrawTexturedString( coerce string S, float X, float Y, optional f
         if( !bOnlyTexture )
         {
             Canvas.TextSize(StripColorTags(D),XL,YL,TextScaler,TextScaler);
-            DrawColoredText(D,X,Y,TextScaler,bUseOutline);
+            DrawColoredText(D,X,Y,TextScaler,bUseOutline,FRI);
             
             X += XL;
         }
@@ -379,13 +390,14 @@ final function DrawTexturedString( coerce string S, float X, float Y, optional f
         Mat = FindNextTexture(S);
     }
     
-    DrawColoredText(S,X,Y,TextScaler,bUseOutline);
+    DrawColoredText(S,X,Y,TextScaler,bUseOutline,FRI);
 }
 final function Texture2D FindNextTexture(out string S)
 {
     local int i, j;
     local string Path;
     local Texture2D Tex;
+    local FTexturePreCache Cache;
 
     Path = S;
     i = InStr(Path,"<Icon>");
@@ -393,13 +405,28 @@ final function Texture2D FindNextTexture(out string S)
         return None;
         
     j = InStr(Path,"</Icon>");
-    S = Left(Path,i)$"<TEXTURE>"$Mid(Path, j+Len("/Icon>"));
+    S = Left(Path,i)$"<TEXTURE>"$Mid(Path, j+6);
+    Path = Mid(Path, i+6, j-(i+6));
     
-    Tex = Texture2D(FindObject(Mid(Path, i+6, j-(i+6)), class'Texture2D'));
+    i = PrecachedTextures.Find('Path', Path);
+    if( i != INDEX_NONE )
+        return PrecachedTextures[i].Tex;
+    
+    Tex = Texture2D(FindObject(Path, class'Texture2D'));
     if( Tex != None )
+    {
+        Cache.Path = Path;
+        Cache.Tex = Tex;
+        PrecachedTextures.AddItem(Cache);
+        
         return Tex;
+    }
 
-    return Texture2D(DynamicLoadObject(Mid(Path, i+6, j-(i+6)), class'Texture2D'));
+    Cache.Path = Path;
+    Cache.Tex = Texture2D(class'ClassicCharacterInfo'.Static.SafeLoadObject(Path, class'Texture2D'));
+    PrecachedTextures.AddItem(Cache);
+    
+    return Cache.Tex;
 }
 final function string StripTextureFromString(string S, optional bool bNoStringAdd)
 {
@@ -797,7 +824,7 @@ final function DrawTileStretched( Texture Tex, float X, float Y, float XS, float
     Canvas.DrawTile(Tex,fX,fY,mW-fX,mH-fY,fX,fY);
 }
 
-final function DrawTextJustified( byte Justification, float X1, float Y1, float X2, float Y2, coerce string S, optional float XS, optional float YS )
+final function DrawTextJustified( byte Justification, float X1, float Y1, float X2, float Y2, coerce string S, optional float XS, optional float YS, optional FontRenderInfo FRI )
 {
     local float XL, YL;
     local float CurY, CurX;
@@ -822,7 +849,7 @@ final function DrawTextJustified( byte Justification, float X1, float Y1, float 
     }
 
     Canvas.SetPos(CurX, CurY);
-    Canvas.DrawText(S,,XS, YS);
+    Canvas.DrawText(S,,XS, YS, FRI);
 }
 
 static final function float TimeFraction( float Start, float End, float Current )
@@ -849,9 +876,31 @@ static final function string Trim(coerce string S)
     return LTrim(RTrim(S));
 }
 
+static final function string FormatInteger( int Val )
+{
+	local string S,O;
+
+	S = string(Val);
+	Val = Len(S);
+	if( Val<=3 )
+		return S;
+	while( Val>3 )
+	{
+		if( O=="" )
+			O = Right(S,3);
+		else O = Right(S,3)$","$O;
+		S = Left(S,Val-3);
+		Val-=3;
+	}
+	if( Val>0 )
+		O = S$","$O;
+	return O;
+}
+
 defaultproperties
 {
-    MainFont=Font'KFClassicMode_Assets.Font.KFMainFont'
     NumberFont=Font'UI_Canvas_Fonts.Font_General'
+    MainFont=Font'KFClassicMode_Assets.Font.KFNormalFont'
     InfiniteFont=Font'KFClassicMode_Assets.Font.KFInfiniteFont'
+    NameFont=Font'KFClassicMode_Assets.Font.KFMainFont'
 }

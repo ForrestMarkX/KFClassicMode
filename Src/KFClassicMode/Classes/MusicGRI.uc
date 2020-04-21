@@ -24,9 +24,12 @@ simulated static final function MusicGRI FindMusicGRI( WorldInfo Level )
     local MusicGRI H;
     
     foreach Level.DynamicActors(class'MusicGRI',H)
-    {
         if( H != None )
             return H;
+    if( Level.NetMode!=NM_Client )
+    {
+        H = Level.Spawn(class'MusicGRI');
+        return H;
     }
     
     return None;

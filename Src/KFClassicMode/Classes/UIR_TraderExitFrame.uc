@@ -44,7 +44,7 @@ function Refresh()
         }
         else
         {
-            AutoFill.ButtonText = TraderMenu.AutoFillString @ "(£"$FillCost$")";
+            AutoFill.ButtonText = TraderMenu.AutoFillString @ "("$Chr(208)$FillCost$")";
             AutoFill.bDisabled = false;
         }
         

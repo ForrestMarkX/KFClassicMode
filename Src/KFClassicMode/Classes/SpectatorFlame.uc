@@ -4,11 +4,21 @@ Class SpectatorFlame extends Emitter
 var ParticleSystem EmitterTemplate;
 var PlayerController PlayerOwner;
 var Vector RandOffset;
+var repnotify Color CurrentColor;
 
 replication
 {
     if( true )
-        PlayerOwner;
+        PlayerOwner, CurrentColor;
+}
+
+`include(VisSpectatorLoc.uci);
+
+simulated function ReplicatedEvent(name VarName)
+{
+    if( VarName == 'CurrentColor' )
+        SetColorParameter('Color', CurrentColor);
+    else Super.ReplicatedEvent(VarName);
 }
 
 simulated function PostBeginPlay()
@@ -34,41 +44,9 @@ simulated function PostBeginPlay()
     SetTemplate(EmitterTemplate);
 }
 
-simulated function Tick(float DT)
-{
-    local KFPawn SpectatedPawn;
-    local Vector CameraLoc, Loc;
-    local Rotator CameraRot;
-    
-    Super.Tick(DT);
-    
-    if( PlayerOwner == None )
-        return;
-    
-    SpectatedPawn = KFPawn(PlayerOwner.GetViewTarget());
-    if( SpectatedPawn != None )
-    {
-        if( WorldInfo.NetMode != NM_DedicatedServer && bHidden && PlayerOwner == GetALocalPlayerController() )
-            SetHidden(false);
-            
-        Loc = SpectatedPawn.Location+(SpectatedPawn.CylinderComponent.CollisionHeight*vect(0,0,1))+RandOffset;
-        if( Loc != Location )
-            SetLocation(Loc);
-    }
-    else 
-    {
-        if( WorldInfo.NetMode != NM_DedicatedServer && !bHidden && PlayerOwner == GetALocalPlayerController() )
-            SetHidden(true);
-            
-        PlayerOwner.GetPlayerViewPoint(CameraLoc, CameraRot);
-        if( CameraLoc != Location )
-            SetLocation(CameraLoc);
-    }
-}
-
 function SetColor( Color C )
 {
-    SetColorParameter('Color', C);
+    CurrentColor = C;
 }
 
 function Vector GetLocation()

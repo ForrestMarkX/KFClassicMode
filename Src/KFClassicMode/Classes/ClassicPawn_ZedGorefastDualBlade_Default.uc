@@ -5,4 +5,6 @@ class ClassicPawn_ZedGorefastDualBlade_Default extends KFPawn_ZedGorefastDualBla
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Gorefast2_Archetype'
 }

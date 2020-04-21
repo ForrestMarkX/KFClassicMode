@@ -5,4 +5,6 @@ class ClassicPawn_ZedClot_AlphaKing_Default extends KFPawn_ZedClot_AlphaKing imp
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Clot_AlphaKing_Archetype'
 }

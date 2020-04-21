@@ -181,14 +181,14 @@ function SetSellable( SItemInformation Info, optional bool bHasAmmo )
     
     if( bHasAmmo )
     {
-        BuyMagB = AddButton('BuyMagB', "£ "$bIsSecondaryAmmo ? Sellable.DefaultItem.WeaponDef.default.SecondaryAmmoMagPrice : Sellable.AmmoPricePerMagazine, 0.775, 0.25, 0.1, 0.5);
+        BuyMagB = AddButton('BuyMagB', Chr(208)@bIsSecondaryAmmo ? Sellable.DefaultItem.WeaponDef.default.SecondaryAmmoMagPrice : Sellable.AmmoPricePerMagazine, 0.775, 0.25, 0.1, 0.5);
 
-        FillAmmoB = AddButton('FillAmmoB', "£ "$(Sellable == KFAPH.GrenadeItem ? KFAPH.GetFillGrenadeCost() : KFAPH.GetFillAmmoCost(Sellable)), 0.89, 0.25, 0.16, 0.5);
+        FillAmmoB = AddButton('FillAmmoB', Chr(208)@(Sellable == KFAPH.GrenadeItem ? KFAPH.GetFillGrenadeCost() : KFAPH.GetFillAmmoCost(Sellable)), 0.89, 0.25, 0.16, 0.5);
         FillAmmoB.GamepadButtonName = "XboxTypeS_X";
     }
     else if( bIsArmor )
     {
-        PurchaseVest = AddButton('PurchaseVest', "£ "$KFAPH.GetFillArmorCost(), 0.775, 0.25, 0.275, 0.5);
+        PurchaseVest = AddButton('PurchaseVest', Chr(208)@KFAPH.GetFillArmorCost(), 0.775, 0.25, 0.275, 0.5);
         PurchaseVest.GamepadButtonName = "XboxTypeS_X";
     }
     

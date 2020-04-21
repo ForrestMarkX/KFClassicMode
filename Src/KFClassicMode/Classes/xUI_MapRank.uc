@@ -1,6 +1,18 @@
 Class xUI_MapRank extends KFGUI_FloatingWindow;
 
 var xVotingReplication RepInfo;
+var KFGUI_Button LikeButton, DislikeButton;
+
+function InitMenu()
+{
+    Super.InitMenu();
+    LikeButton = KFGUI_Button(FindComponentID('Yes'));
+    LikeButton.OnClickLeft = ButtonClicked;
+    LikeButton.OnClickRight = ButtonClicked;
+    DislikeButton = KFGUI_Button(FindComponentID('No'));
+    DislikeButton.OnClickLeft = ButtonClicked;
+    DislikeButton.OnClickRight = ButtonClicked;
+}
 
 function CloseMenu()
 {
@@ -23,6 +35,15 @@ function ButtonClicked( KFGUI_Button Sender )
     }
 }
 
+function PreDraw()
+{
+    if( Owner.ActiveMenus[0] != self )
+        Owner.BringMenuToFront(self);
+    if( Owner.InputFocus != self )
+        GetInputFocus();
+    Super.PreDraw();
+}
+
 defaultproperties
 {
     XPosition=0.35
@@ -30,9 +51,8 @@ defaultproperties
     XSize=0.3
     YSize=0.2
     WindowTitle="Map Review"
+    
     bPersistant=false
-    bAlwaysTop=true
-    bOnlyThisFocus=true
 
     Begin Object Class=KFGUI_TextLable Name=InfoLabel
         ID="Info"
@@ -53,8 +73,6 @@ defaultproperties
         YSize=0.3
         ExtravDir=1
         TextColor=(R=128,G=255,B=128,A=255)
-        OnClickLeft=ButtonClicked
-        OnClickRight=ButtonClicked
     End Object
 
     Begin Object Class=KFGUI_Button Name=DislikeButton
@@ -66,8 +84,6 @@ defaultproperties
         XSize=0.2
         YSize=0.3
         TextColor=(R=255,G=128,B=128,A=255)
-        OnClickLeft=ButtonClicked
-        OnClickRight=ButtonClicked
     End Object
 
     Components.Add(InfoLabel)

@@ -1,6 +1,6 @@
 Class UI_LobbyMenu extends KFGUI_Page;
 
-var KFGUI_Button MenuButton,OptionsButton,ViewMapButton,ReadyButton,DisconnectButton,GearButton;
+var KFGUI_Button MenuButton,OptionsButton,ViewMapButton,ReadyButton,DisconnectButton,GearButton,InventoryButton;
 var KFGUI_Frame MenuBar, MapInfo, StoryBoxBackground, BGPerkEffects, BGPerk, PlayerPortrait;//, PlayerPortraitB;
 var KFGUI_TextLable MapLabel, DifficultyLabel, TimeoutLabel, WaveLabel;
 var KFGUI_TextScroll MOTDText;
@@ -83,6 +83,7 @@ function InitMenu()
     
     OptionsButton = AddMenuButton('Options',"Options","Opens the settings menu");
     GearButton = AddMenuButton('CharacterB',"Gear","Opens the Gear menu to change characters");
+    InventoryButton = AddMenuButton('InventoryB',"Inventory","Opens the Inventory menu to change skins/FX");
     MenuButton = AddMenuButton('MainMenu',"Perks","Opens the main menu for perk changes");
     
     ReadyButton.GamepadButtonName = "XboxTypeS_Y";
@@ -338,6 +339,7 @@ function ButtonClicked( KFGUI_Button Sender )
         }
         
         break;    
+    case 'InventoryB':
     case 'CharacterB':
     case 'Options':
         if( MainMenu != None )
@@ -346,7 +348,9 @@ function ButtonClicked( KFGUI_Button Sender )
         }
         
         Owner.OpenMenu(PC.FlashUIClass);
-        PC.MyGFxManager.OpenMenu(Sender.ID == 'Options' ? UI_OptionsSelection : UI_Gear);
+        if( Sender.ID == 'Options' )
+            PC.MyGFxManager.OpenMenu(UI_OptionsSelection);
+        else PC.MyGFxManager.OpenMenu(Sender.ID == 'InventoryB' ? UI_Inventory : UI_Gear);
         SetVisibility(false);
         break;
     case 'Disconnect':

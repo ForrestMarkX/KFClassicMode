@@ -1,22 +1,10 @@
-Class HealProj extends Projectile;
-
-var Actor SeekTarget;
-var ParticleSystemComponent ParticleSystemComponent;
-var ParticleSystem ProjectileTemplate;
-
-simulated function PostBeginPlay()
-{
-    Super.PostBeginPlay();
-    
-    ParticleSystemComponent.SetTemplate(ProjectileTemplate);
-    ParticleSystemComponent.ActivateSystem();
-}
+Class HealProj extends KFProj_HealingDart_MedicBase;
 
 simulated function Tick( float Delta )
 {
     local vector D;
     
-    Super.Tick(Delta);
+    Super(KFProj_Bullet).Tick(Delta);
     
     if( SeekTarget==None || SeekTarget.bDeleteMe )
     {
@@ -37,14 +25,8 @@ simulated function Tick( float Delta )
 
 defaultproperties
 {
-    Begin Object Class=ParticleSystemComponent Name=ParticleSystemComponent0
-        SecondsBeforeInactive=1
-        bUpdateComponentInTick=true
-    End Object
-    ParticleSystemComponent=ParticleSystemComponent0
-    Components.Add(ParticleSystemComponent0)
-    
-    ProjectileTemplate=ParticleSystem'ZED_Clot_EMIT.FX_Player_Zed_Buff_01'
+	ProjFlightTemplate=ParticleSystem'KFClassicMode_Assets.UFO.FX_Healer_Ball'
+	ProjFlightTemplateZedTime=ParticleSystem'KFClassicMode_Assets.UFO.FX_Healer_Ball'
     
     Speed=250.f
     MaxSpeed=500.f

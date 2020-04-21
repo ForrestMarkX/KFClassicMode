@@ -79,6 +79,9 @@ simulated function SetFleeAndHealMode( bool bNewFleeAndHealStatus )
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Patriarch_Archetype'
+    
     Begin Object Name=MeleeHelper_0
         BaseDamage=75.f
         MomentumTransfer=80000.f

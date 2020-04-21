@@ -4,6 +4,9 @@ class ClassicPawn_ZedSiren extends KFPawn_ZedSiren implements(KFZEDInterface);
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Siren_Archetype'
+    
     DifficultySettings=class'ClassicDifficulty_Siren'
     
     Health=300

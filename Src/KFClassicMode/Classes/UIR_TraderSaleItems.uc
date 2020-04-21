@@ -62,13 +62,13 @@ function DrawMenu()
     Canvas.DrawText(S,,FontScalar,FontScalar,FRI);
     
     if( CurrentBuyPrice >= 10000 )
-        S = "£ 10000";
-    else S = "£ 1000";
+        S = Chr(208)@"10000";
+    else S = Chr(208)@"1000";
     
     Canvas.TextSize(S, XL, YL, FontScalar, FontScalar);
     Canvas.SetDrawColor(0, 0, 0, 255);
     Canvas.SetPos(CompPos[2] - (XL * 1.25), (CompPos[3]/2) - (YL/1.75));
-    Canvas.DrawText("£" @ CurrentBuyPrice,,FontScalar,FontScalar,FRI);
+    Canvas.DrawText(Chr(208) @ CurrentBuyPrice,,FontScalar,FontScalar,FRI);
 }
 
 function Refresh(optional bool bForce)

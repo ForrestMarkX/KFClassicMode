@@ -4,6 +4,9 @@ class ClassicPawn_ZedCrawler extends KFPawn_ZedCrawler implements(KFZEDInterface
 
 defaultproperties
 {
+    MonsterArchPath=""
+    CharacterMonsterArch=KFCharacterInfo_Monster'ZED_ARCH.ZED_Crawler_Archetype'
+    
     bKnockdownWhenJumpedOn=false
     
     Begin Object Name=MeleeHelper_0

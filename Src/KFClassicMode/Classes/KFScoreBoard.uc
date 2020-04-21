@@ -337,7 +337,7 @@ function DrawPlayerEntry( Canvas C, int Index, float YOffset, float Height, floa
     else
     {
         C.SetDrawColor(250, 250, 100, 255);
-        StrValue = "£"$GetNiceSize(int(KFPRI.Score));
+        StrValue = Chr(208)$Owner.CurrentStyle.FormatInteger(int(KFPRI.Score));
     }
     C.DrawText (StrValue, , FontScalar, FontScalar);
     
