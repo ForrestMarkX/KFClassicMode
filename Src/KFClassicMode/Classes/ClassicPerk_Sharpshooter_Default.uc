@@ -115,7 +115,10 @@ simulated function string GetCustomLevelInfo( byte Level )
 DefaultProperties
 {
     PrimaryWeaponDef=class'KFWeapDef_Winchester1894'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Sharpshooter'
     GrenadeWeaponDef=class'KFWeapDef_Grenade_Sharpshooter'
     

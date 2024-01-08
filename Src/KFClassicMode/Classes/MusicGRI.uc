@@ -188,6 +188,9 @@ simulated function PlaySoundTrack(MusicTrackStruct Music)
 {
     local AudioComponent A;
     
+    if( Engine == None )
+        Engine = KFGameEngine(class'Engine'.static.GetEngine());
+    
     A = WorldInfo.CreateAudioComponent(Music.TheSoundCue,false,false,false,,false);
     if( A!=None )
     {

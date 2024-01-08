@@ -74,6 +74,15 @@ final function ClearTimer(optional Name inTimerFunc='Timer')
         
     `TimerHelper.ClearTimer( inTimerFunc, self );
 }
+final function bool IsTimerActive(optional Name inTimerFunc='Timer')
+{
+    if( TimerNames.Find(inTimerFunc) != INDEX_NONE )
+    {
+        TimerNames.RemoveItem(inTimerFunc);
+    }
+        
+    return `TimerHelper.IsTimerActive( inTimerFunc, self );
+}
 function Timer();
 
 function MouseEnter()

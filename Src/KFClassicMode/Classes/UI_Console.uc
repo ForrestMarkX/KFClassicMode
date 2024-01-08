@@ -2,6 +2,18 @@ Class UI_Console extends Console;
 
 var transient Console OriginalConsole;
 var transient UI_ConsoleMenu ConsoleMenu;
+var transient KF2GUIController Controller;
+
+function Initialized()
+{
+	Super.Initialized();
+    
+    Controller = class'KF2GUIController'.static.GetGUIController(GamePlayers[0].Actor);
+    
+    ConsoleMenu = New(None) class'UI_ConsoleMenu';
+    ConsoleMenu.Owner = Controller;
+    ConsoleMenu.InitMenu();
+}
 
 function ConsoleCommand(string Command)
 {
@@ -71,20 +83,21 @@ function bool InputKey( int ControllerId, name Key, EInputEvent Event, float Amo
                 }
                 return true;
             }
+            
+            if( ConsoleMenu.NotifyInputKey(ControllerId, Key, Event, AmountDepressed, bGamepad) )
+                return true;
         }
     
         if(Key == 'F10')
         {
             foreach class'Engine'.static.GetCurrentWorldInfo().LocalPlayerControllers(class'PlayerController', PC)
-            {
                 PC.ForceDisconnect();
-            }
         }
 
         if ( Key == ConsoleKey )
         {
+            ConsoleMenu.ShowMenu();
             bCaptureKeyInput = true;
-            class'KF2GUIController'.static.GetGUIController(GamePlayers[0].Actor).OpenMenu(class'UI_ConsoleMenu');
             return true;
         }
     }
@@ -92,11 +105,45 @@ function bool InputKey( int ControllerId, name Key, EInputEvent Event, float Amo
     return false;
 }
 
-function bool InputChar( int ControllerId, string Unicode )
+function bool InputChar(int ControllerId, string Unicode)
 {
+    if( bCaptureKeyInput )
+    {
+        if( ConsoleMenu.NotifyInputChar(ControllerId, Unicode) )
+            return true;
+    }
+    
     return false;
+}
+
+function bool InputAxis(int ControllerId, name Key, float Delta, float DeltaTime, optional bool bGamepad)
+{
+    if( bCaptureKeyInput )
+    {
+        if( ConsoleMenu.NotifyInputAxis(ControllerId, Key, Delta, DeltaTime, bGamepad) )
+            return true;
+    }
+    
+    return false;
+}
+
+function PostRender_Console(Canvas Canvas)
+{
+    OriginalConsole.PostRender_Console(Canvas);
+    
+    if( bCaptureKeyInput )
+    {
+        ConsoleMenu.bWindowFocused = true;
+        ConsoleMenu.InputPos[0] = 0.f;
+        ConsoleMenu.InputPos[1] = 0.f;
+        ConsoleMenu.InputPos[2] = Canvas.SizeX;
+        ConsoleMenu.InputPos[3] = Canvas.SizeY;
+        ConsoleMenu.Canvas = Canvas;
+        ConsoleMenu.PreDraw();
+    }
 }
 
 defaultproperties
 {
+    OnReceivedNativeInputAxis=InputAxis
 }

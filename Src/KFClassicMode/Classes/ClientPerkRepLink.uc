@@ -31,7 +31,6 @@ simulated static final function ClientPerkRepLink FindContentRep( WorldInfo Leve
 function PostBeginPlay()
 {
     ObjRef = BaseRef;
-    
     if( ObjRef!=None )
         InitRep();
 }

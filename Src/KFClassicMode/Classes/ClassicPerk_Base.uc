@@ -249,7 +249,7 @@ simulated static function class<KFWeaponDefinition> GetWeaponDef(int Level)
     
 simulated static function class<KFWeaponDefinition> GetSecondaryDef(int Level)
 {
-    return default.SecondaryWeaponDef;
+    return default.SecondaryWeaponPaths[0];
 }
 
 simulated static function class<KFWeaponDefinition> GetKnifeDef(int Level)
@@ -605,6 +605,8 @@ defaultproperties
     
     PerkAchievedName="KFClassicMode_Assets.Perks.PerkAchievedCue"
     
-    SecondaryWeaponDef=class'ClassicWeapDef_9mm'
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'ClassicWeapDef_9mm')
+    
     GrenadeWeaponDef=class'ClassicWeapDef_Grenade_Support'
 }

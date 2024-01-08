@@ -95,7 +95,7 @@ simulated function ModifyRecoil( out float CurrentRecoilModifier, KFWeapon KFW )
     }
 }
 
-simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out byte MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
+simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out int MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
 {
     local float TempCapacity;
     

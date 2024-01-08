@@ -106,7 +106,10 @@ function LocalizeText()
     LocalizedObject.SetString("emoteString", Class'KFLocalMessage_VoiceComms'.default.VoiceCommsOptionStrings[8]);
     LocalizedObject.SetString("bodiesString", class'KFGFxMenu_Gear'.Default.BodyString);
     LocalizedObject.SetString("skinsString", class'KFGFxMenu_Gear'.Default.SkinsString);
-    LocalizedObject.SetString("attachmentsString", class'KFGFxMenu_Gear'.Default.AttachmentsString);
+	LocalizedObject.SetString("attachmentsString", class'KFGFxMenu_Gear'.Default.AttachmentsString);
+	LocalizedObject.SetString("attachment0String", class'KFGFxMenu_Gear'.Default.Attachment0String);
+	LocalizedObject.SetString("attachment1String", class'KFGFxMenu_Gear'.Default.Attachment1String);
+	LocalizedObject.SetString("attachment2String", class'KFGFxMenu_Gear'.Default.Attachment2String);
 
     SetObject("localizeText", LocalizedObject);
 }
@@ -641,14 +644,48 @@ function Callback_Body( int MeshIndex, int SkinIndex )
     SetGearButtons(MeshIndex, SkinIndex, class'KFGFxMenu_Gear'.Default.BodyMeshKey, class'KFGFxMenu_Gear'.Default.BodySkinKey, class'KFGFxMenu_Gear'.Default.BodyFunctionKey);
 }
 
-function Callback_Attachment( int MeshIndex, int SkinIndex )
+function Callback_Attachment1( int MeshIndex, int SkinIndex )
 {
-    local int SlotIndex;
-    local KFPawn KFP;
+	Callback_AttachmentNumbered(MeshIndex, SkinIndex, 0);
+}
+function Callback_Attachment2( int MeshIndex, int SkinIndex )
+{
+	Callback_AttachmentNumbered(MeshIndex, SkinIndex, 1);
+}
+function Callback_Attachment3( int MeshIndex, int SkinIndex )
+{
+	Callback_AttachmentNumbered(MeshIndex, SkinIndex, 2);
+}
 
+function Callback_AttachmentNumbered(int MeshIndex, int SkinIndex, int SlotIndex)
+{
+	local KFPawn KFP;
+    
     if( !ClassicPRI.UsesCustomChar() ) // Force client to setup custom character now for this server.
         ClassicPRI.ChangeCharacter(ClassicPRI.RepCustomizationInfo.CharacterIndex,true);
+    
+    KFP = KFPawn(GetPC().Pawn);
+    if( KFP!=None && ClassicPRI!=None )
+    {
+        if( MeshIndex==`CLEARED_ATTACHMENT_INDEX )
+            ClassicPRI.RemoveAttachments(SlotIndex);
+        else
+        {
+            class'ClassicCharacterInfo'.Static.DetachConflictingAttachments(CurrentCharInfo, MeshIndex, KFP, ClassicPRI);
+            ClassicPRI.UpdateCustomization(CO_Attachment, MeshIndex, SkinIndex, SlotIndex);
+            SetAttachmentButtons(class'KFGFxMenu_Gear'.Default.AttachmentKey, class'KFGFxMenu_Gear'.Default.AttachmentFunctionKey);
+        }
+    }
+}
 
+function Callback_Attachment( int MeshIndex, int SkinIndex )
+{
+	local KFPawn KFP;
+	local int SlotIndex;
+    
+    if( !ClassicPRI.UsesCustomChar() ) // Force client to setup custom character now for this server.
+        ClassicPRI.ChangeCharacter(ClassicPRI.RepCustomizationInfo.CharacterIndex,true);
+    
     KFP = KFPawn(GetPC().Pawn);
     if( KFP!=None && ClassicPRI!=None )
     {

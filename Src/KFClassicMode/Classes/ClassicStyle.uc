@@ -350,7 +350,7 @@ function RenderButton( KFGUI_Button B )
     
     if( B.ButtonText!="" )
     {
-        Canvas.Font = NameFont;
+        Canvas.Font = MainFont;
         
         GamepadTexSize = B.CompPos[3] / 1.25;
         

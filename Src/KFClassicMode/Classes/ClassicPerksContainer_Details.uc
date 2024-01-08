@@ -2,7 +2,7 @@ class ClassicPerksContainer_Details extends KFGFxPerksContainer_Details;
 
 `define AddWeaponsInfo(InClassDef) if( `InClassDef!=None ) AddWeaponInfo(WeaponNames, WeaponSources, `InClassDef.static.GetItemName(), `InClassDef.static.GetImagePath())
 
-function UpdateDetails( class<KFPerk> PerkClass )
+function UpdateDetails(class<KFPerk> PerkClass, byte SelectedSkills[`MAX_PERK_SKILLS], bool IsChoosingPrev, bool IsChoosingNext, bool UpdateUI)
 {
     local GFxObject DetailsProvider;
     local ClassicPlayerController KFPC;

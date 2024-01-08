@@ -52,7 +52,5 @@ defaultproperties
     MusicReplicationInfoClass=class'MusicGRI_Menu'
     KFGFxManagerClass=class'MenuMoviePlayer_Manager'
     HUDType=class'MenuInterface'
-    DefaultPawnClass=class'MenuPawn'
     PlayerControllerClass=class'MenuPlayerController'
-    PlayerReplicationInfoClass=class'MenuReplicationInfo'
 }

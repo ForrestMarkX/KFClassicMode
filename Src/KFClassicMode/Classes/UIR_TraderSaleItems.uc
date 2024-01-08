@@ -29,7 +29,7 @@ function DrawMenu()
     
     if( CurrentIcon != None )
     {
-        Canvas.SetDrawColor(255, 0, 0, 255);
+        Canvas.SetDrawColor(255, 15, 15, 255);
         Canvas.SetPos(4, 4);
         Canvas.DrawTile(CurrentIcon, CompPos[3] - 8, CompPos[3] - 8, 0, 0, 256, 256);
     }

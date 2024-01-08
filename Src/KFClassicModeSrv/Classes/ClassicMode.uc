@@ -784,6 +784,62 @@ function SetupDefaultConfig()
         iVersionNumber++;
     }
     
+    if( iVersionNumber <= 9 )
+    {
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGScorcher") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGScorcher");
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRG_EMP_ArcGenerator") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRG_EMP_ArcGenerator");  
+        if( TraderInventory.Find("KFGame.KFWeapDef_Mine_Reconstructor") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Mine_Reconstructor");   
+        if( TraderInventory.Find("KFGame.KFWeapDef_Minigun") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Minigun");        
+        if( TraderInventory.Find("KFGame.KFWeapDef_Blunderbuss") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Blunderbuss");          
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRG_Kaboomstick") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRG_Kaboomstick");           
+        if( TraderInventory.Find("KFGame.KFWeapDef_Pistol_G18C") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Pistol_G18C");           
+        if( TraderInventory.Find("KFGame.KFWeapDef_Pistol_DualG18") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Pistol_DualG18");              
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGTeslauncher") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGTeslauncher");     
+        
+        iVersionNumber++;
+    }
+    
+    if( iVersionNumber <= 10 )
+    {
+        if( TraderInventory.Find("KFGameContent.KFWeapDef_HRGTeslauncher") == INDEX_NONE )
+            TraderInventory.AddItem("KFGameContent.KFWeapDef_HRGTeslauncher");
+        
+        iVersionNumber++;
+    }
+    
+    if( iVersionNumber <= 11 )
+    {
+        MapInfo.Name = "KF-Elysium";
+        MapInfo.Type = "Halloween";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        MapInfo.Name = "KF-HellmarkStation";
+        MapInfo.Type = "Halloween";
+        MapInfo.MaxMonsters = 32;
+        MapTypes.AddItem(MapInfo);
+        
+        if( TraderInventory.Find("KFGameContent.KFWeapDef_HRGTeslauncher") != INDEX_NONE )
+            TraderInventory.RemoveItem("KFGameContent.KFWeapDef_HRGTeslauncher");
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRGTeslauncher") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRGTeslauncher");
+        if( TraderInventory.Find("KFGame.KFWeapDef_HRG_Vampire") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_HRG_Vampire");
+        if( TraderInventory.Find("KFGame.KFWeapDef_Rifle_FrostShotgunAxe") == INDEX_NONE )
+            TraderInventory.AddItem("KFGame.KFWeapDef_Rifle_FrostShotgunAxe");
+        
+        iVersionNumber++;
+    }
+    
     SaveConfig();
 }
 
@@ -1790,10 +1846,7 @@ function ReplaceWeaponPickup(class<KFWeapon> OldWeaponClass, class<KFWeapon> New
             for( i = 0; i < KFPFI.ItemPickups.Length; i++ )
             {
                 if( KFPFI.ItemPickups[i].ItemClass == OldWeaponClass )
-                {
                     KFPFI.ItemPickups[i].ItemClass = NewWeaponClass;
-                    break;
-                }
             }
         }
     }

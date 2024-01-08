@@ -238,7 +238,7 @@ simulated function ModifyWeaponSwitchTime( out float ModifiedSwitchTime )
     ModifiedSwitchTime *= 1.f - GetPassiveValue(WeaponSwitchSpeed, CurrentVetLevel);
 }
 
-simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out byte MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
+simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out int MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
 {
     local float TempCapacity;
 
@@ -324,7 +324,10 @@ DefaultProperties
     BasePerk=class'KFPerk_SWAT'
     
     PrimaryWeaponDef=class'KFWeapDef_MP7'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFweapDef_Knife_SWAT'
     GrenadeWeaponDef=class'KFWeapDef_Grenade_SWAT'
     

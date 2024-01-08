@@ -162,7 +162,10 @@ simulated function string GetCustomLevelInfo( byte Level )
 DefaultProperties
 {
     PrimaryWeaponDef=class'KFWeapDef_MedicPistol'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Medic'
     
     AutoBuyLoadOutPath=(class'KFWeapDef_MedicPistol', class'KFWeapDef_MedicSMG', class'KFWeapDef_MedicShotgun', class'KFWeapDef_MedicRifle', class'KFWeapDef_MedicRifleGrenadeLauncher')

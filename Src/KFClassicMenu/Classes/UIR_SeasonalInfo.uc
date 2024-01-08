@@ -118,7 +118,7 @@ function DrawSeasonalEntry( Canvas C, int Index, float YOffset, float Height, fl
     
     C.SetDrawColor(255, 255, 255, 255);
     C.SetPos(RewardX + (RewardH/2) - ((RewardH*0.75f)/2), RewardY + (RewardH/2) - ((RewardH*0.75f)/2));
-    C.DrawRect(RewardH*0.75f, RewardH*0.75f, Texture2D'UI_HUD.InGameHUD_SWF_I117');
+    C.DrawRect(RewardH*0.75f, RewardH*0.75f, Texture2D'UI_HUD.InGameHUD_SWF_I123');
     
     C.SetDrawColor(34, 177, 76, 255);
     C.SetPos(RewardX+RewardH+(Owner.HUDOwner.ScaledBorderSize*4), RewardY + (RewardH/2) - (YS/2));

@@ -322,7 +322,10 @@ DefaultProperties
     ZedTimeModifyingStates(8)="HuskCannonCharge"
     
     PrimaryWeaponDef=class'KFWeapDef_HX25'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Demo'
     GrenadeWeaponDef=class'KFWeapDef_Grenade_Demo'
     

@@ -3420,10 +3420,10 @@ simulated function DrawPlayerInfo( KFPawn_Human P, float BarPercentage, float Ba
     }
 }
 
-function DrawHiddenHumanPlayerIcon( PlayerReplicationInfo PRI, vector IconWorldLocation, float NormalizedAngle)
+function DrawHiddenHumanPlayerIcon(PlayerReplicationInfo PRI, vector IconWorldLocation, vector ViewLocation, vector ViewVector)
 {
-    local vector ScreenPos;
-    local float IconSizeMult;
+    local vector ScreenPos, ReferencePosition;
+    local float IconSizeMult, NormalizedAngle;
     local KFPlayerReplicationInfo KFPRI;
     local Texture2D PlayerIcon;
     local float ResModifier;
@@ -3436,7 +3436,9 @@ function DrawHiddenHumanPlayerIcon( PlayerReplicationInfo PRI, vector IconWorldL
     if( KFPRI == None )
         return;
 
-    ScreenPos = Canvas.Project(IconWorldLocation + class'KFPawn_Human'.default.CylinderComponent.CollisionHeight * vect(0, 0, 2));
+    ReferencePosition = IconWorldLocation + class'KFPawn_Human'.default.CylinderComponent.CollisionHeight * vect(0, 0, 2);
+    NormalizedAngle = Normal(ReferencePosition - ViewLocation) dot ViewVector;
+    ScreenPos = Canvas.Project(ReferencePosition);
 
     IconSizeMult = (PlayerStatusIconSize * 0.8) * ResModifier;
     ScreenPos.X -= IconSizeMult;
@@ -4790,7 +4792,7 @@ function CheckAndDrawRemainingZedIcons()
         Super.CheckAndDrawRemainingZedIcons();
 }
 
-function DrawZedIcon( Pawn ZedPawn, vector PawnLocation, float NormalizedAngle )
+function DrawZedIcon( Pawn ZedPawn, vector PawnLocation, float NormalizedAngle, color ColorToUse, float SizeMultiplier )
 {
     DrawDirectionalIndicator(PawnLocation + (ZedPawn.CylinderComponent.CollisionHeight * vect(0, 0, 1)), GenericZedIconTexture, PlayerStatusIconSize * (WorldInfo.static.GetResolutionBasedHUDScale() * FriendlyHudScale) * 0.5f,,, GetNameOf(ZedPawn.Class));
 }
@@ -4821,8 +4823,8 @@ defaultproperties
     MaxWeaponPickupDist=700
     WeaponPickupScanRadius=75
     ZedScanRadius=200
-    WeaponAmmoIcon=Texture2D'UI_Menus.TraderMenu_SWF_I10B'
-    WeaponWeightIcon=Texture2D'UI_Menus.TraderMenu_SWF_I26'
+    WeaponAmmoIcon=Texture2D'UI_Menus.UpgradeV2TraderMenu_SWF_I10B'
+    WeaponWeightIcon=Texture2D'UI_Menus.UpgradeV2TraderMenu_SWF_I26'
     WeaponIconSize=32
     WeaponIconColor=(R=192,G=192,B=192,A=255)
     WeaponOverweightIconColor=(R=255,G=0,B=0,A=192)

@@ -68,7 +68,7 @@ simulated function ModifyMaxSpareAmmoAmount( KFWeapon KFW, out int MaxSpareAmmo,
     }
 }
 
-simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out byte MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
+simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out int MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
 {
     local float TempCapacity;
 

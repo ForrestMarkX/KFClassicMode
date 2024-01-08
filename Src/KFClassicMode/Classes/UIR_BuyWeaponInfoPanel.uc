@@ -160,7 +160,7 @@ function SetDisplay(SItemInformation NewBuyable)
     local KFAutoPurchaseHelper KFAPH;
     local ClassicPerk_Base CurrentPerk;
     local int PerkedValue, MagCapacity, MaxAmmo, Damage, Range, ROF, Index, UpgradeLevel;
-    local byte PerkedByteValue;
+    local int PerkedByteValue;
     local float PerkedFloatValue, Penetration;
     local string S;
     local SItemInformation ItemInfo;

@@ -23,6 +23,7 @@ var int LastSortedColumn;
 
 var transient float TextHeight,ScalerSize,TextScaler;
 var transient int OldItemsPerFrame;
+var transient array<KFGUI_ListItem> SortedList;
 
 var KFGUI_ListItem FirstItem,UnusedItem;
 
@@ -87,6 +88,7 @@ function KFGUI_ListItem AddLine( string Value, optional int iValue, optional str
         }
         else
         {
+            i = 0;
             for( O=FirstItem; O!=None; O=O.Next )
             {
                 if( O.Next==None || O.Next.Temp>N.Temp )
@@ -185,6 +187,16 @@ final function KFGUI_ListItem GetFromIndex( int Index )
     return None;
 }
 
+final function int SortColumnList(KFGUI_ListItem NA, KFGUI_ListItem NB)
+{
+    return NA.Temp>NB.Temp ? -1 : 0;
+}
+
+final function int SortColumnListReverse(KFGUI_ListItem NA, KFGUI_ListItem NB)
+{
+    return NA.Temp<NB.Temp ? -1 : 0;
+}
+
 function SortColumn( int Column, optional bool bReverse )
 {
     local array<KFGUI_ListItem> List;
@@ -197,35 +209,25 @@ function SortColumn( int Column, optional bool bReverse )
     LastSortedColumn = Column;
     bLastSortedReverse = bReverse;
     bShouldSortList = true;
+    
+    // Grab current selected line.
+    Sel = GetFromIndex(SelectedRowIndex);
+    SelectedRowIndex = -1;
 
     // Allocate memory space first.
     List.Length = ListCount;
     List.Length = 0;
     
-    // Grab current selected line.
-    Sel = GetFromIndex(SelectedRowIndex);
-    SelectedRowIndex = -1;
-    
     // Slow, sort it all.
     for( N=FirstItem; N!=None; N=N.Next )
     {
         N.Temp = N.GetSortStr(Column);
-
-        if( bReverse )
-        {
-            for( i=0; i<List.Length; ++i )
-                if( List[i].Temp<N.Temp )
-                    break;
-        }
-        else
-        {
-            for( i=0; i<List.Length; ++i )
-                if( List[i].Temp>N.Temp )
-                    break;
-        }
-        List.Insert(i,1);
-        List[i] = N;
+        List.AddItem(N);
     }
+    
+    if( bReverse )
+        List.Sort(SortColumnListReverse);
+    else List.Sort(SortColumnList);
     
     // Rebuild list.
     FirstItem = None;

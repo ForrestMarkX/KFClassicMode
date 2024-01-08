@@ -248,7 +248,10 @@ DefaultProperties
     BasePerk=class'KFPerk_Gunslinger'
     
     PrimaryWeaponDef=class'KFWeapDef_Remington1858Dual'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Gunslinger'
     GrenadeWeaponDef=class'KFWeapDef_Grenade_Gunslinger'
     

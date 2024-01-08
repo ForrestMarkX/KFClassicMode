@@ -154,7 +154,7 @@ function ModifyDamageTaken( out int InDamage, optional class<DamageType> DamageT
 }
 
 
-simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out byte MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
+simulated function ModifyMagSizeAndNumber( KFWeapon KFW, out int MagazineCapacity, optional array< Class<KFPerk> > WeaponPerkClass, optional bool bSecondary=false, optional name WeaponClassname )
 {
     Super(ClassicPerk_Base).ModifyMagSizeAndNumber(KFW, MagazineCapacity, WeaponPerkClass, bSecondary, WeaponClassname);
 }
@@ -281,7 +281,10 @@ simulated function string GetCustomLevelInfo( byte Level )
 DefaultProperties
 {
     PrimaryWeaponDef=class'KFWeapDef_CaulkBurn'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Firebug'
     
     AutoBuyLoadOutPath=(class'KFWeapDef_CaulkBurn', class'KFWeapDef_DragonsBreath', class'KFWeapDef_FlameThrower', class'KFWeapDef_MicrowaveGun', class'KFWeapDef_MicrowaveRifle')

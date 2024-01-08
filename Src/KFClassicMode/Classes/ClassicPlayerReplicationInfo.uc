@@ -409,14 +409,22 @@ simulated function UpdateCustomization( byte Type, int MeshIndex, int SkinIndex,
         CharacterCustomizationChanged();
 }
 
-simulated final function RemoveAttachments()
+simulated final function RemoveAttachments(optional int Index=-1)
 {
     local int i;
-
-    for( i=0; i<`MAX_COSMETIC_ATTACHMENTS; ++i )
+    
+    if( Index != INDEX_NONE )
     {
-        CustomCharacter.AttachmentMeshIndices[i] = `CLEARED_ATTACHMENT_INDEX;
-        CustomCharacter.AttachmentSkinIndices[i] = 0;
+        CustomCharacter.AttachmentMeshIndices[Index] = `CLEARED_ATTACHMENT_INDEX;
+        CustomCharacter.AttachmentSkinIndices[Index] = 0;
+    }
+    else
+    {
+        for( i=0; i<`MAX_COSMETIC_ATTACHMENTS; ++i )
+        {
+            CustomCharacter.AttachmentMeshIndices[i] = `CLEARED_ATTACHMENT_INDEX;
+            CustomCharacter.AttachmentSkinIndices[i] = 0;
+        }
     }
     SavePlayerCharacter();
     ServerSetCharacterX(CustomCharacter);

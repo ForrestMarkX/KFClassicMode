@@ -109,7 +109,7 @@ simulated function Interact( KFPawn_Human KFPH )
     {
         foreach KFPH.InvManager.InventoryActors( class'KFWeapon', KFW )
         {
-            if( KFW.static.DenyPerkResupply() )
+            if( KFW.DenyPerkResupply() )
             {
                 continue;
             }
@@ -281,7 +281,10 @@ simulated function string GetCustomLevelInfo( byte Level )
 DefaultProperties
 {
     PrimaryWeaponDef=class'KFWeapDef_MB500'
-    SecondaryWeaponDef=class'KFWeapDef_9mm'
+    
+    SecondaryWeaponPaths.Empty
+    SecondaryWeaponPaths.Add(class'KFWeapDef_9mm')
+    
     KnifeWeaponDef=class'KFWeapDef_Knife_Support'
     GrenadeWeaponDef=class'KFWeapDef_Grenade_Support'
     

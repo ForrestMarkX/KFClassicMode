@@ -6,7 +6,7 @@ function SetGenericItemDetails(const out STraderItem TraderItem, out GFxObject I
     local ClassicPerk_Base Perk;
     local ClassicPerkManager PerkManager;
     local int FinalMaxSpareAmmoCount, i;
-    local byte FinalMagazineCapacity;
+    local int FinalMagazineCapacity;
     local Float DamageValue;
     local Float NextDamageValue;
     

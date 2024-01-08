@@ -18,9 +18,9 @@ var string PasswordIcon, VACIcon, StatsIcon;
 var array<int> PingFilter;
 var ESteamMatchmakingType SearchType;
 
-var config string SavedServerName;
-var config Bool bNoPassword, bNoMutators, bNotFull, bNotEmpty, bUsesStats, bCustom, bDedicated, bVAC_Secure, bInLobby, bInProgress, bOnlyStockMaps, bOnlyCustomMaps, bLimitServerResults;
-var config byte SavedGameModeIndex, SavedMapIndex, SavedDifficultyIndex, SavedLengthIndex, SavedPingIndex;
+var globalconfig string SavedServerName;
+var globalconfig bool bNoPassword, bNoMutators, bNotFull, bNotEmpty, bUsesStats, bCustom, bDedicated, bVAC_Secure, bInLobby, bInProgress, bOnlyStockMaps, bOnlyCustomMaps, bLimitServerResults;
+var globalconfig byte SavedGameModeIndex, SavedMapIndex, SavedDifficultyIndex, SavedLengthIndex, SavedPingIndex;
 
 var transient string TransitionMap, TransitionGame, AnyString;
 var transient array<string> DifficultyStrings, LengthStrings, GameModeStrings, MapStrings;
@@ -30,6 +30,8 @@ var transient string ServerPassword;
 var transient OnlineSubsystem OnlineSub;
 var transient OnlineGameInterface GameInterface;
 var transient KFDataStore_OnlineGameSearch SearchDataStore;
+
+var transient int LastSearchIndex;
 
 var transient enum EQueryCompletionAction
 {
@@ -119,7 +121,7 @@ function InitMenu()
         GameModeBox.Values.AddItem(GameModeStrings[i]);
     }
     
-    class'KFGFxMenu_StartGame'.static.GetMapList(MapStrings, SavedGameModeIndex);
+    class'KFGFxMenu_StartGame'.static.GetMapList(MapStrings, SavedGameModeIndex, true);
     MapsBox = AddComboBox(class'KFGFxMenu_ServerBrowser'.default.MapString,"Only show servers using this map.",'MapSetting',MapsLabel);
     MapsBox.Values.AddItem(AnyString);
     for( i=0; i<MapStrings.Length; i++ )
@@ -201,6 +203,8 @@ function OnCancelSearchComplete( bool bWasSuccessful )
 
     CurrentAction = QueryCompletionAction;
     QueryCompletionAction = QUERYACTION_None;
+    
+    LastSearchIndex = 0;
 
     switch ( CurrentAction )
     {
@@ -349,7 +353,7 @@ function OnFindOnlineGamesCompleteDelegate(bool bWasSuccessful)
     if( !bSearchCompleted )
     {
         if( Search.Results.Length > 0 )
-            SetTimer(0.01f, false, nameof(UpdateListDataProvider));
+            SetTimer(PC.WorldInfo.DeltaSeconds*4.f, false, nameof(UpdateListDataProvider));
         LastServerCount = Search.Results.Length;
     }
     else
@@ -375,57 +379,49 @@ function bool GetWaveFilter(int Index, int MaxWaves)
 function UpdateListDataProvider()
 {
     local KFOnlineGameSettings TempOnlineGamesSettings;
-    local KFOnlineGameSearch LatestGameSearch;
     local int i, NumPlayers;
     local string CurrentWave, Ping, ServerFlags, GamemodeInfo;
-    
+    local KFOnlineGameSearch LatestGameSearch;
+
     LatestGameSearch = KFOnlineGameSearch(SearchDataStore.GetActiveGameSearch());
     if( LatestGameSearch != None )
     {
-        for (i = 0; i < LatestGameSearch.Results.Length; i++)
+        for( i=LastSearchIndex; i<LatestGameSearch.Results.Length; i++ )
         {
-            if( CurrentServers.ListCount >= 700 )
-            {
-                CancelQuery(QUERYACTION_None);
-                break;
-            }
-                
             TempOnlineGamesSettings = KFOnlineGameSettings(LatestGameSearch.Results[i].GameSettings);
             if( ShouldServerBeFiltered(TempOnlineGamesSettings) )
                 continue;
                 
-            if ( TempOnlineGamesSettings.ElementIdx != i )
-            {
-                CurrentWave = TempOnlineGamesSettings.CurrentWave$(IsEndlessModeIndex(TempOnlineGamesSettings.Mode, TempOnlineGamesSettings.NumWaves) ? "" : ("/"$TempOnlineGamesSettings.NumWaves));
-                NumPlayers = TempOnlineGamesSettings.NumPublicConnections-TempOnlineGamesSettings.NumOpenPublicConnections-TempOnlineGamesSettings.NumSpectators;
+            CurrentWave = TempOnlineGamesSettings.CurrentWave$(IsEndlessModeIndex(TempOnlineGamesSettings.Mode, TempOnlineGamesSettings.NumWaves) ? "" : ("/"$TempOnlineGamesSettings.NumWaves));
+            NumPlayers = TempOnlineGamesSettings.NumPublicConnections-TempOnlineGamesSettings.NumOpenPublicConnections-TempOnlineGamesSettings.NumSpectators;
+            
+            if( TempOnlineGamesSettings.PingInMs >= 200 )
+                Ping = "\\cG";
+            else if( TempOnlineGamesSettings.PingInMs >= 150 )
+                Ping = "\\cF";
+            else Ping = "\\cD";
+            
+            Ping $= (TempOnlineGamesSettings.PingInMs < 0) ? ("-") : (string(TempOnlineGamesSettings.PingInMs)) $ "\\cC";
+            
+            ServerFlags = "<Icon>"$GetDifficultyIcon(TempOnlineGamesSettings.Difficulty)$"</Icon>";
+            if( TempOnlineGamesSettings.bRequiresPassword )
+                ServerFlags $= "<Icon>"$PasswordIcon$"</Icon>";
+            if( TempOnlineGamesSettings.bAntiCheatProtected )
+                ServerFlags $= "<Icon>"$VACIcon$"</Icon>";
+            if( TempOnlineGamesSettings.bUsesStats )
+                ServerFlags $= "<Icon>"$StatsIcon$"</Icon>";
                 
-                if( TempOnlineGamesSettings.PingInMs >= 200 )
-                    Ping = "\\cG";
-                else if( TempOnlineGamesSettings.PingInMs >= 150 )
-                    Ping = "\\cF";
-                else Ping = "\\cD";
-                
-                Ping $= (TempOnlineGamesSettings.PingInMs < 0) ? ("-") : (String(TempOnlineGamesSettings.PingInMs)) $ "\\cC";
-                
-                ServerFlags = "<Icon>"$GetDifficultyIcon(TempOnlineGamesSettings.Difficulty)$"</Icon>";
-                if( TempOnlineGamesSettings.bRequiresPassword )
-                    ServerFlags $= "<Icon>"$PasswordIcon$"</Icon>";
-                if( TempOnlineGamesSettings.bAntiCheatProtected )
-                    ServerFlags $= "<Icon>"$VACIcon$"</Icon>";
-                if( TempOnlineGamesSettings.bUsesStats )
-                    ServerFlags $= "<Icon>"$StatsIcon$"</Icon>";
-                    
-                GamemodeInfo = class'KFCommon_LocalizedStrings'.static.GetGameModeString(TempOnlineGamesSettings.Mode);
-                if( GamemodeInfo == class'KFCommon_LocalizedStrings'.default.NoPreferenceString )
-                    GamemodeInfo = "Custom";
-                
-                CurrentServers.AddLine(ServerFlags$"\n"$Owner.CurrentStyle.Trim(TempOnlineGamesSettings.OwningPlayerName)$"\n"$GamemodeInfo$"\n"$TempOnlineGamesSettings.MapName$"\n"$NumPlayers$"/"$TempOnlineGamesSettings.NumPublicConnections$"\n"$CurrentWave$"\n"$Ping,i,
-                MakeSortStr(TempOnlineGamesSettings.Difficulty)$"\n"$TempOnlineGamesSettings.OwningPlayerName$"\n"$GamemodeInfo$"\n"$TempOnlineGamesSettings.MapName$"\n"$MakeSortStr(NumPlayers)$"\n"$MakeSortStr(TempOnlineGamesSettings.CurrentWave)$"\n"$MakeSortStr(TempOnlineGamesSettings.PingInMs));
-                TempOnlineGamesSettings.ElementIdx = i;
-                
-                ServerBrowser.NumServers.SetText("Servers Recieved:"@CurrentServers.ListCount);
-            }
+            GamemodeInfo = class'KFCommon_LocalizedStrings'.static.GetGameModeString(TempOnlineGamesSettings.Mode);
+            if( GamemodeInfo == class'KFCommon_LocalizedStrings'.default.NoPreferenceString )
+                GamemodeInfo = "Custom";
+            
+            CurrentServers.AddLine(ServerFlags$"\n"$Owner.CurrentStyle.Trim(TempOnlineGamesSettings.OwningPlayerName)$"\n"$GamemodeInfo$"\n"$TempOnlineGamesSettings.MapName$"\n"$NumPlayers$"/"$TempOnlineGamesSettings.NumPublicConnections$"\n"$CurrentWave$"\n"$Ping,i,
+            MakeSortStr(TempOnlineGamesSettings.Difficulty)$"\n"$TempOnlineGamesSettings.OwningPlayerName$"\n"$GamemodeInfo$"\n"$TempOnlineGamesSettings.MapName$"\n"$MakeSortStr(NumPlayers)$"\n"$MakeSortStr(TempOnlineGamesSettings.CurrentWave)$"\n"$MakeSortStr(TempOnlineGamesSettings.PingInMs));
+            
+            ServerBrowser.NumServers.SetText("Servers Recieved:"@CurrentServers.ListCount);
         }
+        
+        LastSearchIndex = LatestGameSearch.Results.Length;
     }
 }
 
